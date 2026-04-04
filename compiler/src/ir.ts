@@ -39,7 +39,7 @@ export interface IREndContainer { kind: 'end_container'; tag: 'Window' | 'View' 
 export interface IRText { kind: 'text'; format: string; args: string[]; }
 export interface IRButton { kind: 'button'; title: string; action: string[]; style?: string; }
 export interface IRTextInput { kind: 'text_input'; label: string; bufferIndex: number; stateVar: string; style?: string; }
-export interface IRCheckbox { kind: 'checkbox'; label: string; stateVar: string; style?: string; }
+export interface IRCheckbox { kind: 'checkbox'; label: string; stateVar: string; valueExpr?: string; onChangeExpr?: string; style?: string; }
 export interface IRSeparator { kind: 'separator'; }
 export interface IRBeginPopup { kind: 'begin_popup'; id: string; style?: string; }
 export interface IREndPopup { kind: 'end_popup'; }

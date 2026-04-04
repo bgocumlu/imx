@@ -21,22 +21,66 @@ function cppPropType(t: IRType | 'callback'): string {
     return cppType(t);
 }
 
-export function emitComponent(comp: IRComponent): string {
+/**
+ * Emit a .gen.h header for a component that has props.
+ * Contains the props struct and function forward declaration.
+ */
+export function emitComponentHeader(comp: IRComponent): string {
     const lines: string[] = [];
 
-    // Headers
+    lines.push('#pragma once');
     lines.push('#include <reimgui/runtime.h>');
     lines.push('#include <reimgui/renderer.h>');
+    lines.push('#include <functional>');
+    lines.push('#include <string>');
     lines.push('');
 
-    // Props struct if component has params
+    // Props struct
+    lines.push(`struct ${comp.name}Props {`);
+    for (const p of comp.params) {
+        lines.push(`${INDENT}${cppPropType(p.type)} ${p.name};`);
+    }
+    lines.push('};');
+    lines.push('');
+
+    // Function forward declaration
+    lines.push(`void ${comp.name}_render(reimgui::RenderContext& ctx, const ${comp.name}Props& props);`);
+    lines.push('');
+
+    return lines.join('\n');
+}
+
+export interface ImportInfo {
+    name: string;         // component name e.g. "TodoItem"
+    headerFile: string;   // e.g. "TodoItem.gen.h"
+}
+
+export function emitComponent(comp: IRComponent, imports?: ImportInfo[]): string {
+    const lines: string[] = [];
+
+    // Reset counters for each component
+    styleCounter = 0;
+    customComponentCounter = 0;
+    checkboxCounter = 0;
+
     const hasProps = comp.params.length > 0;
+
     if (hasProps) {
-        lines.push(`struct ${comp.name}Props {`);
-        for (const p of comp.params) {
-            lines.push(`${INDENT}${cppPropType(p.type)} ${p.name};`);
+        // Component with props: include its own header instead of redeclaring struct
+        lines.push(`#include "${comp.name}.gen.h"`);
+        lines.push('');
+    } else {
+        // No props: standard headers
+        lines.push('#include <reimgui/runtime.h>');
+        lines.push('#include <reimgui/renderer.h>');
+
+        // Include imported component headers
+        if (imports && imports.length > 0) {
+            for (const imp of imports) {
+                lines.push(`#include "${imp.headerFile}"`);
+            }
         }
-        lines.push('};');
+
         lines.push('');
     }
 
@@ -140,6 +184,8 @@ function emitNode(node: IRNode, lines: string[], depth: number): void {
 }
 
 let styleCounter = 0;
+let customComponentCounter = 0;
+let checkboxCounter = 0;
 
 function buildStyleBlock(node: IRBeginContainer, indent: string, lines: string[]): string | null {
     // Check for style-related props (gap, padding, width, height, etc.)
@@ -269,15 +315,29 @@ function emitTextInput(node: IRTextInput, lines: string[], indent: string): void
 }
 
 function emitCheckbox(node: IRCheckbox, lines: string[], indent: string): void {
+    const label = node.label && node.label !== '""' ? node.label : `"##checkbox_${checkboxCounter}"`;
+    checkboxCounter++;
+
     if (node.stateVar) {
+        // State-bound case
         lines.push(`${indent}{`);
         lines.push(`${indent}${INDENT}bool val = ${node.stateVar}.get();`);
-        lines.push(`${indent}${INDENT}if (reimgui::renderer::checkbox(${node.label}, &val)) {`);
+        lines.push(`${indent}${INDENT}if (reimgui::renderer::checkbox(${label}, &val)) {`);
         lines.push(`${indent}${INDENT}${INDENT}${node.stateVar}.set(val);`);
         lines.push(`${indent}${INDENT}}`);
         lines.push(`${indent}}`);
+    } else if (node.valueExpr !== undefined) {
+        // Props-bound / expression-bound case
+        lines.push(`${indent}{`);
+        lines.push(`${indent}${INDENT}bool val = ${node.valueExpr};`);
+        lines.push(`${indent}${INDENT}if (reimgui::renderer::checkbox(${label}, &val)) {`);
+        if (node.onChangeExpr) {
+            lines.push(`${indent}${INDENT}${INDENT}${node.onChangeExpr};`);
+        }
+        lines.push(`${indent}${INDENT}}`);
+        lines.push(`${indent}}`);
     } else {
-        lines.push(`${indent}reimgui::renderer::checkbox(${node.label}, nullptr);`);
+        lines.push(`${indent}reimgui::renderer::checkbox(${label}, nullptr);`);
     }
 }
 
@@ -301,15 +361,23 @@ function emitListMap(node: IRListMap, lines: string[], indent: string, depth: nu
 }
 
 function emitCustomComponent(node: IRCustomComponent, lines: string[], indent: string): void {
+    const instanceIndex = customComponentCounter++;
     const propsEntries = Object.entries(node.props);
+
+    lines.push(`${indent}ctx.begin_instance("${node.name}", ${instanceIndex}, ${node.stateCount}, ${node.bufferCount});`);
+
     if (propsEntries.length > 0) {
-        const propsStr = propsEntries.map(([k, v]) => `.${k} = ${v}`).join(', ');
-        lines.push(`${indent}ctx.begin_instance("${node.name}", 0, ${node.stateCount}, ${node.bufferCount});`);
-        lines.push(`${indent}${node.name}_render(ctx, {${propsStr}});`);
-        lines.push(`${indent}ctx.end_instance();`);
+        // MSVC-compatible: use variable-based prop assignment instead of designated initializers
+        lines.push(`${indent}{`);
+        lines.push(`${indent}${INDENT}${node.name}Props p;`);
+        for (const [k, v] of propsEntries) {
+            lines.push(`${indent}${INDENT}p.${k} = ${v};`);
+        }
+        lines.push(`${indent}${INDENT}${node.name}_render(ctx, p);`);
+        lines.push(`${indent}}`);
     } else {
-        lines.push(`${indent}ctx.begin_instance("${node.name}", 0, ${node.stateCount}, ${node.bufferCount});`);
         lines.push(`${indent}${node.name}_render(ctx);`);
-        lines.push(`${indent}ctx.end_instance();`);
     }
+
+    lines.push(`${indent}ctx.end_instance();`);
 }

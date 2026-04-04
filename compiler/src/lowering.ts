@@ -189,17 +189,17 @@ export function exprToCpp(node: ts.Expression, ctx: LoweringContext): string {
         return `${fn}(${args})`;
     }
 
-    // Arrow function
+    // Arrow function -> C++ lambda
     if (ts.isArrowFunction(node)) {
-        // Return the body as statements
         if (ts.isBlock(node.body)) {
             const stmts: string[] = [];
             for (const stmt of node.body.statements) {
                 stmts.push(stmtToCpp(stmt, ctx));
             }
-            return stmts.join(' ');
+            return `[&]() { ${stmts.join(' ')} }`;
         } else {
-            return exprToCpp(node.body as ts.Expression, ctx);
+            const bodyExpr = exprToCpp(node.body as ts.Expression, ctx);
+            return `[&]() { ${bodyExpr}; }`;
         }
     }
 
@@ -423,16 +423,36 @@ function lowerCheckbox(attrs: Record<string, string>, rawAttrs: Map<string, ts.E
 
     // Detect bound state variable from value prop
     let stateVar = '';
+    let valueExprStr: string | undefined;
+    let onChangeExprStr: string | undefined;
     const valueExpr = rawAttrs.get('value');
     if (valueExpr && ts.isIdentifier(valueExpr)) {
         const varName = valueExpr.text;
         if (ctx.stateVars.has(varName)) {
             stateVar = varName;
+        } else {
+            // Non-state value (e.g., props.done passed as identifier)
+            valueExprStr = exprToCpp(valueExpr, ctx);
+        }
+    } else if (valueExpr) {
+        // Non-state value expression (e.g., props.done)
+        valueExprStr = exprToCpp(valueExpr, ctx);
+    }
+
+    // If not state-bound, get onChange expression
+    if (!stateVar) {
+        const onChangeRaw = rawAttrs.get('onChange');
+        if (onChangeRaw) {
+            onChangeExprStr = exprToCpp(onChangeRaw, ctx);
+            // If it's not already a lambda/call, make it a call
+            if (!onChangeExprStr.startsWith('[') && !onChangeExprStr.endsWith(')')) {
+                onChangeExprStr = `${onChangeExprStr}()`;
+            }
         }
     }
 
     const style = attrs['style'];
-    body.push({ kind: 'checkbox', label, stateVar, style });
+    body.push({ kind: 'checkbox', label, stateVar, valueExpr: valueExprStr, onChangeExpr: onChangeExprStr, style });
 }
 
 function lowerTextElement(node: ts.JsxElement, body: IRNode[], ctx: LoweringContext): void {

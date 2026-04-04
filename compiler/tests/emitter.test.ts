@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { parseIgxFile } from '../src/parser.js';
 import { validate } from '../src/validator.js';
 import { lowerComponent } from '../src/lowering.js';
-import { emitComponent, emitRoot } from '../src/emitter.js';
+import { emitComponent, emitComponentHeader, emitRoot } from '../src/emitter.js';
 
 function compile(source: string): string {
     const parsed = parseIgxFile('Test.igx', source);
@@ -11,6 +11,15 @@ function compile(source: string): string {
     expect(validation.errors).toHaveLength(0);
     const ir = lowerComponent(parsed, validation);
     return emitComponent(ir);
+}
+
+function compileHeader(source: string): string {
+    const parsed = parseIgxFile('Test.igx', source);
+    expect(parsed.errors).toHaveLength(0);
+    const validation = validate(parsed);
+    expect(validation.errors).toHaveLength(0);
+    const ir = lowerComponent(parsed, validation);
+    return emitComponentHeader(ir);
 }
 
 describe('emitComponent', () => {
@@ -53,17 +62,24 @@ function App() {
     });
 
     it('emits component with props struct', () => {
-        const output = compile(`
+        const source = `
 function Greeting(props: { name: string, age: number }) {
   return <Text>Hello {props.name}</Text>;
 }
-        `);
+        `;
 
-        expect(output).toContain('struct GreetingProps');
-        expect(output).toContain('std::string name;');
-        expect(output).toContain('int age;');
+        // The .gen.cpp now includes its own .gen.h instead of inlining the struct
+        const output = compile(source);
+        expect(output).toContain('#include "Greeting.gen.h"');
         expect(output).toContain('const GreetingProps& props');
         expect(output).toContain('reimgui::renderer::text(');
+
+        // The struct is in the header
+        const header = compileHeader(source);
+        expect(header).toContain('struct GreetingProps');
+        expect(header).toContain('std::string name;');
+        expect(header).toContain('int age;');
+        expect(header).toContain('void Greeting_render(reimgui::RenderContext& ctx, const GreetingProps& props);');
     });
 
     it('emits ternary conditional with else', () => {
