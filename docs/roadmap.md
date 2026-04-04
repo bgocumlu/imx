@@ -230,7 +230,14 @@ Candidates:
 - `useEffect`
 - native IR instead of C++ codegen
 - hot reload
-- richer style system
+- **Complete Theme System** — expand `<Theme>` from 3 color props to ~5 semantic props that intelligently derive all 55 ImGui color slots:
+  - `accentColor` — interactive elements (buttons, tabs, sliders, headers, grips, checkmarks)
+  - `backgroundColor` — all background surfaces (window, popup, child, frame, menu bar, scrollbar track)
+  - `textColor` — all text variants (normal, disabled, placeholder)
+  - `borderColor` — borders, separators, table lines
+  - `surfaceColor` — secondary surfaces (table rows, title bars, modal dim overlay)
+  - Each prop derives normal/hovered/active/dimmed variants automatically
+  - Goal: 5 props → full control of all 55 ImGui color slots via smart derivation
 - plugin APIs
 
 Exit criteria:
