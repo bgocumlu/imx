@@ -193,6 +193,47 @@ function App() {
         expect(output).toContain('#include <imgui_internal.h>');
     });
 
+    it('emits native widget with WidgetArgs dispatch', () => {
+        const output = compile(`
+function App() {
+  const [vol, setVol] = useState(0.5);
+  return (
+    <Window title="Test">
+      <Knob value={vol} min={0} max={1} onChange={(v: number) => setVol(v)} />
+    </Window>
+  );
+}
+        `);
+
+        expect(output).toContain('imx::WidgetArgs _wa("Knob##nw_0")');
+        expect(output).toContain('_wa.set("value", vol.get())');
+        expect(output).toContain('_wa.set("min", 0)');
+        expect(output).toContain('_wa.set("max", 1)');
+        expect(output).toContain('_wa.set_callback("onChange"');
+        expect(output).toContain('std::any_cast<float>(_v)');
+        expect(output).toContain('vol.set(');
+        expect(output).toContain('imx::call_widget("Knob", _wa)');
+    });
+
+    it('emits native widget void callback', () => {
+        const output = compile(`
+function App() {
+  const [count, setCount] = useState(0);
+  return (
+    <Window title="Test">
+      <MyButton onPress={() => setCount(count + 1)} />
+    </Window>
+  );
+}
+        `);
+
+        expect(output).toContain('imx::WidgetArgs _wa("MyButton##nw_0")');
+        expect(output).toContain('_wa.set_callback("onPress"');
+        expect(output).toContain('[&](std::any)');
+        expect(output).toContain('count.set(count.get() + 1)');
+        expect(output).toContain('imx::call_widget("MyButton", _wa)');
+    });
+
     it('emits resetLayout as imx_reset_layout', () => {
         const output = compile(`
 function App() {

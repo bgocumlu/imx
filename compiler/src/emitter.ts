@@ -5,7 +5,7 @@ import type {
     IRBeginPopup, IREndPopup, IROpenPopup, IRMenuItem,
     IRSliderFloat, IRSliderInt, IRDragFloat, IRDragInt, IRCombo,
     IRInputInt, IRInputFloat, IRColorEdit, IRListBox, IRProgressBar, IRTooltip,
-    IRDockLayout, IRDockSplit, IRDockPanel,
+    IRDockLayout, IRDockSplit, IRDockPanel, IRNativeWidget,
 } from './ir.js';
 
 const INDENT = '    ';
@@ -146,6 +146,7 @@ export function emitComponent(comp: IRComponent, imports?: ImportInfo[], sourceF
     checkboxCounter = 0;
     comboCounter = 0;
     listBoxCounter = 0;
+    nativeWidgetCounter = 0;
     currentCompName = comp.name;
 
     const hasProps = comp.params.length > 0;
@@ -334,6 +335,9 @@ function emitNode(node: IRNode, lines: string[], depth: number): void {
         case 'tooltip':
             emitTooltip(node, lines, indent);
             break;
+        case 'native_widget':
+            emitNativeWidget(node, lines, indent);
+            break;
         case 'dock_layout': {
             lines.push(`${indent}{`);
             lines.push(`${indent}${INDENT}ImGuiID dock_id = ImGui::GetID("MainDockSpace");`);
@@ -358,6 +362,7 @@ let customComponentCounter = 0;
 let checkboxCounter = 0;
 let comboCounter = 0;
 let listBoxCounter = 0;
+let nativeWidgetCounter = 0;
 const windowOpenStack: boolean[] = []; // tracks if begin_window used open prop
 
 function buildStyleBlock(node: IRBeginContainer, indent: string, lines: string[]): string | null {
@@ -737,6 +742,28 @@ function emitCustomComponent(node: IRCustomComponent, lines: string[], indent: s
     }
 
     lines.push(`${indent}ctx.end_instance();`);
+}
+
+function emitNativeWidget(node: IRNativeWidget, lines: string[], indent: string): void {
+    emitLocComment(node.loc, node.name, lines, indent);
+    const idx = nativeWidgetCounter++;
+    const label = `${node.name}##nw_${idx}`;
+
+    lines.push(`${indent}{`);
+    lines.push(`${indent}${INDENT}imx::WidgetArgs _wa("${label}");`);
+
+    // Value props
+    for (const [k, v] of Object.entries(node.props)) {
+        lines.push(`${indent}${INDENT}_wa.set("${k}", ${v});`);
+    }
+
+    // Callback props — already lowered to [&](std::any _v) { ... } lambdas
+    for (const [k, v] of Object.entries(node.callbackProps)) {
+        lines.push(`${indent}${INDENT}_wa.set_callback("${k}", ${v});`);
+    }
+
+    lines.push(`${indent}${INDENT}imx::call_widget("${node.name}", _wa);`);
+    lines.push(`${indent}}`);
 }
 
 function ensureFloatLiteral(val: string): string {
