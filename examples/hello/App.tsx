@@ -13,6 +13,11 @@ export default function App() {
   const [weight, setWeight] = useState(9.8);
   const [color, setColor] = useState([1.0, 0.5, 0.0, 1.0]);
   const [progress, setProgress] = useState(0.7);
+  const [size, setSize] = useState(0);
+  const [selected, setSelected] = useState(0);
+  const [notes, setNotes] = useState("Type here...");
+  const [pickerColor, setPickerColor] = useState([0.2, 0.8, 0.4, 1.0]);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   return (
     <Theme preset="dark" accentColor={[0.2, 0.5, 1.0, 1.0]} rounding={6}>
@@ -26,9 +31,14 @@ export default function App() {
             <DockPanel>
               <Window title="Inspector" />
             </DockPanel>
-            <DockPanel>
-              <Window title="Data" />
-            </DockPanel>
+            <DockSplit direction="horizontal" size={0.5}>
+              <DockPanel>
+                <Window title="Data" />
+              </DockPanel>
+              <DockPanel>
+                <Window title="Widgets" />
+              </DockPanel>
+            </DockSplit>
           </DockSplit>
         </DockSplit>
       </DockLayout>
@@ -103,6 +113,41 @@ export default function App() {
           </TableRow>
         </Table>
       </Window>
+      <Window title="Widgets">
+        <Column gap={4}>
+          <CollapsingHeader label="Radio / Selectable">
+            <Text>Size:</Text>
+            <Radio label="Small" value={size} index={0} />
+            <Radio label="Medium" value={size} index={1} />
+            <Radio label="Large" value={size} index={2} />
+            <Separator />
+            <Selectable label="Option A" selected={selected === 0} onSelect={() => setSelected(0)} />
+            <Selectable label="Option B" selected={selected === 1} onSelect={() => setSelected(1)} />
+            <Selectable label="Option C" selected={selected === 2} onSelect={() => setSelected(2)} />
+          </CollapsingHeader>
+          <CollapsingHeader label="Text / Color">
+            <InputTextMultiline label="Notes" value={notes} style={{ width: 300, height: 100 }} />
+            <ColorPicker label="Picker" value={pickerColor} />
+          </CollapsingHeader>
+          <CollapsingHeader label="Display">
+            <BulletText>First bullet point</BulletText>
+            <BulletText>Second bullet point</BulletText>
+            <LabelText label="Version" value="0.2.0" />
+            <LabelText label="Components" value="41" />
+            <Separator />
+            <PlotLines label="FPS" values={[60, 58, 62, 55, 61, 63, 59]} style={{ width: 200, height: 50 }} />
+            <PlotHistogram label="Distribution" values={[1, 3, 5, 7, 5, 3, 1]} style={{ width: 200, height: 50 }} />
+          </CollapsingHeader>
+          <Button title="Show Modal" onPress={() => setShowConfirm(true)} />
+        </Column>
+      </Window>
+      <Modal title="Confirm Action" open={showConfirm} onClose={() => setShowConfirm(false)}>
+        <Text>Are you sure you want to proceed?</Text>
+        <Row gap={8}>
+          <Button title="Yes" onPress={() => setShowConfirm(false)} />
+          <Button title="Cancel" onPress={() => setShowConfirm(false)} />
+        </Row>
+      </Modal>
       {showAbout && <Window title="About">
         <Column gap={8}>
           <Text>IMX v0.1</Text>

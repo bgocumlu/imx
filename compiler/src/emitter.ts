@@ -410,6 +410,48 @@ let nativeWidgetCounter = 0;
 let plotCounter = 0;
 const windowOpenStack: boolean[] = []; // tracks if begin_window used open prop
 
+/**
+ * Build a Style variable from a raw style expression string for self-closing components.
+ * Handles JS-like object literals: { width: 300, height: 100 } -> imx::Style with assignments.
+ * Returns the variable name, or null if no style.
+ */
+function buildStyleVar(styleExpr: string | undefined, indent: string, lines: string[]): string | null {
+    if (!styleExpr) return null;
+
+    // Check if it looks like an object literal: { key: value, ... }
+    const trimmed = styleExpr.trim();
+    if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
+        const inner = trimmed.slice(1, -1).trim();
+        if (!inner) return null;
+
+        const varName = `style_${styleCounter++}`;
+        lines.push(`${indent}imx::Style ${varName};`);
+
+        // Parse key: value pairs
+        const pairs = inner.split(',').map(s => s.trim()).filter(s => s.length > 0);
+        for (const pair of pairs) {
+            const colonIdx = pair.indexOf(':');
+            if (colonIdx === -1) continue;
+            const key = pair.substring(0, colonIdx).trim();
+            const val = pair.substring(colonIdx + 1).trim();
+
+            // Map camelCase to snake_case
+            const cppKey = key === 'paddingHorizontal' ? 'padding_horizontal'
+                : key === 'paddingVertical' ? 'padding_vertical'
+                : key === 'minWidth' ? 'min_width'
+                : key === 'minHeight' ? 'min_height'
+                : key;
+
+            const floatVal = val.includes('.') ? `${val}F` : `${val}.0F`;
+            lines.push(`${indent}${varName}.${cppKey} = ${floatVal};`);
+        }
+        return varName;
+    }
+
+    // Already a variable name or expression — return as-is
+    return styleExpr;
+}
+
 function buildStyleBlock(node: IRBeginContainer, indent: string, lines: string[]): string | null {
     // Check for style-related props (gap, padding, width, height, etc.)
     const styleProps: Record<string, string> = {};
@@ -588,7 +630,10 @@ function emitBeginContainer(node: IRBeginContainer, lines: string[], indent: str
                 lines.push(`${indent}    bool modal_open = true;`);
                 lines.push(`${indent}    imx::renderer::begin_modal(${title}, ${openExpr}, &modal_open);`);
                 if (onCloseExpr) {
-                    lines.push(`${indent}    if (!modal_open) { ${onCloseExpr}; }`);
+                    // onCloseExpr may be a lambda [&](){...} — wrap as IIFE
+                    lines.push(`${indent}    if (!modal_open) {`);
+                    lines.push(`${indent}        (${onCloseExpr})();`);
+                    lines.push(`${indent}    }`);
                 }
             } else {
                 windowOpenStack.push(false);
@@ -1111,16 +1156,18 @@ function emitRadio(node: IRRadio, lines: string[], indent: string): void {
 function emitInputTextMultiline(node: IRInputTextMultiline, lines: string[], indent: string): void {
     emitLocComment(node.loc, 'InputTextMultiline', lines, indent);
     lines.push(`${indent}{`);
-    lines.push(`${indent}${INDENT}auto& buf = ctx.get_buffer(${node.bufferIndex});`);
+    const innerIndent = indent + INDENT;
+    const styleVar = buildStyleVar(node.style, innerIndent, lines);
+    lines.push(`${innerIndent}auto& buf = ctx.get_buffer(${node.bufferIndex});`);
     if (node.stateVar) {
-        lines.push(`${indent}${INDENT}buf.sync_from(${node.stateVar}.get());`);
+        lines.push(`${innerIndent}buf.sync_from(${node.stateVar}.get());`);
     }
-    const styleArg = node.style ? `, ${node.style}` : '';
-    lines.push(`${indent}${INDENT}if (imx::renderer::text_input_multiline(${node.label}, buf${styleArg})) {`);
+    const styleArg = styleVar ? `, ${styleVar}` : '';
+    lines.push(`${innerIndent}if (imx::renderer::text_input_multiline(${node.label}, buf${styleArg})) {`);
     if (node.stateVar) {
-        lines.push(`${indent}${INDENT}${INDENT}${node.stateVar}.set(buf.value());`);
+        lines.push(`${innerIndent}${INDENT}${node.stateVar}.set(buf.value());`);
     }
-    lines.push(`${indent}${INDENT}}`);
+    lines.push(`${innerIndent}}`);
     lines.push(`${indent}}`);
 }
 
@@ -1143,10 +1190,12 @@ function emitPlotLines(node: IRPlotLines, lines: string[], indent: string): void
     const values = node.values.split(',').map(v => ensureFloatLiteral(v.trim()));
     const count = values.length;
     lines.push(`${indent}{`);
-    lines.push(`${indent}${INDENT}float ${varName}[] = {${values.join(', ')}};`);
+    const innerIndent = indent + INDENT;
+    const styleVar = buildStyleVar(node.style, innerIndent, lines);
+    lines.push(`${innerIndent}float ${varName}[] = {${values.join(', ')}};`);
     const overlay = node.overlay ? `, ${node.overlay}` : ', nullptr';
-    const styleArg = node.style ? `, ${node.style}` : '';
-    lines.push(`${indent}${INDENT}imx::renderer::plot_lines(${node.label}, ${varName}, ${count}${overlay}${styleArg});`);
+    const styleArg = styleVar ? `, ${styleVar}` : '';
+    lines.push(`${innerIndent}imx::renderer::plot_lines(${node.label}, ${varName}, ${count}${overlay}${styleArg});`);
     lines.push(`${indent}}`);
 }
 
@@ -1157,10 +1206,12 @@ function emitPlotHistogram(node: IRPlotHistogram, lines: string[], indent: strin
     const values = node.values.split(',').map(v => ensureFloatLiteral(v.trim()));
     const count = values.length;
     lines.push(`${indent}{`);
-    lines.push(`${indent}${INDENT}float ${varName}[] = {${values.join(', ')}};`);
+    const innerIndent = indent + INDENT;
+    const styleVar = buildStyleVar(node.style, innerIndent, lines);
+    lines.push(`${innerIndent}float ${varName}[] = {${values.join(', ')}};`);
     const overlay = node.overlay ? `, ${node.overlay}` : ', nullptr';
-    const styleArg = node.style ? `, ${node.style}` : '';
-    lines.push(`${indent}${INDENT}imx::renderer::plot_histogram(${node.label}, ${varName}, ${count}${overlay}${styleArg});`);
+    const styleArg = styleVar ? `, ${styleVar}` : '';
+    lines.push(`${innerIndent}imx::renderer::plot_histogram(${node.label}, ${varName}, ${count}${overlay}${styleArg});`);
     lines.push(`${indent}}`);
 }
 

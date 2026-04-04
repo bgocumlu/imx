@@ -191,7 +191,10 @@ export function exprToCpp(node: ts.Expression, ctx: LoweringContext): string {
     if (ts.isBinaryExpression(node)) {
         const left = exprToCpp(node.left, ctx);
         const right = exprToCpp(node.right, ctx);
-        const op = node.operatorToken.getText();
+        let op = node.operatorToken.getText();
+        // Map TypeScript operators to C++ equivalents
+        if (op === '===') op = '==';
+        else if (op === '!==') op = '!=';
         return `${left} ${op} ${right}`;
     }
 

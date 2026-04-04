@@ -32,7 +32,7 @@ interface DockLayoutProps { children?: any; }
 interface DockSplitProps { direction: "horizontal" | "vertical"; size: number; children?: any; }
 interface DockPanelProps { children?: any; }
 interface ThemeProps {
-  preset: "dark" | "light" | "classic";
+  preset: string;
   accentColor?: [number, number, number, number];
   windowBg?: [number, number, number, number];
   textColor?: [number, number, number, number];
@@ -61,6 +61,16 @@ interface ColorEditProps { label: string; value: number[]; onChange: (v: number[
 interface ListBoxProps { label: string; value: number; onChange: (v: number) => void; items: string[]; style?: Style; }
 interface ProgressBarProps { value: number; overlay?: string; style?: Style; }
 interface TooltipProps { text: string; }
+interface BulletTextProps { style?: Style; children?: any; }
+interface LabelTextProps { label: string; value: string; }
+interface SelectableProps { label: string; selected?: boolean; onSelect?: () => void; style?: Style; }
+interface RadioProps { label: string; value: number; index: number; onChange?: (v: number) => void; style?: Style; }
+interface InputTextMultilineProps { label: string; value: string; style?: Style; }
+interface ColorPickerProps { label: string; value: number[]; style?: Style; }
+interface PlotLinesProps { label: string; values: number[]; overlay?: string; style?: Style; }
+interface PlotHistogramProps { label: string; values: number[]; overlay?: string; style?: Style; }
+interface ModalProps { title: string; open?: boolean; onClose?: () => void; style?: Style; children?: any; }
+interface ImageProps { src: string; embed?: boolean; width?: number; height?: number; }
 
 // Declare components as functions so TypeScript recognizes PascalCase JSX tags
 declare function Window(props: WindowProps): any;
@@ -98,6 +108,16 @@ declare function ColorEdit(props: ColorEditProps): any;
 declare function ListBox(props: ListBoxProps): any;
 declare function ProgressBar(props: ProgressBarProps): any;
 declare function Tooltip(props: TooltipProps): any;
+declare function BulletText(props: BulletTextProps): any;
+declare function LabelText(props: LabelTextProps): any;
+declare function Selectable(props: SelectableProps): any;
+declare function Radio(props: RadioProps): any;
+declare function InputTextMultiline(props: InputTextMultilineProps): any;
+declare function ColorPicker(props: ColorPickerProps): any;
+declare function PlotLines(props: PlotLinesProps): any;
+declare function PlotHistogram(props: PlotHistogramProps): any;
+declare function Modal(props: ModalProps): any;
+declare function Image(props: ImageProps): any;
 
 declare function resetLayout(): void;
 
