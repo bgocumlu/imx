@@ -324,6 +324,16 @@ bool begin_modal(const char* title, bool open, bool* p_open, const Style& style)
     if (open && !ImGui::IsPopupOpen(title)) {
         ImGui::OpenPopup(title);
     }
+    // If state says closed but popup is still open (e.g., button set state to false
+    // without going through ImGui's X button), force-close it properly.
+    if (!open && ImGui::IsPopupOpen(title)) {
+        if (ImGui::BeginPopupModal(title, nullptr)) {
+            ImGui::CloseCurrentPopup();
+            ImGui::EndPopup();
+        }
+        return false;
+    }
+    if (!open) return false;
     return ImGui::BeginPopupModal(title, p_open);
 }
 
