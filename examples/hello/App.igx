@@ -29,11 +29,46 @@ function App() {
         </Column>
       </Window>
       <Window title="Inspector">
-        <Column gap={4}>
-          <Text>Properties</Text>
-          <Separator />
-          <Text>Select an item to inspect</Text>
-        </Column>
+        <TabBar>
+          <TabItem label="Properties">
+            <Column gap={4}>
+              <CollapsingHeader label="Transform">
+                <Text>Position: 0, 0, 0</Text>
+                <Text>Rotation: 0, 0, 0</Text>
+                <Text>Scale: 1, 1, 1</Text>
+              </CollapsingHeader>
+              <CollapsingHeader label="Material">
+                <Text>Shader: Standard</Text>
+                <Text>Color: White</Text>
+              </CollapsingHeader>
+            </Column>
+          </TabItem>
+          <TabItem label="Scene">
+            <TreeNode label="Root">
+              <TreeNode label="Objects">
+                <Text>Cube</Text>
+                <Text>Sphere</Text>
+              </TreeNode>
+              <TreeNode label="Lights">
+                <Text>Point Light</Text>
+              </TreeNode>
+            </TreeNode>
+          </TabItem>
+        </TabBar>
+      </Window>
+      <Window title="Data">
+        <Table columns={["Name", "Status", "Action"]}>
+          <TableRow>
+            <Text>Item 1</Text>
+            <Text>Active</Text>
+            <Button title="Edit" onPress={() => setShowAbout(false)} />
+          </TableRow>
+          <TableRow>
+            <Text>Item 2</Text>
+            <Text>Done</Text>
+            <Button title="View" onPress={() => setShowAbout(false)} />
+          </TableRow>
+        </Table>
       </Window>
       {showAbout && <Window title="About">
         <Column gap={8}>
