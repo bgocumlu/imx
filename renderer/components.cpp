@@ -468,4 +468,44 @@ void end_theme() {
     }
 }
 
+struct StyleColorState {
+    int count;
+};
+static std::vector<StyleColorState> g_style_color_stack;
+
+void begin_style_color(const StyleColorOverrides& o) {
+    int count = 0;
+    if (o.text)             { ImGui::PushStyleColor(ImGuiCol_Text, *o.text); count++; }
+    if (o.text_disabled)    { ImGui::PushStyleColor(ImGuiCol_TextDisabled, *o.text_disabled); count++; }
+    if (o.window_bg)        { ImGui::PushStyleColor(ImGuiCol_WindowBg, *o.window_bg); count++; }
+    if (o.frame_bg)         { ImGui::PushStyleColor(ImGuiCol_FrameBg, *o.frame_bg); count++; }
+    if (o.frame_bg_hovered) { ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, *o.frame_bg_hovered); count++; }
+    if (o.frame_bg_active)  { ImGui::PushStyleColor(ImGuiCol_FrameBgActive, *o.frame_bg_active); count++; }
+    if (o.title_bg)         { ImGui::PushStyleColor(ImGuiCol_TitleBg, *o.title_bg); count++; }
+    if (o.title_bg_active)  { ImGui::PushStyleColor(ImGuiCol_TitleBgActive, *o.title_bg_active); count++; }
+    if (o.button)           { ImGui::PushStyleColor(ImGuiCol_Button, *o.button); count++; }
+    if (o.button_hovered)   { ImGui::PushStyleColor(ImGuiCol_ButtonHovered, *o.button_hovered); count++; }
+    if (o.button_active)    { ImGui::PushStyleColor(ImGuiCol_ButtonActive, *o.button_active); count++; }
+    if (o.header)           { ImGui::PushStyleColor(ImGuiCol_Header, *o.header); count++; }
+    if (o.header_hovered)   { ImGui::PushStyleColor(ImGuiCol_HeaderHovered, *o.header_hovered); count++; }
+    if (o.header_active)    { ImGui::PushStyleColor(ImGuiCol_HeaderActive, *o.header_active); count++; }
+    if (o.separator)        { ImGui::PushStyleColor(ImGuiCol_Separator, *o.separator); count++; }
+    if (o.check_mark)       { ImGui::PushStyleColor(ImGuiCol_CheckMark, *o.check_mark); count++; }
+    if (o.slider_grab)      { ImGui::PushStyleColor(ImGuiCol_SliderGrab, *o.slider_grab); count++; }
+    if (o.border)           { ImGui::PushStyleColor(ImGuiCol_Border, *o.border); count++; }
+    if (o.popup_bg)         { ImGui::PushStyleColor(ImGuiCol_PopupBg, *o.popup_bg); count++; }
+    if (o.tab)              { ImGui::PushStyleColor(ImGuiCol_Tab, *o.tab); count++; }
+    StyleColorState s;
+    s.count = count;
+    g_style_color_stack.push_back(s);
+}
+
+void end_style_color() {
+    if (!g_style_color_stack.empty()) {
+        int count = g_style_color_stack.back().count;
+        g_style_color_stack.pop_back();
+        if (count > 0) ImGui::PopStyleColor(count);
+    }
+}
+
 } // namespace imx::renderer

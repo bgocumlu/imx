@@ -33,6 +33,29 @@ struct ThemeConfig {
     std::optional<float> spacing;
 };
 
+struct StyleColorOverrides {
+    std::optional<ImVec4> text;
+    std::optional<ImVec4> text_disabled;
+    std::optional<ImVec4> window_bg;
+    std::optional<ImVec4> frame_bg;
+    std::optional<ImVec4> frame_bg_hovered;
+    std::optional<ImVec4> frame_bg_active;
+    std::optional<ImVec4> title_bg;
+    std::optional<ImVec4> title_bg_active;
+    std::optional<ImVec4> button;
+    std::optional<ImVec4> button_hovered;
+    std::optional<ImVec4> button_active;
+    std::optional<ImVec4> header;
+    std::optional<ImVec4> header_hovered;
+    std::optional<ImVec4> header_active;
+    std::optional<ImVec4> separator;
+    std::optional<ImVec4> check_mark;
+    std::optional<ImVec4> slider_grab;
+    std::optional<ImVec4> border;
+    std::optional<ImVec4> popup_bg;
+    std::optional<ImVec4> tab;
+};
+
 class WidgetArgs {
 public:
     explicit WidgetArgs(const char* label);
@@ -176,6 +199,9 @@ void image_embedded(const char* key, const unsigned char* data, unsigned int siz
 
 void begin_theme(const char* preset, const ThemeConfig& config = {});
 void end_theme();
+
+void begin_style_color(const StyleColorOverrides& overrides);
+void end_style_color();
 
 } // namespace renderer
 } // namespace imx

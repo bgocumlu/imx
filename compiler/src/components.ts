@@ -344,6 +344,31 @@ export const HOST_COMPONENTS: Record<string, HostComponentDef> = {
         },
         hasChildren: true, isContainer: true,
     },
+    StyleColor: {
+        props: {
+            text: { type: 'style', required: false },
+            textDisabled: { type: 'style', required: false },
+            windowBg: { type: 'style', required: false },
+            frameBg: { type: 'style', required: false },
+            frameBgHovered: { type: 'style', required: false },
+            frameBgActive: { type: 'style', required: false },
+            titleBg: { type: 'style', required: false },
+            titleBgActive: { type: 'style', required: false },
+            button: { type: 'style', required: false },
+            buttonHovered: { type: 'style', required: false },
+            buttonActive: { type: 'style', required: false },
+            header: { type: 'style', required: false },
+            headerHovered: { type: 'style', required: false },
+            headerActive: { type: 'style', required: false },
+            separator: { type: 'style', required: false },
+            checkMark: { type: 'style', required: false },
+            sliderGrab: { type: 'style', required: false },
+            border: { type: 'style', required: false },
+            popupBg: { type: 'style', required: false },
+            tab: { type: 'style', required: false },
+        },
+        hasChildren: true, isContainer: true,
+    },
 };
 
 export function isHostComponent(name: string): boolean {

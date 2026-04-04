@@ -48,7 +48,7 @@ export interface IRBeginContainer {
     tag: 'Window' | 'View' | 'Row' | 'Column' | 'DockSpace' | 'MenuBar' | 'Menu'
        | 'Table' | 'TableRow' | 'TabBar' | 'TabItem' | 'TreeNode' | 'CollapsingHeader'
        | 'Theme' | 'DockLayout' | 'DockSplit' | 'DockPanel' | 'Modal'
-       | 'Group' | 'ID';
+       | 'Group' | 'ID' | 'StyleColor';
     props: Record<string, string>;
     style?: string;
     loc?: SourceLoc;
@@ -58,7 +58,7 @@ export interface IREndContainer {
     tag: 'Window' | 'View' | 'Row' | 'Column' | 'DockSpace' | 'MenuBar' | 'Menu'
        | 'Table' | 'TableRow' | 'TabBar' | 'TabItem' | 'TreeNode' | 'CollapsingHeader'
        | 'Theme' | 'DockLayout' | 'DockSplit' | 'DockPanel' | 'Modal'
-       | 'Group' | 'ID';
+       | 'Group' | 'ID' | 'StyleColor';
 }
 export interface IRText { kind: 'text'; format: string; args: string[]; loc?: SourceLoc; }
 export interface IRButton { kind: 'button'; title: string; action: string[]; style?: string; loc?: SourceLoc; }
