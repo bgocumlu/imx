@@ -168,7 +168,7 @@ bool color_picker(const char* label, float color[4], const Style& style = {});
 void plot_lines(const char* label, const float* values, int count, const char* overlay = nullptr, const Style& style = {});
 void plot_histogram(const char* label, const float* values, int count, const char* overlay = nullptr, const Style& style = {});
 
-void begin_modal(const char* title, bool open, bool* p_open, const Style& style = {});
+bool begin_modal(const char* title, bool open, bool* p_open, const Style& style = {});
 void end_modal();
 
 void image(const char* path, float width = 0, float height = 0);

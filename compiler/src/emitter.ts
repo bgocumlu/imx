@@ -628,16 +628,13 @@ function emitBeginContainer(node: IRBeginContainer, lines: string[], indent: str
                 windowOpenStack.push(true);
                 lines.push(`${indent}{`);
                 lines.push(`${indent}    bool modal_open = true;`);
-                lines.push(`${indent}    imx::renderer::begin_modal(${title}, ${openExpr}, &modal_open);`);
+                lines.push(`${indent}    if (imx::renderer::begin_modal(${title}, ${openExpr}, &modal_open)) {`);
                 if (onCloseExpr) {
-                    // onCloseExpr may be a lambda [&](){...} — wrap as IIFE
-                    lines.push(`${indent}    if (!modal_open) {`);
-                    lines.push(`${indent}        (${onCloseExpr})();`);
-                    lines.push(`${indent}    }`);
+                    lines.push(`${indent}    if (!modal_open) { (${onCloseExpr})(); }`);
                 }
             } else {
                 windowOpenStack.push(false);
-                lines.push(`${indent}imx::renderer::begin_modal(${title}, true, nullptr);`);
+                lines.push(`${indent}if (imx::renderer::begin_modal(${title}, true, nullptr)) {`);
             }
             break;
         }
@@ -706,9 +703,10 @@ function emitEndContainer(node: IREndContainer, lines: string[], indent: string)
             break;
         case 'Modal': {
             lines.push(`${indent}imx::renderer::end_modal();`);
+            lines.push(`${indent}}`); // close the if (begin_modal) block
             const hadOpen = windowOpenStack.pop() ?? false;
             if (hadOpen) {
-                lines.push(`${indent}}`);
+                lines.push(`${indent}}`); // close the { bool modal_open scope
             }
             break;
         }

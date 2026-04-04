@@ -319,12 +319,12 @@ void plot_histogram(const char* label, const float* values, int count, const cha
     ImGui::PlotHistogram(label, values, count, 0, overlay, FLT_MAX, FLT_MAX, size);
 }
 
-void begin_modal(const char* title, bool open, bool* p_open, const Style& style) {
+bool begin_modal(const char* title, bool open, bool* p_open, const Style& style) {
     before_child();
     if (open) {
         ImGui::OpenPopup(title);
     }
-    ImGui::BeginPopupModal(title, p_open);
+    return ImGui::BeginPopupModal(title, p_open);
 }
 
 void end_modal() {
