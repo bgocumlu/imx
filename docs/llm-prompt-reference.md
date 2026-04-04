@@ -37,12 +37,17 @@ Text: style?(Style) | children — display text, content as children
 Separator: (no props) — horizontal line
 ProgressBar: value(number, required) | overlay?(string) | style?(Style) — progress 0.0-1.0
 Tooltip: text(string, required) — tooltip on previous item hover
+BulletText: style?(Style) | children — bulleted text item
+LabelText: label(string, required) | value(string, required) — label with value display
+PlotLines: label(string, required) | values(number[], required) | overlay?(string) | style?(Style) — line graph
+PlotHistogram: label(string, required) | values(number[], required) | overlay?(string) | style?(Style) — histogram
 ```
 
 ### Inputs
 ```
 Button: title(string, required) | onPress(() => void, required) | disabled?(boolean) | style?(Style)
 TextInput: value(string, required) | onChange((v: string) => void, required) | label?(string) | placeholder?(string) | style?(Style)
+InputTextMultiline: label(string, required) | value(string, required) | onChange((v: string) => void, required) | style?(Style)
 Checkbox: value(boolean, required) | onChange((v: boolean) => void, required) | label?(string) | style?(Style)
 SliderFloat: label(string, required) | value(number, required) | onChange((v: number) => void, required) | min(number, required) | max(number, required) | style?(Style)
 SliderInt: label(string, required) | value(number, required) | onChange((v: number) => void, required) | min(number, required) | max(number, required) | style?(Style)
@@ -50,13 +55,17 @@ DragFloat: label(string, required) | value(number, required) | onChange((v: numb
 DragInt: label(string, required) | value(number, required) | onChange((v: number) => void, required) | speed?(number) | style?(Style)
 InputInt: label(string, required) | value(number, required) | onChange((v: number) => void, required) | style?(Style)
 InputFloat: label(string, required) | value(number, required) | onChange((v: number) => void, required) | style?(Style)
+Radio: label(string, required) | value(number, required) | index(number, required) | onChange?((v: number) => void) | style?(Style)
+Selectable: label(string, required) | selected?(boolean) | onSelect?(() => void) | style?(Style)
 ColorEdit: label(string, required) | value(number[], required) | onChange((v: number[]) => void, required) | style?(Style)
+ColorPicker: label(string, required) | value(number[], required) | onChange((v: number[]) => void, required) | style?(Style)
 Combo: label(string, required) | value(number, required) | onChange((v: number) => void, required) | items(string[], required) | style?(Style)
 ListBox: label(string, required) | value(number, required) | onChange((v: number) => void, required) | items(string[], required) | style?(Style)
 ```
 
 ### Overlay
 ```
+Modal: title(string, required) | open?(boolean) | onClose?(() => void) | style?(Style) | children — blocking modal dialog
 Popup: id(string, required) | style?(Style) | children
 ```
 
@@ -132,6 +141,105 @@ export default function App() {
 ```
 
 Props access: `props.name` (no destructuring). Types: `string`, `number`, `boolean`, `() => void`.
+
+## Component Examples (Batch 1-2)
+
+### Modal
+```tsx
+const [showConfirm, setShowConfirm] = useState(false);
+
+<Button title="Delete" onPress={() => setShowConfirm(true)} />
+<Modal title="Confirm Deletion" open={showConfirm} onClose={() => setShowConfirm(false)}>
+  <Text>Are you sure you want to delete this item?</Text>
+  <Row gap={8}>
+    <Button title="Delete" onPress={() => { deleteItem(); setShowConfirm(false); }} />
+    <Button title="Cancel" onPress={() => setShowConfirm(false)} />
+  </Row>
+</Modal>
+```
+
+### Radio
+```tsx
+const [selectedSize, setSelectedSize] = useState(0);
+
+<Column gap={4}>
+  <Radio label="Small" value={selectedSize} index={0} onChange={setSelectedSize} />
+  <Radio label="Medium" value={selectedSize} index={1} onChange={setSelectedSize} />
+  <Radio label="Large" value={selectedSize} index={2} onChange={setSelectedSize} />
+</Column>
+```
+
+### Selectable
+```tsx
+const [selectedItem, setSelectedItem] = useState(0);
+
+<Column gap={2}>
+  <Selectable label="Item 1" selected={selectedItem === 0} onSelect={() => setSelectedItem(0)} />
+  <Selectable label="Item 2" selected={selectedItem === 1} onSelect={() => setSelectedItem(1)} />
+  <Selectable label="Item 3" selected={selectedItem === 2} onSelect={() => setSelectedItem(2)} />
+</Column>
+```
+
+### InputTextMultiline
+```tsx
+const [description, setDescription] = useState("Enter text here...");
+
+<InputTextMultiline 
+  label="Description" 
+  value={description} 
+  onChange={setDescription}
+  style={{ width: 400, height: 150 }}
+/>
+```
+
+### ColorPicker
+```tsx
+const [themeColor, setThemeColor] = useState([0.2, 0.5, 0.9, 1.0]);
+
+<ColorPicker label="Theme Color" value={themeColor} onChange={setThemeColor} />
+```
+
+### PlotLines
+```tsx
+const [frameRate, setFrameRate] = useState([60, 61, 59, 62, 60]);
+
+<PlotLines 
+  label="Frame Rate" 
+  values={frameRate} 
+  overlay="60 FPS" 
+  style={{ width: 300, height: 100 }}
+/>
+```
+
+### PlotHistogram
+```tsx
+const [scores, setScores] = useState([2, 5, 8, 12, 7, 3]);
+
+<PlotHistogram 
+  label="Score Distribution" 
+  values={scores} 
+  style={{ width: 300, height: 100 }}
+/>
+```
+
+### BulletText
+```tsx
+<Column gap={4}>
+  <Text style={{ fontSize: 16 }}>Key Features:</Text>
+  <BulletText>Fast rendering with ImGui</BulletText>
+  <BulletText>React-like JSX syntax</BulletText>
+  <BulletText>Native C++ performance</BulletText>
+</Column>
+```
+
+### LabelText
+```tsx
+<Column gap={4}>
+  <LabelText label="Version" value="1.0.0" />
+  <LabelText label="Author" value="Your Name" />
+  <LabelText label="Status" value="Active" />
+</Column>
+```
 
 ## Full Example
 

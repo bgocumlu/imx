@@ -586,7 +586,181 @@ const [selected, setSelected] = useState(0);
 
 ---
 
+#### Radio
+
+A radio button for single-selection from multiple options.
+
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| label | string | Yes | Radio button label text |
+| value | number | Yes | Current selected index (bound to state) |
+| index | number | Yes | The index this radio button represents |
+| onChange | (v: number) => void | No | Called with the new index when selected |
+| style | Style | No | Layout and appearance styles |
+
+```tsx
+const [size, setSize] = useState(0);
+<Radio label="Small" value={size} index={0} onChange={setSize} />
+<Radio label="Large" value={size} index={1} onChange={setSize} />
+```
+
+> **Note:** Use multiple Radio buttons with the same `value` prop and different `index` values to create a radio group.
+
+---
+
+#### Selectable
+
+A clickable item that can be selected or deselected.
+
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| label | string | Yes | Selectable item label text |
+| selected | boolean | No | Whether the item is currently selected |
+| onSelect | () => void | No | Called when the item is clicked |
+| style | Style | No | Layout and appearance styles |
+
+```tsx
+const [selected, setSelected] = useState(0);
+<Selectable label="Option A" selected={selected === 0} onSelect={() => setSelected(0)} />
+<Selectable label="Option B" selected={selected === 1} onSelect={() => setSelected(1)} />
+```
+
+---
+
+#### InputTextMultiline
+
+A multi-line text editor for editing larger text content.
+
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| label | string | Yes | Label displayed above the text editor |
+| value | string | Yes | Current text value (bound to state) |
+| style | Style | No | Layout and appearance styles (width/height control size) |
+
+```tsx
+const [notes, setNotes] = useState("");
+<InputTextMultiline label="Notes" value={notes} onChange={setNotes} style={{ width: 400, height: 200 }} />
+```
+
+> **Note:** Unlike TextInput, this component renders as a multi-line editor. Use `width` and `height` in styles to control the editor dimensions.
+
+---
+
+#### ColorPicker
+
+A full color picker widget for selecting RGBA colors.
+
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| label | string | Yes | Label displayed next to the color picker |
+| value | number[] | Yes | RGBA color array `[r, g, b, a]`, floats 0.0-1.0 (bound to state) |
+| style | Style | No | Layout and appearance styles |
+
+```tsx
+const [bgColor, setBgColor] = useState([0.2, 0.4, 0.8, 1.0]);
+<ColorPicker label="Background" value={bgColor} onChange={setBgColor} />
+```
+
+> **Note:** ColorPicker is a full-featured color picker unlike ColorEdit. Color values are floats from 0.0 to 1.0 per channel.
+
+---
+
+#### PlotLines
+
+A simple line graph for visualizing numeric data.
+
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| label | string | Yes | Label displayed above the graph |
+| values | number[] | Yes | Array of numeric values to plot |
+| overlay | string | No | Text overlay (e.g., "avg: 60") |
+| style | Style | No | Layout and appearance styles (width/height set graph size) |
+
+```tsx
+const [fps, setFps] = useState([60, 58, 62, 61, 59]);
+<PlotLines label="FPS" values={fps} overlay="avg: 60" style={{ width: 200, height: 80 }} />
+```
+
+---
+
+#### PlotHistogram
+
+A histogram for displaying data distribution.
+
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| label | string | Yes | Label displayed above the histogram |
+| values | number[] | Yes | Array of numeric values to display as bars |
+| overlay | string | No | Text overlay (e.g., "total: 11") |
+| style | Style | No | Layout and appearance styles (width/height set histogram size) |
+
+```tsx
+const [distribution, setDistribution] = useState([1, 3, 5, 2]);
+<PlotHistogram label="Distribution" values={distribution} style={{ width: 200, height: 80 }} />
+```
+
+---
+
+#### BulletText
+
+A text item prefixed with a bullet point.
+
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| style | Style | No | Layout and appearance styles |
+| children | text | Yes | The text content to display with a bullet |
+
+```tsx
+<BulletText>This is a bullet point</BulletText>
+<BulletText>Another item in the list</BulletText>
+```
+
+---
+
+#### LabelText
+
+A label paired with a text value display.
+
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| label | string | Yes | The label text |
+| value | string | Yes | The value text to display |
+
+```tsx
+<LabelText label="Name" value="John Doe" />
+<LabelText label="Status" value="Active" />
+```
+
+---
+
 ### Overlay
+
+#### Modal
+
+A blocking modal dialog window. Shows on top of other content and blocks interaction with the main window.
+
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| title | string | Yes | Modal window title displayed in the title bar |
+| open | boolean | No | Whether the modal is currently visible |
+| onClose | () => void | No | Called when the modal is closed (e.g., by clicking the close button) |
+| style | Style | No | Layout and appearance styles |
+| children | | Yes | Modal content |
+
+```tsx
+const [show, setShow] = useState(false);
+<Modal title="Confirm?" open={show} onClose={() => setShow(false)}>
+  <Text>Are you sure?</Text>
+  <Row gap={8}>
+    <Button title="Yes" onPress={() => handleConfirm()} />
+    <Button title="Cancel" onPress={() => setShow(false)} />
+  </Row>
+</Modal>
+```
+
+> **Note:** Modal is useful for confirmation dialogs and important notifications. Use the `open` prop to control visibility and `onClose` to handle dismissal.
+
+---
 
 #### Popup
 
