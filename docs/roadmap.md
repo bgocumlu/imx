@@ -1,0 +1,191 @@
+# ReImGui Roadmap
+
+## Phase 1: Lock the Model
+
+Goal:
+
+- freeze naming, semantics, and constraints before implementation spreads
+
+Deliverables:
+
+- `docs/spec.md`
+- `docs/mvp.md`
+- `docs/roadmap.md`
+
+Exit criteria:
+
+- component naming is stable enough to implement
+- non-goals are explicit
+- the team agrees the product is React-Native-like, not React runtime based
+- the `.igx` source extension is standardized
+- repository layout and target boundaries are documented
+
+## Phase 2: Native Runtime Skeleton
+
+Goal:
+
+- create the smallest native runtime that can own component state and drive rendering
+
+Deliverables:
+
+- instance registry
+- state slot storage for `useState`
+- callback storage
+- root render entrypoint
+- initial `reimgui_runtime` target
+
+Exit criteria:
+
+- runtime can support one hand-written component tree without a compiler
+
+## Phase 3: Hand-Written Host Components
+
+Goal:
+
+- implement the host rendering contract for the MVP components in C++
+
+Deliverables:
+
+- `Window`
+- `View`
+- `Row`
+- `Column`
+- `Text`
+- `Button`
+- `TextInput`
+- `Checkbox`
+- `Separator`
+- `Popup`
+- initial `reimgui_renderer_imgui` target
+
+Exit criteria:
+
+- a hand-authored native test app can render and interact correctly through the runtime
+
+## Phase 4: TSX Frontend
+
+Goal:
+
+- parse TSX-like source and build an AST suitable for validation and lowering
+
+Deliverables:
+
+- parser or adapted frontend
+- `.igx` file loading
+- AST for components, props, expressions, and children
+- validation for supported constructs
+- initial `reimgui_codegen` target
+
+Exit criteria:
+
+- a small TSX file can be parsed and validated with clear error messages
+
+## Phase 5: C++ Codegen
+
+Goal:
+
+- lower TSX components into generated C++ that targets the native runtime
+
+Deliverables:
+
+- component lowering
+- prop lowering
+- callback lowering
+- `useState` lowering
+- root app entry generation
+
+Exit criteria:
+
+- a TSX app compiles into generated C++ and runs in the existing native shell
+
+## Phase 6: Toolchain Integration
+
+Goal:
+
+- connect code generation to the normal build flow
+
+Deliverables:
+
+- codegen command or build tool
+- generated source integration with CMake
+- example application source tree
+
+Exit criteria:
+
+- `cmake --build` produces a working native app from TSX input
+
+## Phase 7: API Stabilization
+
+Goal:
+
+- make the author-facing model predictable enough for LLM-driven generation
+
+Deliverables:
+
+- API examples
+- component docs
+- prop reference
+- style reference
+
+Exit criteria:
+
+- example prompts produce valid code at acceptable quality
+
+## Phase 8: ImGui-Native Expansion
+
+Goal:
+
+- add the real editor-grade surface area that makes the framework useful beyond demos
+
+Priority order:
+
+- `DockSpace`
+- `MenuBar`
+- `Menu`
+- `MenuItem`
+- `Table`
+- `TreeNode`
+- `CollapsingHeader`
+- `TabBar`
+- `TabItem`
+- `SliderFloat`
+- `ColorEdit`
+
+Exit criteria:
+
+- an editor-like sample app can be built entirely with the public API
+
+## Phase 9: Developer Experience
+
+Goal:
+
+- improve iteration speed without breaking the native-first architecture
+
+Possible deliverables:
+
+- generated-code debug output
+- source location mapping
+- watch mode
+- better diagnostics
+
+Exit criteria:
+
+- debugging and iteration feel reasonable without a JS runtime
+
+## Phase 10: Reevaluate Advanced Features
+
+Goal:
+
+- decide whether extra complexity is justified after the core model works
+
+Candidates:
+
+- `useEffect`
+- native IR instead of C++ codegen
+- hot reload
+- richer style system
+- plugin APIs
+
+Exit criteria:
+
+- each advanced feature is justified by demonstrated need, not by imitation of React
