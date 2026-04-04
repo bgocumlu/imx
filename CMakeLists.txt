@@ -57,6 +57,15 @@ add_library(reimgui_runtime STATIC
 )
 target_include_directories(reimgui_runtime PUBLIC include/)
 
+# --- reimgui_renderer ---
+add_library(reimgui_renderer STATIC
+    renderer/style.cpp
+    renderer/layout.cpp
+    renderer/components.cpp
+)
+target_include_directories(reimgui_renderer PUBLIC include/)
+target_link_libraries(reimgui_renderer PUBLIC reimgui_runtime imgui_lib)
+
 # --- Tests ---
 add_executable(runtime_tests
     tests/runtime/test_state.cpp
