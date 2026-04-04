@@ -79,9 +79,26 @@ target_link_libraries(runtime_tests PRIVATE reimgui_runtime Catch2::Catch2WithMa
 add_executable(app main.cpp)
 target_link_libraries(app PRIVATE imgui_lib)
 
-# --- Hand-written example app (Phase 3 validation) ---
-add_executable(hello_hand
-    examples/hello/main.cpp
-    examples/hello/hand_written_app.cpp
+# --- Code generation: .igx -> .gen.cpp ---
+set(REIMGUI_GENERATED_DIR ${CMAKE_BINARY_DIR}/generated)
+file(MAKE_DIRECTORY ${REIMGUI_GENERATED_DIR})
+
+add_custom_command(
+    OUTPUT
+        ${REIMGUI_GENERATED_DIR}/App.gen.cpp
+        ${REIMGUI_GENERATED_DIR}/app_root.gen.cpp
+    COMMAND node ${CMAKE_SOURCE_DIR}/compiler/dist/index.js
+        ${CMAKE_SOURCE_DIR}/examples/hello/App.igx
+        -o ${REIMGUI_GENERATED_DIR}
+    DEPENDS
+        ${CMAKE_SOURCE_DIR}/examples/hello/App.igx
+    COMMENT "Compiling App.igx -> C++"
 )
-target_link_libraries(hello_hand PRIVATE reimgui_renderer)
+
+# --- hello_app: end-to-end .igx -> native binary ---
+add_executable(hello_app
+    examples/hello/main.cpp
+    ${REIMGUI_GENERATED_DIR}/App.gen.cpp
+    ${REIMGUI_GENERATED_DIR}/app_root.gen.cpp
+)
+target_link_libraries(hello_app PRIVATE reimgui_renderer)

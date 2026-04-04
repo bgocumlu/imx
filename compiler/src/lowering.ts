@@ -441,9 +441,17 @@ function lowerTextElement(node: ts.JsxElement, body: IRNode[], ctx: LoweringCont
 
     for (const child of node.children) {
         if (ts.isJsxText(child)) {
-            // Escape percent signs and add text
-            const text = child.text.replace(/%/g, '%%').trim();
-            if (text) format += text;
+            // Collapse whitespace (newlines, tabs, runs of spaces) into single spaces,
+            // matching JSX semantics. Only fully-blank segments are dropped.
+            const text = child.text.replace(/%/g, '%%').replace(/\s+/g, ' ');
+            // Drop segments that are purely whitespace at the very start or end of children
+            const isFirst = child === node.children[0];
+            const isLast = child === node.children[node.children.length - 1];
+            const trimmed = isFirst && isLast ? text.trim()
+                : isFirst ? text.trimStart()
+                : isLast ? text.trimEnd()
+                : text;
+            if (trimmed) format += trimmed;
         } else if (ts.isJsxExpression(child) && child.expression) {
             const expr = child.expression;
             const cppExpr = exprToCpp(expr, ctx);

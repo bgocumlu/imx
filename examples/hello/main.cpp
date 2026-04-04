@@ -1,11 +1,10 @@
-#include "hand_written_app.h"
+// examples/hello/main.cpp
 #include <reimgui/runtime.h>
 #include <reimgui/renderer.h>
 
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
-
 #include <GLFW/glfw3.h>
 
 struct App {
@@ -59,8 +58,8 @@ static void render_frame(App& app) {
 
     draw_dockspace();
 
-    // --- ReImGui: hand-written render function (simulates compiler output) ---
-    hand_written_render_root(app.runtime);
+    // --- Generated code drives the UI ---
+    reimgui::render_root(app.runtime);
 
     ImGui::Render();
 
@@ -101,7 +100,7 @@ int main() {
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 #endif
 
-    GLFWwindow* window = glfwCreateWindow(600, 400, "reimgui - hand-written test", nullptr, nullptr);
+    GLFWwindow* window = glfwCreateWindow(600, 400, "reimgui", nullptr, nullptr);
     if (window == nullptr) {
         glfwTerminate();
         return 1;

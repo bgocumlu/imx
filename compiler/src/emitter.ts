@@ -46,7 +46,10 @@ export function emitComponent(comp: IRComponent): string {
 
     // State declarations
     for (const slot of comp.stateSlots) {
-        lines.push(`${INDENT}auto ${slot.name} = ctx.use_state<${cppType(slot.type)}>(${slot.index}, ${slot.initialValue});`);
+        const initVal = slot.type === 'string'
+            ? `std::string(${slot.initialValue})`
+            : slot.initialValue;
+        lines.push(`${INDENT}auto ${slot.name} = ctx.use_state<${cppType(slot.type)}>(${initVal}, ${slot.index});`);
     }
 
     if (comp.stateSlots.length > 0) {
@@ -136,6 +139,44 @@ function emitNode(node: IRNode, lines: string[], depth: number): void {
     }
 }
 
+let styleCounter = 0;
+
+function buildStyleBlock(node: IRBeginContainer, indent: string, lines: string[]): string | null {
+    // Check for style-related props (gap, padding, width, height, etc.)
+    const styleProps: Record<string, string> = {};
+    for (const [key, val] of Object.entries(node.props)) {
+        if (['gap', 'padding', 'paddingHorizontal', 'paddingVertical', 'width', 'height', 'minWidth', 'minHeight'].includes(key)) {
+            // Map camelCase to snake_case for C++ Style struct
+            const cppKey = key === 'paddingHorizontal' ? 'padding_horizontal'
+                : key === 'paddingVertical' ? 'padding_vertical'
+                : key === 'minWidth' ? 'min_width'
+                : key === 'minHeight' ? 'min_height'
+                : key;
+            styleProps[cppKey] = val;
+        }
+    }
+
+    // Also check node.style (explicit style prop)
+    const explicitStyle = node.style ?? node.props['style'];
+    if (explicitStyle) {
+        return explicitStyle;
+    }
+
+    if (Object.keys(styleProps).length === 0) {
+        return null;
+    }
+
+    // Generate MSVC-compatible style construction
+    const varName = `style_${styleCounter++}`;
+    lines.push(`${indent}reimgui::Style ${varName};`);
+    for (const [key, val] of Object.entries(styleProps)) {
+        // Ensure the value is a float literal (e.g., 8 -> 8.0F, 8.5 -> 8.5F)
+        const floatVal = val.includes('.') ? `${val}F` : `${val}.0F`;
+        lines.push(`${indent}${varName}.${key} = ${floatVal};`);
+    }
+    return varName;
+}
+
 function emitBeginContainer(node: IRBeginContainer, lines: string[], indent: string): void {
     switch (node.tag) {
         case 'Window': {
@@ -144,7 +185,7 @@ function emitBeginContainer(node: IRBeginContainer, lines: string[], indent: str
             break;
         }
         case 'Row': {
-            const style = node.style ?? node.props['style'];
+            const style = buildStyleBlock(node, indent, lines);
             if (style) {
                 lines.push(`${indent}reimgui::renderer::begin_row(${style});`);
             } else {
@@ -153,7 +194,7 @@ function emitBeginContainer(node: IRBeginContainer, lines: string[], indent: str
             break;
         }
         case 'Column': {
-            const style = node.style ?? node.props['style'];
+            const style = buildStyleBlock(node, indent, lines);
             if (style) {
                 lines.push(`${indent}reimgui::renderer::begin_column(${style});`);
             } else {
@@ -162,7 +203,7 @@ function emitBeginContainer(node: IRBeginContainer, lines: string[], indent: str
             break;
         }
         case 'View': {
-            const style = node.style ?? node.props['style'];
+            const style = buildStyleBlock(node, indent, lines);
             if (style) {
                 lines.push(`${indent}reimgui::renderer::begin_view(${style});`);
             } else {
@@ -212,24 +253,31 @@ function emitButton(node: IRButton, lines: string[], indent: string, depth: numb
 }
 
 function emitTextInput(node: IRTextInput, lines: string[], indent: string): void {
+    const label = node.label && node.label !== '""' ? node.label : `"##textinput_${node.bufferIndex}"`;
     if (node.stateVar) {
-        lines.push(`${indent}auto& buf_${node.bufferIndex} = ctx.get_buffer(${node.bufferIndex});`);
-        lines.push(`${indent}buf_${node.bufferIndex}.sync_from(${node.stateVar}.get());`);
-        lines.push(`${indent}reimgui::renderer::text_input(${node.label}, buf_${node.bufferIndex});`);
-        lines.push(`${indent}${node.stateVar}.set(buf_${node.bufferIndex}.as_string());`);
+        lines.push(`${indent}{`);
+        lines.push(`${indent}${INDENT}auto& buf = ctx.get_buffer(${node.bufferIndex});`);
+        lines.push(`${indent}${INDENT}buf.sync_from(${node.stateVar}.get());`);
+        lines.push(`${indent}${INDENT}if (reimgui::renderer::text_input(${label}, buf)) {`);
+        lines.push(`${indent}${INDENT}${INDENT}${node.stateVar}.set(buf.value());`);
+        lines.push(`${indent}${INDENT}}`);
+        lines.push(`${indent}}`);
     } else {
         lines.push(`${indent}auto& buf_${node.bufferIndex} = ctx.get_buffer(${node.bufferIndex});`);
-        lines.push(`${indent}reimgui::renderer::text_input(${node.label}, buf_${node.bufferIndex});`);
+        lines.push(`${indent}reimgui::renderer::text_input(${label}, buf_${node.bufferIndex});`);
     }
 }
 
 function emitCheckbox(node: IRCheckbox, lines: string[], indent: string): void {
     if (node.stateVar) {
-        lines.push(`${indent}bool tmp_${node.stateVar} = ${node.stateVar}.get();`);
-        lines.push(`${indent}reimgui::renderer::checkbox(${node.label}, tmp_${node.stateVar});`);
-        lines.push(`${indent}${node.stateVar}.set(tmp_${node.stateVar});`);
+        lines.push(`${indent}{`);
+        lines.push(`${indent}${INDENT}bool val = ${node.stateVar}.get();`);
+        lines.push(`${indent}${INDENT}if (reimgui::renderer::checkbox(${node.label}, &val)) {`);
+        lines.push(`${indent}${INDENT}${INDENT}${node.stateVar}.set(val);`);
+        lines.push(`${indent}${INDENT}}`);
+        lines.push(`${indent}}`);
     } else {
-        lines.push(`${indent}reimgui::renderer::checkbox(${node.label}, false);`);
+        lines.push(`${indent}reimgui::renderer::checkbox(${node.label}, nullptr);`);
     }
 }
 
