@@ -321,7 +321,7 @@ void plot_histogram(const char* label, const float* values, int count, const cha
 
 bool begin_modal(const char* title, bool open, bool* p_open, const Style& style) {
     before_child();
-    if (open) {
+    if (open && !ImGui::IsPopupOpen(title)) {
         ImGui::OpenPopup(title);
     }
     return ImGui::BeginPopupModal(title, p_open);
