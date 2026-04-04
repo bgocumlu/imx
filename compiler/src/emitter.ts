@@ -9,6 +9,7 @@ import type {
     IRBulletText, IRLabelText,
     IRSelectable, IRRadio,
     IRInputTextMultiline, IRColorPicker,
+    IRPlotLines, IRPlotHistogram,
 } from './ir.js';
 
 const INDENT = '    ';
@@ -150,6 +151,7 @@ export function emitComponent(comp: IRComponent, imports?: ImportInfo[], sourceF
     comboCounter = 0;
     listBoxCounter = 0;
     nativeWidgetCounter = 0;
+    plotCounter = 0;
     currentCompName = comp.name;
 
     const hasProps = comp.params.length > 0;
@@ -356,6 +358,12 @@ function emitNode(node: IRNode, lines: string[], depth: number): void {
         case 'color_picker':
             emitColorPicker(node, lines, indent);
             break;
+        case 'plot_lines':
+            emitPlotLines(node, lines, indent);
+            break;
+        case 'plot_histogram':
+            emitPlotHistogram(node, lines, indent);
+            break;
         case 'native_widget':
             emitNativeWidget(node, lines, indent);
             break;
@@ -384,6 +392,7 @@ let checkboxCounter = 0;
 let comboCounter = 0;
 let listBoxCounter = 0;
 let nativeWidgetCounter = 0;
+let plotCounter = 0;
 const windowOpenStack: boolean[] = []; // tracks if begin_window used open prop
 
 function buildStyleBlock(node: IRBeginContainer, indent: string, lines: string[]): string | null {
@@ -1084,4 +1093,32 @@ function emitColorPicker(node: IRColorPicker, lines: string[], indent: string): 
         lines.push(`${indent}${INDENT}}`);
         lines.push(`${indent}}`);
     }
+}
+
+function emitPlotLines(node: IRPlotLines, lines: string[], indent: string): void {
+    emitLocComment(node.loc, 'PlotLines', lines, indent);
+    const idx = plotCounter++;
+    const varName = `_plot_${idx}`;
+    const values = node.values.split(',').map(v => ensureFloatLiteral(v.trim()));
+    const count = values.length;
+    lines.push(`${indent}{`);
+    lines.push(`${indent}${INDENT}float ${varName}[] = {${values.join(', ')}};`);
+    const overlay = node.overlay ? `, ${node.overlay}` : ', nullptr';
+    const styleArg = node.style ? `, ${node.style}` : '';
+    lines.push(`${indent}${INDENT}imx::renderer::plot_lines(${node.label}, ${varName}, ${count}${overlay}${styleArg});`);
+    lines.push(`${indent}}`);
+}
+
+function emitPlotHistogram(node: IRPlotHistogram, lines: string[], indent: string): void {
+    emitLocComment(node.loc, 'PlotHistogram', lines, indent);
+    const idx = plotCounter++;
+    const varName = `_plot_${idx}`;
+    const values = node.values.split(',').map(v => ensureFloatLiteral(v.trim()));
+    const count = values.length;
+    lines.push(`${indent}{`);
+    lines.push(`${indent}${INDENT}float ${varName}[] = {${values.join(', ')}};`);
+    const overlay = node.overlay ? `, ${node.overlay}` : ', nullptr';
+    const styleArg = node.style ? `, ${node.style}` : '';
+    lines.push(`${indent}${INDENT}imx::renderer::plot_histogram(${node.label}, ${varName}, ${count}${overlay}${styleArg});`);
+    lines.push(`${indent}}`);
 }

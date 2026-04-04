@@ -165,6 +165,8 @@ bool selectable(const char* label, bool selected = false, const Style& style = {
 bool radio(const char* label, int* value, int v_button, const Style& style = {});
 bool text_input_multiline(const char* label, TextBuffer& buffer, const Style& style = {});
 bool color_picker(const char* label, float color[4], const Style& style = {});
+void plot_lines(const char* label, const float* values, int count, const char* overlay = nullptr, const Style& style = {});
+void plot_histogram(const char* label, const float* values, int count, const char* overlay = nullptr, const Style& style = {});
 
 void begin_theme(const char* preset, const ThemeConfig& config = {});
 void end_theme();

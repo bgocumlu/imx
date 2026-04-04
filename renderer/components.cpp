@@ -303,6 +303,22 @@ bool color_picker(const char* label, float color[4], const Style& style) {
     return ImGui::ColorPicker4(label, color);
 }
 
+void plot_lines(const char* label, const float* values, int count, const char* overlay, const Style& style) {
+    before_child();
+    ImVec2 size(0, 0);
+    if (style.width) size.x = *style.width;
+    if (style.height) size.y = *style.height;
+    ImGui::PlotLines(label, values, count, 0, overlay, FLT_MAX, FLT_MAX, size);
+}
+
+void plot_histogram(const char* label, const float* values, int count, const char* overlay, const Style& style) {
+    before_child();
+    ImVec2 size(0, 0);
+    if (style.width) size.x = *style.width;
+    if (style.height) size.y = *style.height;
+    ImGui::PlotHistogram(label, values, count, 0, overlay, FLT_MAX, FLT_MAX, size);
+}
+
 void begin_theme(const char* preset, const ThemeConfig& config) {
     before_child();
 

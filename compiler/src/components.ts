@@ -272,6 +272,24 @@ export const HOST_COMPONENTS: Record<string, HostComponentDef> = {
         },
         hasChildren: false, isContainer: false,
     },
+    PlotLines: {
+        props: {
+            label: { type: 'string', required: true },
+            values: { type: 'string', required: true },
+            overlay: { type: 'string', required: false },
+            style: { type: 'style', required: false },
+        },
+        hasChildren: false, isContainer: false,
+    },
+    PlotHistogram: {
+        props: {
+            label: { type: 'string', required: true },
+            values: { type: 'string', required: true },
+            overlay: { type: 'string', required: false },
+            style: { type: 'style', required: false },
+        },
+        hasChildren: false, isContainer: false,
+    },
     DockLayout: {
         props: {},
         hasChildren: true, isContainer: true,

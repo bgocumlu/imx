@@ -193,6 +193,8 @@ interface SelectableProps { label: string; selected?: boolean; onSelect?: () => 
 interface RadioProps { label: string; value: number; index: number; onChange?: (v: number) => void; style?: Style; }
 interface InputTextMultilineProps { label: string; value: string; style?: Style; }
 interface ColorPickerProps { label: string; value: number[]; style?: Style; }
+interface PlotLinesProps { label: string; values: number[]; overlay?: string; style?: Style; }
+interface PlotHistogramProps { label: string; values: number[]; overlay?: string; style?: Style; }
 
 declare function Window(props: WindowProps): any;
 declare function View(props: ViewProps): any;
@@ -235,6 +237,8 @@ declare function Selectable(props: SelectableProps): any;
 declare function Radio(props: RadioProps): any;
 declare function InputTextMultiline(props: InputTextMultilineProps): any;
 declare function ColorPicker(props: ColorPickerProps): any;
+declare function PlotLines(props: PlotLinesProps): any;
+declare function PlotHistogram(props: PlotHistogramProps): any;
 
 declare function resetLayout(): void;
 

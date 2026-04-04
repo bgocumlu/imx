@@ -13,6 +13,7 @@ import type {
     IRBulletText, IRLabelText,
     IRSelectable, IRRadio,
     IRInputTextMultiline, IRColorPicker,
+    IRPlotLines, IRPlotHistogram,
 } from './ir.js';
 
 interface LoweringContext {
@@ -504,6 +505,12 @@ function lowerJsxSelfClosing(node: ts.JsxSelfClosingElement, body: IRNode[], ctx
         case 'ColorPicker':
             lowerColorPicker(attrs, rawAttrs, body, ctx, loc);
             break;
+        case 'PlotLines':
+            lowerPlotLines(attrs, body, ctx, loc);
+            break;
+        case 'PlotHistogram':
+            lowerPlotHistogram(attrs, body, ctx, loc);
+            break;
         default:
             // Container self-closing (e.g., <Window title="X"/>)
             if (HOST_COMPONENTS[name]?.isContainer) {
@@ -938,6 +945,22 @@ function lowerColorPicker(attrs: Record<string, string>, rawAttrs: Map<string, t
         stateVar = valueRaw.text;
     }
     body.push({ kind: 'color_picker', label, stateVar, style, loc });
+}
+
+function lowerPlotLines(attrs: Record<string, string>, body: IRNode[], ctx: LoweringContext, loc: SourceLoc): void {
+    const label = attrs['label'] ?? '""';
+    const values = attrs['values'] ?? '';
+    const overlay = attrs['overlay'];
+    const style = attrs['style'];
+    body.push({ kind: 'plot_lines', label, values, overlay, style, loc });
+}
+
+function lowerPlotHistogram(attrs: Record<string, string>, body: IRNode[], ctx: LoweringContext, loc: SourceLoc): void {
+    const label = attrs['label'] ?? '""';
+    const values = attrs['values'] ?? '';
+    const overlay = attrs['overlay'];
+    const style = attrs['style'];
+    body.push({ kind: 'plot_histogram', label, values, overlay, style, loc });
 }
 
 function getAttributes(attributes: ts.JsxAttributes, ctx: LoweringContext): Record<string, string> {

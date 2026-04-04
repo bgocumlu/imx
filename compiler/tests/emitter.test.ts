@@ -321,6 +321,26 @@ function App() {
         expect(output).toContain('imx::renderer::color_picker("Color", val.data())');
         expect(output).toContain('col.set(val)');
     });
+
+    it('emits PlotLines with array values', () => {
+        const output = compile(`
+function App() {
+  return <Window title="Test"><PlotLines label="FPS" values={[60, 58, 62]} /></Window>;
+}
+        `);
+        expect(output).toContain('float _plot_0[] = {60.0f, 58.0f, 62.0f}');
+        expect(output).toContain('imx::renderer::plot_lines("FPS", _plot_0, 3');
+    });
+
+    it('emits PlotHistogram with overlay', () => {
+        const output = compile(`
+function App() {
+  return <Window title="Test"><PlotHistogram label="Dist" values={[1, 3, 5]} overlay="avg" /></Window>;
+}
+        `);
+        expect(output).toContain('float _plot_0[] = {1.0f, 3.0f, 5.0f}');
+        expect(output).toContain('imx::renderer::plot_histogram("Dist", _plot_0, 3, "avg"');
+    });
 });
 
 describe('source location comments', () => {

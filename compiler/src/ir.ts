@@ -39,7 +39,8 @@ export type IRNode =
     | IRDockLayout | IRNativeWidget
     | IRBulletText | IRLabelText
     | IRSelectable | IRRadio
-    | IRInputTextMultiline | IRColorPicker;
+    | IRInputTextMultiline | IRColorPicker
+    | IRPlotLines | IRPlotHistogram;
 
 export interface IRBeginContainer {
     kind: 'begin_container';
@@ -95,6 +96,8 @@ export interface IRSelectable { kind: 'selectable'; label: string; selected: str
 export interface IRRadio { kind: 'radio'; label: string; stateVar: string; valueExpr?: string; onChangeExpr?: string; index: string; style?: string; loc?: SourceLoc; }
 export interface IRInputTextMultiline { kind: 'input_text_multiline'; label: string; bufferIndex: number; stateVar: string; style?: string; loc?: SourceLoc; }
 export interface IRColorPicker { kind: 'color_picker'; label: string; stateVar: string; style?: string; loc?: SourceLoc; }
+export interface IRPlotLines { kind: 'plot_lines'; label: string; values: string; overlay?: string; style?: string; loc?: SourceLoc; }
+export interface IRPlotHistogram { kind: 'plot_histogram'; label: string; values: string; overlay?: string; style?: string; loc?: SourceLoc; }
 
 export interface IRDockLayout {
     kind: 'dock_layout';
