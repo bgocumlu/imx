@@ -121,10 +121,8 @@ function validateJsxElement(node: ts.JsxElement, sf: ts.SourceFile, customCompon
 
 function validateJsxTag(tagName: ts.JsxTagNameExpression, node: ts.Node, sf: ts.SourceFile, customComponents: Map<string, string>, errors: ParseError[]): void {
     if (!ts.isIdentifier(tagName)) return;
-    const name = tagName.text;
-    if (!isHostComponent(name) && !customComponents.has(name)) {
-        errors.push(err(sf, node, `Unknown component: <${name}>`));
-    }
+    // Host components and imported custom components are validated.
+    // Unknown elements are treated as native widgets (validated by TypeScript + C++ linker).
 }
 
 function validateJsxAttributes(attrs: ts.JsxAttributes, tagName: ts.JsxTagNameExpression, sf: ts.SourceFile, errors: ParseError[]): void {

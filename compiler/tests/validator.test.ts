@@ -12,12 +12,11 @@ describe('validate', () => {
         expect(result.useStateCalls[0]).toMatchObject({ name: 'count', setter: 'setCount', index: 0 });
     });
 
-    it('errors on unknown component', () => {
-        const source = `function App() { return <Slider value={0} />; }`;
+    it('passes unknown elements as native widgets', () => {
+        const source = `function App() { return <Knob value={0} />; }`;
         const parsed = parseFile('App.tsx', source);
         const result = validate(parsed);
-        expect(result.errors.length).toBeGreaterThan(0);
-        expect(result.errors[0].message).toContain('Unknown component');
+        expect(result.errors).toHaveLength(0);
     });
 
     it('errors on missing required prop', () => {

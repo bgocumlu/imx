@@ -36,7 +36,7 @@ export type IRNode =
     | IRMenuItem
     | IRSliderFloat | IRSliderInt | IRDragFloat | IRDragInt | IRCombo
     | IRInputInt | IRInputFloat | IRColorEdit | IRListBox | IRProgressBar | IRTooltip
-    | IRDockLayout;
+    | IRDockLayout | IRNativeWidget;
 
 export interface IRBeginContainer {
     kind: 'begin_container';
@@ -76,6 +76,15 @@ export interface IRColorEdit { kind: 'color_edit'; label: string; stateVar: stri
 export interface IRListBox { kind: 'list_box'; label: string; stateVar: string; valueExpr?: string; onChangeExpr?: string; items: string; style?: string; loc?: SourceLoc; }
 export interface IRProgressBar { kind: 'progress_bar'; value: string; overlay?: string; style?: string; loc?: SourceLoc; }
 export interface IRTooltip { kind: 'tooltip'; text: string; loc?: SourceLoc; }
+
+export interface IRNativeWidget {
+    kind: 'native_widget';
+    name: string;
+    props: Record<string, string>;
+    callbackProps: Record<string, string>;
+    key?: string;
+    loc?: SourceLoc;
+}
 
 export interface IRDockLayout {
     kind: 'dock_layout';
