@@ -630,7 +630,13 @@ function emitBeginContainer(node: IRBeginContainer, lines: string[], indent: str
                 lines.push(`${indent}    bool modal_open = true;`);
                 lines.push(`${indent}    if (imx::renderer::begin_modal(${title}, ${openExpr}, &modal_open)) {`);
                 if (onCloseExpr) {
-                    lines.push(`${indent}    if (!modal_open) { (${onCloseExpr})(); }`);
+                    // Extract lambda body: [&]() { body } -> body
+                    const lambdaMatch = onCloseExpr.match(/^\[&\]\(\)\s*\{\s*(.*?)\s*\}$/);
+                    if (lambdaMatch) {
+                        lines.push(`${indent}    if (!modal_open) { ${lambdaMatch[1]} }`);
+                    } else {
+                        lines.push(`${indent}    if (!modal_open) { ${onCloseExpr}; }`);
+                    }
                 }
             } else {
                 windowOpenStack.push(false);

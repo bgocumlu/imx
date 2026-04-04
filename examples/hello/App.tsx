@@ -137,6 +137,8 @@ export default function App() {
             <Separator />
             <PlotLines label="FPS" values={[60, 58, 62, 55, 61, 63, 59]} style={{ width: 200, height: 50 }} />
             <PlotHistogram label="Distribution" values={[1, 3, 5, 7, 5, 3, 1]} style={{ width: 200, height: 50 }} />
+            <Separator />
+            <Image src="flower.jpg" width={200} height={150} />
           </CollapsingHeader>
           <Button title="Show Modal" onPress={() => setShowConfirm(true)} />
         </Column>
