@@ -356,6 +356,22 @@ export const HOST_COMPONENTS = {
         },
         hasChildren: true, isContainer: true,
     },
+    StyleVar: {
+        props: {
+            alpha: { type: 'number', required: false },
+            windowPadding: { type: 'style', required: false },
+            windowRounding: { type: 'number', required: false },
+            framePadding: { type: 'style', required: false },
+            frameRounding: { type: 'number', required: false },
+            frameBorderSize: { type: 'number', required: false },
+            itemSpacing: { type: 'style', required: false },
+            itemInnerSpacing: { type: 'style', required: false },
+            indentSpacing: { type: 'number', required: false },
+            cellPadding: { type: 'style', required: false },
+            tabRounding: { type: 'number', required: false },
+        },
+        hasChildren: true, isContainer: true,
+    },
 };
 export function isHostComponent(name) {
     return name in HOST_COMPONENTS;

@@ -413,6 +413,25 @@ function App() {
         expect(output).toContain('begin_style_color(');
         expect(output).toContain('end_style_color()');
     });
+
+    it('emits StyleVar with float and vec2 overrides', () => {
+        const output = compile(`
+function App() {
+  return (
+    <Window title="Test">
+      <StyleVar frameRounding={8} framePadding={[12, 6]}>
+        <Button title="Styled" onPress={() => {}} />
+      </StyleVar>
+    </Window>
+  );
+}
+        `);
+        expect(output).toContain('imx::StyleVarOverrides');
+        expect(output).toContain('.frame_rounding = 8.0F');
+        expect(output).toContain('.frame_padding = ImVec2(');
+        expect(output).toContain('begin_style_var(');
+        expect(output).toContain('end_style_var()');
+    });
 });
 
 describe('source location comments', () => {

@@ -272,6 +272,22 @@ declare function Group(props: GroupProps): any;
 declare function ID(props: IDProps): any;
 declare function StyleColor(props: StyleColorProps): any;
 
+interface StyleVarProps {
+  alpha?: number;
+  windowPadding?: [number, number];
+  windowRounding?: number;
+  framePadding?: [number, number];
+  frameRounding?: number;
+  frameBorderSize?: number;
+  itemSpacing?: [number, number];
+  itemInnerSpacing?: [number, number];
+  indentSpacing?: number;
+  cellPadding?: [number, number];
+  tabRounding?: number;
+  children?: any;
+}
+declare function StyleVar(props: StyleVarProps): any;
+
 declare function resetLayout(): void;
 
 // --- Custom native widgets ---

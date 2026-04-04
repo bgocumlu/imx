@@ -59,8 +59,16 @@ function emitImVec4(arrayStr: string): string {
     return `ImVec4(${parts.join(', ')})`;
 }
 
+function emitImVec2(arrayStr: string): string {
+    const parts = arrayStr.split(',').map(s => {
+        const v = s.trim();
+        return v.includes('.') ? `${v}f` : `${v}.0f`;
+    });
+    return `ImVec2(${parts.join(', ')})`;
+}
+
 function emitFloat(val: string): string {
-    return val.includes('.') ? `${val}f` : `${val}.0f`;
+    return val.includes('.') ? `${val}F` : `${val}.0F`;
 }
 
 function findDockLayout(nodes: IRNode[]): IRDockLayout | null {
@@ -667,6 +675,32 @@ function emitBeginContainer(node: IRBeginContainer, lines: string[], indent: str
             lines.push(`${indent}imx::renderer::begin_style_color(${varName});`);
             break;
         }
+        case 'StyleVar': {
+            const varName = `sv_${styleCounter++}`;
+            lines.push(`${indent}imx::StyleVarOverrides ${varName};`);
+            const floatProps: [string, string][] = [
+                ['alpha', 'alpha'], ['windowRounding', 'window_rounding'],
+                ['frameRounding', 'frame_rounding'], ['frameBorderSize', 'frame_border_size'],
+                ['indentSpacing', 'indent_spacing'], ['tabRounding', 'tab_rounding'],
+            ];
+            for (const [tsName, cppName] of floatProps) {
+                if (node.props[tsName]) {
+                    lines.push(`${indent}${varName}.${cppName} = ${emitFloat(node.props[tsName])};`);
+                }
+            }
+            const vec2Props: [string, string][] = [
+                ['windowPadding', 'window_padding'], ['framePadding', 'frame_padding'],
+                ['itemSpacing', 'item_spacing'], ['itemInnerSpacing', 'item_inner_spacing'],
+                ['cellPadding', 'cell_padding'],
+            ];
+            for (const [tsName, cppName] of vec2Props) {
+                if (node.props[tsName]) {
+                    lines.push(`${indent}${varName}.${cppName} = ${emitImVec2(node.props[tsName])};`);
+                }
+            }
+            lines.push(`${indent}imx::renderer::begin_style_var(${varName});`);
+            break;
+        }
         case 'Group': {
             lines.push(`${indent}ImGui::BeginGroup();`);
             break;
@@ -761,6 +795,9 @@ function emitEndContainer(node: IREndContainer, lines: string[], indent: string)
         }
         case 'StyleColor':
             lines.push(`${indent}imx::renderer::end_style_color();`);
+            break;
+        case 'StyleVar':
+            lines.push(`${indent}imx::renderer::end_style_var();`);
             break;
         case 'Group':
             lines.push(`${indent}ImGui::EndGroup();`);

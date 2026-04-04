@@ -508,4 +508,35 @@ void end_style_color() {
     }
 }
 
+struct StyleVarState {
+    int count;
+};
+static std::vector<StyleVarState> g_style_var_stack;
+
+void begin_style_var(const StyleVarOverrides& o) {
+    int count = 0;
+    if (o.alpha)              { ImGui::PushStyleVar(ImGuiStyleVar_Alpha, *o.alpha); count++; }
+    if (o.window_padding)     { ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, *o.window_padding); count++; }
+    if (o.window_rounding)    { ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, *o.window_rounding); count++; }
+    if (o.frame_padding)      { ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, *o.frame_padding); count++; }
+    if (o.frame_rounding)     { ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, *o.frame_rounding); count++; }
+    if (o.frame_border_size)  { ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, *o.frame_border_size); count++; }
+    if (o.item_spacing)       { ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, *o.item_spacing); count++; }
+    if (o.item_inner_spacing) { ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, *o.item_inner_spacing); count++; }
+    if (o.indent_spacing)     { ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, *o.indent_spacing); count++; }
+    if (o.cell_padding)       { ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, *o.cell_padding); count++; }
+    if (o.tab_rounding)       { ImGui::PushStyleVar(ImGuiStyleVar_TabRounding, *o.tab_rounding); count++; }
+    StyleVarState s;
+    s.count = count;
+    g_style_var_stack.push_back(s);
+}
+
+void end_style_var() {
+    if (!g_style_var_stack.empty()) {
+        int count = g_style_var_stack.back().count;
+        g_style_var_stack.pop_back();
+        if (count > 0) ImGui::PopStyleVar(count);
+    }
+}
+
 } // namespace imx::renderer

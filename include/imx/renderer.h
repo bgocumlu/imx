@@ -56,6 +56,20 @@ struct StyleColorOverrides {
     std::optional<ImVec4> tab;
 };
 
+struct StyleVarOverrides {
+    std::optional<float> alpha;
+    std::optional<ImVec2> window_padding;
+    std::optional<float> window_rounding;
+    std::optional<ImVec2> frame_padding;
+    std::optional<float> frame_rounding;
+    std::optional<float> frame_border_size;
+    std::optional<ImVec2> item_spacing;
+    std::optional<ImVec2> item_inner_spacing;
+    std::optional<float> indent_spacing;
+    std::optional<ImVec2> cell_padding;
+    std::optional<float> tab_rounding;
+};
+
 class WidgetArgs {
 public:
     explicit WidgetArgs(const char* label);
@@ -202,6 +216,9 @@ void end_theme();
 
 void begin_style_color(const StyleColorOverrides& overrides);
 void end_style_color();
+
+void begin_style_var(const StyleVarOverrides& overrides);
+void end_style_var();
 
 } // namespace renderer
 } // namespace imx
