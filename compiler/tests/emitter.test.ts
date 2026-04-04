@@ -355,8 +355,8 @@ function App() {
   );
 }
         `);
-        expect(output).toContain('imx::renderer::begin_modal("Confirm", show.get(), &modal_open)');
-        expect(output).toContain('if (!modal_open)');
+        expect(output).toContain('imx::renderer::begin_modal("Confirm", show.get(), &modal_closed)');
+        expect(output).toContain('if (modal_closed)');
         expect(output).toContain('show.set(false)');
         expect(output).toContain('imx::renderer::end_modal()');
     });

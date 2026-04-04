@@ -409,6 +409,7 @@ let listBoxCounter = 0;
 let nativeWidgetCounter = 0;
 let plotCounter = 0;
 const windowOpenStack: boolean[] = []; // tracks if begin_window used open prop
+const modalOnCloseStack: (string | null)[] = []; // tracks modal onClose expressions
 
 /**
  * Build a Style variable from a raw style expression string for self-closing components.
@@ -626,20 +627,19 @@ function emitBeginContainer(node: IRBeginContainer, lines: string[], indent: str
             const onCloseExpr = node.props['onClose'];
             if (openExpr) {
                 windowOpenStack.push(true);
-                lines.push(`${indent}{`);
-                lines.push(`${indent}    bool modal_open = true;`);
-                lines.push(`${indent}    if (imx::renderer::begin_modal(${title}, ${openExpr}, &modal_open)) {`);
+                // Extract onClose body for use in end emitter
+                let onCloseBody: string | null = null;
                 if (onCloseExpr) {
-                    // Extract lambda body: [&]() { body } -> body
                     const lambdaMatch = onCloseExpr.match(/^\[&\]\(\)\s*\{\s*(.*?)\s*\}$/);
-                    if (lambdaMatch) {
-                        lines.push(`${indent}    if (!modal_open) { ${lambdaMatch[1]} }`);
-                    } else {
-                        lines.push(`${indent}    if (!modal_open) { ${onCloseExpr}; }`);
-                    }
+                    onCloseBody = lambdaMatch ? lambdaMatch[1] : `${onCloseExpr};`;
                 }
+                modalOnCloseStack.push(onCloseBody);
+                lines.push(`${indent}{`);
+                lines.push(`${indent}    bool modal_closed = false;`);
+                lines.push(`${indent}    if (imx::renderer::begin_modal(${title}, ${openExpr}, &modal_closed)) {`);
             } else {
                 windowOpenStack.push(false);
+                modalOnCloseStack.push(null);
                 lines.push(`${indent}if (imx::renderer::begin_modal(${title}, true, nullptr)) {`);
             }
             break;
@@ -711,8 +711,15 @@ function emitEndContainer(node: IREndContainer, lines: string[], indent: string)
             lines.push(`${indent}imx::renderer::end_modal();`);
             lines.push(`${indent}}`); // close the if (begin_modal) block
             const hadOpen = windowOpenStack.pop() ?? false;
-            if (hadOpen) {
-                lines.push(`${indent}}`); // close the { bool modal_open scope
+            const onCloseBody = modalOnCloseStack.pop() ?? null;
+            if (hadOpen && onCloseBody) {
+                // Check modal_closed OUTSIDE the if(begin_modal) block,
+                // because BeginPopupModal returns false when X is clicked
+                // (it calls EndPopup internally).
+                lines.push(`${indent}if (modal_closed) { ${onCloseBody} }`);
+                lines.push(`${indent}}`); // close the { bool modal_closed scope
+            } else if (hadOpen) {
+                lines.push(`${indent}}`); // close scope without onClose
             }
             break;
         }

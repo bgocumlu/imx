@@ -319,8 +319,10 @@ void plot_histogram(const char* label, const float* values, int count, const cha
     ImGui::PlotHistogram(label, values, count, 0, overlay, FLT_MAX, FLT_MAX, size);
 }
 
-bool begin_modal(const char* title, bool open, bool* p_open, const Style& style) {
+bool begin_modal(const char* title, bool open, bool* user_closed, const Style& style) {
     // No before_child() — modals are overlays, not part of parent layout
+    if (user_closed) *user_closed = false;
+
     if (open && !ImGui::IsPopupOpen(title)) {
         ImGui::OpenPopup(title);
     }
@@ -334,7 +336,16 @@ bool begin_modal(const char* title, bool open, bool* p_open, const Style& style)
         return false;
     }
     if (!open) return false;
-    return ImGui::BeginPopupModal(title, p_open);
+
+    // Pass p_open to get X button. If X is clicked, BeginPopupModal calls
+    // EndPopup internally and returns false. We detect this via p_open.
+    bool p_open = true;
+    bool visible = ImGui::BeginPopupModal(title, &p_open);
+    if (!visible && !p_open) {
+        // X was clicked — BeginPopupModal already called EndPopup
+        if (user_closed) *user_closed = true;
+    }
+    return visible;
 }
 
 void end_modal() {
