@@ -1,0 +1,17 @@
+{
+  "name": "reimgui-compiler",
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "typescript": "^5.8.0"
+  },
+  "devDependencies": {
+    "vitest": "^3.1.0",
+    "@types/node": "^22.0.0"
+  }
+}
