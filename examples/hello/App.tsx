@@ -15,13 +15,32 @@ export default function App() {
   const [progress, setProgress] = useState(0.7);
 
   return (
+    <Theme preset="dark" accentColor={[0.2, 0.5, 1.0, 1.0]} rounding={6}>
     <DockSpace>
+      <DockLayout>
+        <DockSplit direction="horizontal" size={0.25}>
+          <DockPanel>
+            <Window title="Todos" />
+          </DockPanel>
+          <DockSplit direction="vertical" size={0.7}>
+            <DockPanel>
+              <Window title="Inspector" />
+            </DockPanel>
+            <DockPanel>
+              <Window title="Data" />
+            </DockPanel>
+          </DockSplit>
+        </DockSplit>
+      </DockLayout>
       <MenuBar>
         <Menu label="File">
           <MenuItem label="New" shortcut="Ctrl+N" />
           <MenuItem label="Open" shortcut="Ctrl+O" />
           <Separator />
           <MenuItem label="Exit" onPress={() => setShowAbout(false)} />
+        </Menu>
+        <Menu label="View">
+          <MenuItem label="Reset Layout" onPress={resetLayout} />
         </Menu>
         <Menu label="Help">
           <MenuItem label="About" onPress={() => setShowAbout(!showAbout)} />
@@ -92,5 +111,6 @@ export default function App() {
         </Column>
       </Window>}
     </DockSpace>
+    </Theme>
   );
 }
