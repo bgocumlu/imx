@@ -316,6 +316,14 @@ add_executable(${projectName}
 )
 target_link_libraries(${projectName} PRIVATE imx::renderer)
 target_include_directories(${projectName} PRIVATE \${CMAKE_BINARY_DIR}/generated)
+
+# Copy public/ assets to output directory
+add_custom_command(TARGET ${projectName} POST_BUILD
+    COMMAND \${CMAKE_COMMAND} -E copy_directory
+        \${CMAKE_CURRENT_SOURCE_DIR}/public
+        $<TARGET_FILE_DIR:${projectName}>
+    COMMENT "Copying public/ assets"
+)
 `;
 }
 
@@ -329,6 +337,8 @@ export function initProject(projectDir: string, projectName?: string): void {
     }
 
     fs.mkdirSync(srcDir, { recursive: true });
+    const publicDir = path.join(projectDir, 'public');
+    fs.mkdirSync(publicDir, { recursive: true });
 
     // Write files
     fs.writeFileSync(path.join(srcDir, 'main.cpp'), MAIN_CPP.replace('APP_NAME', name));
@@ -345,6 +355,7 @@ export function initProject(projectDir: string, projectName?: string): void {
     console.log(`    src/imx.d.ts      — type definitions for IDE support`);
     console.log(`    tsconfig.json         — TypeScript config`);
     console.log(`    CMakeLists.txt        — build config with FetchContent`);
+    console.log(`    public/               — static assets (copied to exe directory)`);
     console.log('');
     console.log('  Next steps:');
     console.log(`    cmake -B build`);

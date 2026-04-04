@@ -138,6 +138,14 @@ if(IMX_BUILD_EXAMPLES)
     target_link_libraries(hello_app PRIVATE imx_renderer)
     target_include_directories(hello_app PRIVATE ${IMX_GENERATED_DIR})
 
+    # Copy public/ assets to output directory
+    add_custom_command(TARGET hello_app POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+            ${CMAKE_CURRENT_SOURCE_DIR}/examples/hello/public
+            $<TARGET_FILE_DIR:hello_app>
+        COMMENT "Copying hello public/ assets"
+    )
+
     # --- settings_app: LLM prompt reference test ---
     set(SETTINGS_GEN_DIR ${CMAKE_BINARY_DIR}/settings_generated)
     add_executable(settings_app
