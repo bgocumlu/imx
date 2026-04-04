@@ -52,4 +52,39 @@ private:
     bool modified_ = false;
 };
 
+// Identity key for component instances — either positional (int) or explicit string key.
+using InstanceKey = std::variant<int, std::string>;
+
+// A live instance of a component. Owns state slots, text buffers, and child instances.
+class ComponentInstance {
+public:
+    ComponentInstance(int state_count, int buffer_count);
+    std::any& state_at(int index);
+    bool is_initialized(int index) const;
+    void mark_initialized(int index);
+    TextBuffer& buffer_at(int index);
+    ComponentInstance* find_child(const std::string& type, const InstanceKey& key);
+    ComponentInstance& ensure_child(const std::string& type, const InstanceKey& key,
+                                    int state_count, int buffer_count, bool& created);
+    void pre_frame();
+    int sweep_children();
+    void mark_visited(const std::string& type, const InstanceKey& key);
+    int child_count() const;
+
+private:
+    std::vector<std::any> state_slots_;
+    std::vector<bool> state_initialized_;
+    std::vector<TextBuffer> buffers_;
+    struct ChildKey {
+        std::string type;
+        InstanceKey key;
+        bool operator==(const ChildKey& other) const = default;
+    };
+    struct ChildKeyHash {
+        size_t operator()(const ChildKey& k) const;
+    };
+    std::unordered_map<ChildKey, std::unique_ptr<ComponentInstance>, ChildKeyHash> children_;
+    std::unordered_map<ChildKey, bool, ChildKeyHash> visited_;
+};
+
 } // namespace reimgui
