@@ -99,7 +99,7 @@ function App() {
         expect(output).toContain('ctx.get_buffer(0)');
         expect(output).toContain('sync_from(name.get())');
         expect(output).toContain('reimgui::renderer::text_input("Name"');
-        expect(output).toContain('name.set(buf_0.as_string())');
+        expect(output).toContain('name.set(buf.value())');
     });
 
     it('emits Checkbox with temp bool pattern', () => {
@@ -114,9 +114,9 @@ function App() {
 }
         `);
 
-        expect(output).toContain('bool tmp_checked = checked.get()');
-        expect(output).toContain('reimgui::renderer::checkbox("Check"');
-        expect(output).toContain('checked.set(tmp_checked)');
+        expect(output).toContain('bool val = checked.get()');
+        expect(output).toContain('reimgui::renderer::checkbox("Check", &val)');
+        expect(output).toContain('checked.set(val)');
     });
 });
 
