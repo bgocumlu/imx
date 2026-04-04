@@ -196,6 +196,8 @@ interface ModalProps { title: string; open?: boolean; onClose?: () => void; styl
 interface ImageProps { src: string; embed?: boolean; width?: number; height?: number; }
 interface GroupProps { style?: Style; children?: any; }
 interface IDProps { scope: string | number; children?: any; }
+interface DragDropSourceProps { type: string; payload: number | string; children?: any; }
+interface DragDropTargetProps { type: string; onDrop: (payload: any) => void; children?: any; }
 interface StyleColorProps {
   text?: [number, number, number, number];
   textDisabled?: [number, number, number, number];
@@ -284,6 +286,8 @@ interface StyleVarProps {
   children?: any;
 }
 declare function StyleVar(props: StyleVarProps): any;
+declare function DragDropSource(props: DragDropSourceProps): any;
+declare function DragDropTarget(props: DragDropTargetProps): any;
 
 declare function resetLayout(): void;
 

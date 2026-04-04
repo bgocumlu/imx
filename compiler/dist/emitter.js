@@ -129,6 +129,8 @@ export function emitComponent(comp, imports, sourceFile) {
     listBoxCounter = 0;
     nativeWidgetCounter = 0;
     plotCounter = 0;
+    dragDropSourceStack.length = 0;
+    dragDropTargetStack.length = 0;
     currentCompName = comp.name;
     const hasProps = comp.params.length > 0;
     const hasColorType = comp.stateSlots.some(s => s.type === 'color');
@@ -367,6 +369,8 @@ let nativeWidgetCounter = 0;
 let plotCounter = 0;
 const windowOpenStack = []; // tracks if begin_window used open prop
 const modalOnCloseStack = []; // tracks modal onClose expressions
+const dragDropSourceStack = [];
+const dragDropTargetStack = [];
 /**
  * Build a Style variable from a raw style expression string for self-closing components.
  * Handles JS-like object literals: { width: 300, height: 100 } -> imx::Style with assignments.
@@ -666,6 +670,16 @@ function emitBeginContainer(node, lines, indent) {
             }
             break;
         }
+        case 'DragDropSource': {
+            dragDropSourceStack.push(node.props);
+            lines.push(`${indent}ImGui::BeginGroup();`);
+            break;
+        }
+        case 'DragDropTarget': {
+            dragDropTargetStack.push(node.props);
+            lines.push(`${indent}ImGui::BeginGroup();`);
+            break;
+        }
         case 'DockLayout':
         case 'DockSplit':
         case 'DockPanel':
@@ -757,6 +771,40 @@ function emitEndContainer(node, lines, indent) {
         case 'ID':
             lines.push(`${indent}ImGui::PopID();`);
             break;
+        case 'DragDropSource': {
+            const props = dragDropSourceStack.pop() ?? {};
+            const typeStr = asCharPtr(props['type'] ?? '""');
+            const payload = props['payload'] ?? '0';
+            lines.push(`${indent}ImGui::EndGroup();`);
+            lines.push(`${indent}if (ImGui::BeginDragDropSource()) {`);
+            lines.push(`${indent}    float _dd_payload = static_cast<float>(${payload});`);
+            lines.push(`${indent}    ImGui::SetDragDropPayload(${typeStr}, &_dd_payload, sizeof(_dd_payload));`);
+            lines.push(`${indent}    ImGui::Text("Dragging...");`);
+            lines.push(`${indent}    ImGui::EndDragDropSource();`);
+            lines.push(`${indent}}`);
+            break;
+        }
+        case 'DragDropTarget': {
+            const props = dragDropTargetStack.pop() ?? {};
+            const typeStr = asCharPtr(props['type'] ?? '""');
+            const onDrop = props['onDrop'] ?? '';
+            lines.push(`${indent}ImGui::EndGroup();`);
+            lines.push(`${indent}if (ImGui::BeginDragDropTarget()) {`);
+            lines.push(`${indent}    if (const ImGuiPayload* _dd_p = ImGui::AcceptDragDropPayload(${typeStr})) {`);
+            // Parse the structured callback: "cppType|paramName|bodyCode"
+            const parts = onDrop.split('|');
+            if (parts.length >= 3) {
+                const cppType = parts[0];
+                const paramName = parts[1];
+                const bodyCode = parts.slice(2).join('|'); // rejoin in case body contained |
+                lines.push(`${indent}        ${cppType} ${paramName} = *(const ${cppType}*)_dd_p->Data;`);
+                lines.push(`${indent}        ${bodyCode}`);
+            }
+            lines.push(`${indent}    }`);
+            lines.push(`${indent}    ImGui::EndDragDropTarget();`);
+            lines.push(`${indent}}`);
+            break;
+        }
         case 'DockLayout':
         case 'DockSplit':
         case 'DockPanel':

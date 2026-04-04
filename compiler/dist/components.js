@@ -372,6 +372,20 @@ export const HOST_COMPONENTS = {
         },
         hasChildren: true, isContainer: true,
     },
+    DragDropSource: {
+        props: {
+            type: { type: 'string', required: true },
+            payload: { type: 'number', required: true },
+        },
+        hasChildren: true, isContainer: true,
+    },
+    DragDropTarget: {
+        props: {
+            type: { type: 'string', required: true },
+            onDrop: { type: 'callback', required: true },
+        },
+        hasChildren: true, isContainer: true,
+    },
 };
 export function isHostComponent(name) {
     return name in HOST_COMPONENTS;

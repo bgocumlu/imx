@@ -337,6 +337,47 @@ function lowerJsxElement(node, body, ctx) {
         const attrs = getAttributes(node.openingElement.attributes, ctx);
         if (def.isContainer) {
             const containerTag = name;
+            // Special handling for DragDropTarget — lower onDrop callback with type info
+            if (name === 'DragDropTarget') {
+                const rawAttrs = getRawAttributes(node.openingElement.attributes);
+                const props = {};
+                for (const [attrName, expr] of rawAttrs) {
+                    if (attrName === 'onDrop' && expr && (ts.isArrowFunction(expr) || ts.isFunctionExpression(expr))) {
+                        const params = expr.parameters;
+                        if (params.length > 0) {
+                            const param = params[0];
+                            const paramName = ts.isIdentifier(param.name) ? param.name.text : '_p';
+                            let cppType = 'float';
+                            if (param.type) {
+                                const typeText = param.type.getText();
+                                if (typeText === 'number')
+                                    cppType = 'float';
+                                else if (typeText === 'boolean')
+                                    cppType = 'bool';
+                                else if (typeText === 'string')
+                                    cppType = 'std::string';
+                            }
+                            const bodyCode = ts.isBlock(expr.body)
+                                ? expr.body.statements.map(s => stmtToCpp(s, ctx)).join(' ')
+                                : exprToCpp(expr.body, ctx) + ';';
+                            // Store as structured string: type|paramName|body
+                            props[attrName] = `${cppType}|${paramName}|${bodyCode}`;
+                        }
+                    }
+                    else if (expr) {
+                        props[attrName] = exprToCpp(expr, ctx);
+                    }
+                    else {
+                        props[attrName] = 'true';
+                    }
+                }
+                body.push({ kind: 'begin_container', tag: containerTag, props, loc: getLoc(node, ctx) });
+                for (const child of node.children) {
+                    lowerJsxChild(child, body, ctx);
+                }
+                body.push({ kind: 'end_container', tag: containerTag });
+                return;
+            }
             body.push({ kind: 'begin_container', tag: containerTag, props: attrs, loc: getLoc(node, ctx) });
             for (const child of node.children) {
                 lowerJsxChild(child, body, ctx);
