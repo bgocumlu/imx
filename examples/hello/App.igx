@@ -5,6 +5,10 @@ function App() {
   const [done2, setDone2] = useState(false);
   const [done3, setDone3] = useState(true);
   const [showAbout, setShowAbout] = useState(false);
+  const [speed, setSpeed] = useState(5.0);
+  const [count, setCount] = useState(3);
+  const [posX, setPosX] = useState(0.0);
+  const [mode, setMode] = useState(0);
 
   return (
     <DockSpace>
@@ -33,9 +37,10 @@ function App() {
           <TabItem label="Properties">
             <Column gap={4}>
               <CollapsingHeader label="Transform">
-                <Text>Position: 0, 0, 0</Text>
-                <Text>Rotation: 0, 0, 0</Text>
-                <Text>Scale: 1, 1, 1</Text>
+                <DragFloat label="X" value={posX} onChange={setPosX} speed={0.1} />
+                <SliderFloat label="Speed" value={speed} onChange={setSpeed} min={0} max={100} />
+                <SliderInt label="Count" value={count} onChange={setCount} min={0} max={10} />
+                <Combo label="Mode" value={mode} onChange={setMode} items={["Easy", "Medium", "Hard"]} />
               </CollapsingHeader>
               <CollapsingHeader label="Material">
                 <Text>Shader: Standard</Text>
