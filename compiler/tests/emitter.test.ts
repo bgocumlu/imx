@@ -134,6 +134,27 @@ function App() {
         expect(output).toContain('reimgui::renderer::checkbox("Check", &val)');
         expect(output).toContain('checked.set(val)');
     });
+    it('emits Theme with preset and overrides', () => {
+        const output = compile(`
+function App() {
+  return (
+    <Theme preset="dark" accentColor={[0.2, 0.5, 1.0, 1.0]} rounding={6}>
+      <DockSpace>
+        <Window title="Test">
+          <Text>Hello</Text>
+        </Window>
+      </DockSpace>
+    </Theme>
+  );
+}
+        `);
+
+        expect(output).toContain('reimgui::renderer::begin_theme(');
+        expect(output).toContain('"dark"');
+        expect(output).toContain('accent_color = ImVec4(');
+        expect(output).toContain('rounding =');
+        expect(output).toContain('reimgui::renderer::end_theme()');
+    });
 });
 
 describe('source location comments', () => {

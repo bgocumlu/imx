@@ -5,6 +5,7 @@ import type {
     IRBeginPopup, IREndPopup, IROpenPopup, IRMenuItem,
     IRSliderFloat, IRSliderInt, IRDragFloat, IRDragInt, IRCombo,
     IRInputInt, IRInputFloat, IRColorEdit, IRListBox, IRProgressBar, IRTooltip,
+    IRDockLayout, IRDockSplit, IRDockPanel,
 } from './ir.js';
 
 const INDENT = '    ';
@@ -42,6 +43,18 @@ function asCharPtr(expr: string): string {
     if (expr.endsWith('.c_str()')) return expr;
     // Expression — assume std::string, add .c_str()
     return `${expr}.c_str()`;
+}
+
+function emitImVec4(arrayStr: string): string {
+    const parts = arrayStr.split(',').map(s => {
+        const v = s.trim();
+        return v.includes('.') ? `${v}f` : `${v}.0f`;
+    });
+    return `ImVec4(${parts.join(', ')})`;
+}
+
+function emitFloat(val: string): string {
+    return val.includes('.') ? `${val}f` : `${val}.0f`;
 }
 
 /**
@@ -393,6 +406,35 @@ function emitBeginContainer(node: IRBeginContainer, lines: string[], indent: str
             lines.push(`${indent}if (reimgui::renderer::begin_collapsing_header(${label})) {`);
             break;
         }
+        case 'Theme': {
+            const preset = asCharPtr(node.props['preset'] ?? '"dark"');
+            const varName = `theme_${styleCounter++}`;
+            lines.push(`${indent}reimgui::ThemeConfig ${varName};`);
+            if (node.props['accentColor']) {
+                lines.push(`${indent}${varName}.accent_color = ${emitImVec4(node.props['accentColor'])};`);
+            }
+            if (node.props['windowBg']) {
+                lines.push(`${indent}${varName}.window_bg = ${emitImVec4(node.props['windowBg'])};`);
+            }
+            if (node.props['textColor']) {
+                lines.push(`${indent}${varName}.text_color = ${emitImVec4(node.props['textColor'])};`);
+            }
+            if (node.props['rounding']) {
+                lines.push(`${indent}${varName}.rounding = ${emitFloat(node.props['rounding'])};`);
+            }
+            if (node.props['borderSize']) {
+                lines.push(`${indent}${varName}.border_size = ${emitFloat(node.props['borderSize'])};`);
+            }
+            if (node.props['spacing']) {
+                lines.push(`${indent}${varName}.spacing = ${emitFloat(node.props['spacing'])};`);
+            }
+            lines.push(`${indent}reimgui::renderer::begin_theme(${preset}, ${varName});`);
+            break;
+        }
+        case 'DockLayout':
+        case 'DockSplit':
+        case 'DockPanel':
+            break;
     }
 }
 
@@ -443,6 +485,13 @@ function emitEndContainer(node: IREndContainer, lines: string[], indent: string)
         case 'CollapsingHeader':
             lines.push(`${indent}reimgui::renderer::end_collapsing_header();`);
             lines.push(`${indent}}`);
+            break;
+        case 'Theme':
+            lines.push(`${indent}reimgui::renderer::end_theme();`);
+            break;
+        case 'DockLayout':
+        case 'DockSplit':
+        case 'DockPanel':
             break;
     }
 }
