@@ -52,7 +52,7 @@ export function startWatch(watchDir: string, outputDir: string): void {
     // Debounce timer
     let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 
-    const watcher = fs.watch(watchDir, { recursive: true }, (_event, filename) => {
+    const watcher = fs.watch(watchDir, { recursive: true }, (_event: string, filename: string | null) => {
         if (!filename || !filename.endsWith('.tsx')) return;
 
         // Debounce: wait 100ms after last change before recompiling
