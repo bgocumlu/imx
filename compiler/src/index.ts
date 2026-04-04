@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 import { parseArgs } from 'node:util';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
@@ -14,7 +15,7 @@ const { values, positionals } = parseArgs({
 });
 
 if (positionals.length === 0) {
-    console.error('Usage: reimgui-compiler <input.igx|.tsx ...> -o <output-dir>');
+    console.error('Usage: imxc <input.tsx ...> -o <output-dir>');
     process.exit(1);
 }
 
@@ -120,7 +121,7 @@ if (compiled.length > 0) {
     console.log(`  -> ${rootPath} (root entry point)`);
 }
 
-console.log(`reimgui-compiler: ${compiled.length} component(s) compiled successfully.`);
+console.log(`imxc: ${compiled.length} component(s) compiled successfully.`);
 
 /**
  * Walk IR nodes and update custom_component nodes with resolved stateCount/bufferCount

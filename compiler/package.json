@@ -1,12 +1,22 @@
 {
-  "name": "reimgui-compiler",
+  "name": "imxc",
   "version": "0.1.0",
+  "description": "Compiler for ReImGui — compiles React-like .tsx to native Dear ImGui C++",
   "type": "module",
+  "bin": {
+    "imxc": "dist/index.js"
+  },
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "prepublishOnly": "npm run build"
   },
+  "keywords": ["imgui", "react", "tsx", "native", "gui", "compiler", "codegen"],
+  "license": "MIT",
   "dependencies": {
     "typescript": "^5.8.0"
   },
