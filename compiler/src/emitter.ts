@@ -644,6 +644,29 @@ function emitBeginContainer(node: IRBeginContainer, lines: string[], indent: str
             }
             break;
         }
+        case 'StyleColor': {
+            const varName = `sc_${styleCounter++}`;
+            lines.push(`${indent}imx::StyleColorOverrides ${varName};`);
+            const colorProps: [string, string][] = [
+                ['text', 'text'], ['textDisabled', 'text_disabled'],
+                ['windowBg', 'window_bg'], ['frameBg', 'frame_bg'],
+                ['frameBgHovered', 'frame_bg_hovered'], ['frameBgActive', 'frame_bg_active'],
+                ['titleBg', 'title_bg'], ['titleBgActive', 'title_bg_active'],
+                ['button', 'button'], ['buttonHovered', 'button_hovered'],
+                ['buttonActive', 'button_active'], ['header', 'header'],
+                ['headerHovered', 'header_hovered'], ['headerActive', 'header_active'],
+                ['separator', 'separator'], ['checkMark', 'check_mark'],
+                ['sliderGrab', 'slider_grab'], ['border', 'border'],
+                ['popupBg', 'popup_bg'], ['tab', 'tab'],
+            ];
+            for (const [tsName, cppName] of colorProps) {
+                if (node.props[tsName]) {
+                    lines.push(`${indent}${varName}.${cppName} = ${emitImVec4(node.props[tsName])};`);
+                }
+            }
+            lines.push(`${indent}imx::renderer::begin_style_color(${varName});`);
+            break;
+        }
         case 'Group': {
             lines.push(`${indent}ImGui::BeginGroup();`);
             break;
@@ -736,6 +759,9 @@ function emitEndContainer(node: IREndContainer, lines: string[], indent: string)
             }
             break;
         }
+        case 'StyleColor':
+            lines.push(`${indent}imx::renderer::end_style_color();`);
+            break;
         case 'Group':
             lines.push(`${indent}ImGui::EndGroup();`);
             break;

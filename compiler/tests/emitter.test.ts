@@ -394,6 +394,25 @@ function App() {
         expect(output).toContain('imx::renderer::text("Player 1")');
         expect(output).toContain('ImGui::PopID()');
     });
+
+    it('emits StyleColor with struct-based overrides', () => {
+        const output = compile(`
+function App() {
+  return (
+    <Window title="Test">
+      <StyleColor button={[1, 0, 0, 1]} text={[1, 1, 1, 1]}>
+        <Button title="Red" onPress={() => {}} />
+      </StyleColor>
+    </Window>
+  );
+}
+        `);
+        expect(output).toContain('imx::StyleColorOverrides');
+        expect(output).toContain('.button = ImVec4(');
+        expect(output).toContain('.text = ImVec4(');
+        expect(output).toContain('begin_style_color(');
+        expect(output).toContain('end_style_color()');
+    });
 });
 
 describe('source location comments', () => {

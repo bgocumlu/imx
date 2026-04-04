@@ -196,6 +196,29 @@ interface ModalProps { title: string; open?: boolean; onClose?: () => void; styl
 interface ImageProps { src: string; embed?: boolean; width?: number; height?: number; }
 interface GroupProps { style?: Style; children?: any; }
 interface IDProps { scope: string | number; children?: any; }
+interface StyleColorProps {
+  text?: [number, number, number, number];
+  textDisabled?: [number, number, number, number];
+  windowBg?: [number, number, number, number];
+  frameBg?: [number, number, number, number];
+  frameBgHovered?: [number, number, number, number];
+  frameBgActive?: [number, number, number, number];
+  titleBg?: [number, number, number, number];
+  titleBgActive?: [number, number, number, number];
+  button?: [number, number, number, number];
+  buttonHovered?: [number, number, number, number];
+  buttonActive?: [number, number, number, number];
+  header?: [number, number, number, number];
+  headerHovered?: [number, number, number, number];
+  headerActive?: [number, number, number, number];
+  separator?: [number, number, number, number];
+  checkMark?: [number, number, number, number];
+  sliderGrab?: [number, number, number, number];
+  border?: [number, number, number, number];
+  popupBg?: [number, number, number, number];
+  tab?: [number, number, number, number];
+  children?: any;
+}
 
 declare function Window(props: WindowProps): any;
 declare function View(props: ViewProps): any;
@@ -244,6 +267,7 @@ declare function Modal(props: ModalProps): any;
 declare function Image(props: ImageProps): any;
 declare function Group(props: GroupProps): any;
 declare function ID(props: IDProps): any;
+declare function StyleColor(props: StyleColorProps): any;
 
 declare function resetLayout(): void;
 
