@@ -9,6 +9,7 @@ import type {
     IRBeginPopup, IREndPopup, IROpenPopup, IRMenuItem,
     IRSliderFloat, IRSliderInt, IRDragFloat, IRDragInt, IRCombo,
     IRInputInt, IRInputFloat, IRColorEdit, IRListBox, IRProgressBar, IRTooltip,
+    IRDockLayout, IRDockSplit, IRDockPanel,
 } from './ir.js';
 
 interface LoweringContext {
@@ -161,6 +162,9 @@ export function exprToCpp(node: ts.Expression, ctx: LoweringContext): string {
         if (ctx.stateVars.has(name)) {
             return `${name}.get()`;
         }
+        if (name === 'resetLayout') {
+            return 'reimgui_reset_layout';
+        }
         return name;
     }
 
@@ -279,8 +283,13 @@ function extractActionStatements(expr: ts.Expression, ctx: LoweringContext): str
             return [exprToCpp(expr.body as ts.Expression, ctx) + ';'];
         }
     }
-    // If not an arrow function, just call it
-    return [exprToCpp(expr, ctx) + ';'];
+    // If not an arrow function, call it
+    const code = exprToCpp(expr, ctx);
+    // Bare identifier (not already a call) needs () to invoke
+    if (ts.isIdentifier(expr)) {
+        return [code + '();'];
+    }
+    return [code + ';'];
 }
 
 /**
@@ -349,6 +358,11 @@ function lowerJsxElement(node: ts.JsxElement, body: IRNode[], ctx: LoweringConte
 
     if (name === 'Text') {
         lowerTextElement(node, body, ctx, getLoc(node, ctx));
+        return;
+    }
+
+    if (name === 'DockLayout') {
+        body.push(lowerDockLayout(node, ctx));
         return;
     }
 
@@ -704,6 +718,51 @@ function lowerCustomComponent(name: string, attributes: ts.JsxAttributes, body: 
         bufferCount: 0,
         loc,
     });
+}
+
+function lowerDockLayout(node: ts.JsxElement, ctx: LoweringContext): IRDockLayout {
+    const children: (IRDockSplit | IRDockPanel)[] = [];
+    for (const child of node.children) {
+        if (ts.isJsxElement(child)) {
+            const tag = child.openingElement.tagName;
+            if (ts.isIdentifier(tag)) {
+                if (tag.text === 'DockSplit') children.push(lowerDockSplit(child, ctx));
+                else if (tag.text === 'DockPanel') children.push(lowerDockPanel(child, ctx));
+            }
+        }
+    }
+    return { kind: 'dock_layout', children, loc: getLoc(node, ctx) };
+}
+
+function lowerDockSplit(node: ts.JsxElement, ctx: LoweringContext): IRDockSplit {
+    const attrs = getAttributes(node.openingElement.attributes, ctx);
+    const direction = attrs['direction'] ?? '"horizontal"';
+    const size = attrs['size'] ?? '0.5';
+    const children: (IRDockSplit | IRDockPanel)[] = [];
+    for (const child of node.children) {
+        if (ts.isJsxElement(child)) {
+            const tag = child.openingElement.tagName;
+            if (ts.isIdentifier(tag)) {
+                if (tag.text === 'DockSplit') children.push(lowerDockSplit(child, ctx));
+                else if (tag.text === 'DockPanel') children.push(lowerDockPanel(child, ctx));
+            }
+        }
+    }
+    return { kind: 'dock_split', direction, size, children };
+}
+
+function lowerDockPanel(node: ts.JsxElement, ctx: LoweringContext): IRDockPanel {
+    const windows: string[] = [];
+    for (const child of node.children) {
+        if (ts.isJsxSelfClosingElement(child)) {
+            const tag = child.tagName;
+            if (ts.isIdentifier(tag) && tag.text === 'Window') {
+                const attrs = getAttributes(child.attributes, ctx);
+                if (attrs['title']) windows.push(attrs['title']);
+            }
+        }
+    }
+    return { kind: 'dock_panel', windows };
 }
 
 function lowerJsxChild(child: ts.JsxChild, body: IRNode[], ctx: LoweringContext): void {

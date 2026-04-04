@@ -9,6 +9,7 @@ import type {
 } from './ir.js';
 
 const INDENT = '    ';
+let currentCompName = '';
 
 function emitLocComment(loc: SourceLoc | undefined, tag: string, lines: string[], indent: string): void {
     if (loc) {
@@ -57,6 +58,48 @@ function emitFloat(val: string): string {
     return val.includes('.') ? `${val}f` : `${val}.0f`;
 }
 
+function findDockLayout(nodes: IRNode[]): IRDockLayout | null {
+    for (const node of nodes) {
+        if (node.kind === 'dock_layout') return node;
+    }
+    return null;
+}
+
+function emitDockSetupFunction(layout: IRDockLayout, compName: string, lines: string[]): void {
+    lines.push(`void ${compName}_setup_dock_layout(ImGuiID dockspace_id) {`);
+    lines.push(`${INDENT}ImGui::DockBuilderRemoveNode(dockspace_id);`);
+    lines.push(`${INDENT}ImGui::DockBuilderAddNode(dockspace_id, ImGuiDockNodeFlags_None);`);
+    lines.push(`${INDENT}ImGui::DockBuilderSetNodeSize(dockspace_id, ImGui::GetMainViewport()->WorkSize);`);
+    lines.push('');
+
+    let counter = 0;
+    function emitDockNode(node: IRDockSplit | IRDockPanel, parentVar: string): void {
+        if (node.kind === 'dock_panel') {
+            for (const title of node.windows) {
+                lines.push(`${INDENT}ImGui::DockBuilderDockWindow(${title}, ${parentVar});`);
+            }
+        } else {
+            const dirRaw = node.direction.replace(/"/g, '');
+            const dir = dirRaw === 'horizontal' ? 'ImGuiDir_Left' : 'ImGuiDir_Up';
+            const sizeF = emitFloat(node.size);
+            const firstVar = `dock_${counter++}`;
+            const secondVar = `dock_${counter++}`;
+            lines.push(`${INDENT}ImGuiID ${firstVar}, ${secondVar};`);
+            lines.push(`${INDENT}ImGui::DockBuilderSplitNode(${parentVar}, ${dir}, ${sizeF}, &${firstVar}, &${secondVar});`);
+            if (node.children.length >= 1) emitDockNode(node.children[0], firstVar);
+            if (node.children.length >= 2) emitDockNode(node.children[1], secondVar);
+        }
+    }
+
+    for (const child of layout.children) {
+        emitDockNode(child, 'dockspace_id');
+    }
+
+    lines.push(`${INDENT}ImGui::DockBuilderFinish(dockspace_id);`);
+    lines.push('}');
+    lines.push('');
+}
+
 /**
  * Emit a .gen.h header for a component that has props.
  * Contains the props struct and function forward declaration.
@@ -103,6 +146,7 @@ export function emitComponent(comp: IRComponent, imports?: ImportInfo[], sourceF
     checkboxCounter = 0;
     comboCounter = 0;
     listBoxCounter = 0;
+    currentCompName = comp.name;
 
     const hasProps = comp.params.length > 0;
     const hasColorType = comp.stateSlots.some(s => s.type === 'color');
@@ -135,6 +179,20 @@ export function emitComponent(comp: IRComponent, imports?: ImportInfo[], sourceF
         }
 
         lines.push('');
+    }
+
+    const dockLayout = findDockLayout(comp.body);
+    if (dockLayout) {
+        lines.push('#include <imgui_internal.h>');
+        lines.push('');
+        lines.push('static bool g_layout_applied = false;');
+        lines.push('static bool g_reset_layout = false;');
+        lines.push('');
+        lines.push('void reimgui_reset_layout() {');
+        lines.push(`${INDENT}g_reset_layout = true;`);
+        lines.push('}');
+        lines.push('');
+        emitDockSetupFunction(dockLayout, comp.name, lines);
     }
 
     // Function signature
@@ -275,6 +333,13 @@ function emitNode(node: IRNode, lines: string[], depth: number): void {
             break;
         case 'tooltip':
             emitTooltip(node, lines, indent);
+            break;
+        case 'dock_layout':
+            lines.push(`${indent}if (!g_layout_applied || g_reset_layout) {`);
+            lines.push(`${indent}${INDENT}${currentCompName}_setup_dock_layout(ImGui::GetID("MainDockSpace"));`);
+            lines.push(`${indent}${INDENT}g_layout_applied = true;`);
+            lines.push(`${indent}${INDENT}g_reset_layout = false;`);
+            lines.push(`${indent}}`);
             break;
     }
 }

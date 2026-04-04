@@ -155,6 +155,61 @@ function App() {
         expect(output).toContain('rounding =');
         expect(output).toContain('reimgui::renderer::end_theme()');
     });
+
+    it('emits DockLayout with setup function and conditional', () => {
+        const output = compile(`
+function App() {
+  return (
+    <DockSpace>
+      <DockLayout>
+        <DockSplit direction="horizontal" size={0.25}>
+          <DockPanel>
+            <Window title="Left" />
+          </DockPanel>
+          <DockPanel>
+            <Window title="Right" />
+          </DockPanel>
+        </DockSplit>
+      </DockLayout>
+      <Window title="Left"><Text>L</Text></Window>
+      <Window title="Right"><Text>R</Text></Window>
+    </DockSpace>
+  );
+}
+        `);
+
+        expect(output).toContain('static bool g_layout_applied = false');
+        expect(output).toContain('static bool g_reset_layout = false');
+        expect(output).toContain('void reimgui_reset_layout()');
+        expect(output).toContain('g_reset_layout = true');
+        expect(output).toContain('App_setup_dock_layout(ImGuiID dockspace_id)');
+        expect(output).toContain('DockBuilderRemoveNode');
+        expect(output).toContain('DockBuilderSplitNode');
+        expect(output).toContain('DockBuilderDockWindow("Left"');
+        expect(output).toContain('DockBuilderDockWindow("Right"');
+        expect(output).toContain('DockBuilderFinish');
+        expect(output).toContain('if (!g_layout_applied || g_reset_layout)');
+        expect(output).toContain('#include <imgui_internal.h>');
+    });
+
+    it('emits resetLayout as reimgui_reset_layout', () => {
+        const output = compile(`
+function App() {
+  return (
+    <DockSpace>
+      <MenuBar>
+        <Menu label="View">
+          <MenuItem label="Reset" onPress={resetLayout} />
+        </Menu>
+      </MenuBar>
+      <Window title="Main"><Text>Content</Text></Window>
+    </DockSpace>
+  );
+}
+        `);
+
+        expect(output).toContain('reimgui_reset_layout()');
+    });
 });
 
 describe('source location comments', () => {
