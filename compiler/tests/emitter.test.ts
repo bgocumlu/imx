@@ -522,7 +522,7 @@ function App() {
         expect(output).toContain('ImGui::BeginGroup()');
         expect(output).toContain('imx::renderer::text("Drag me")');
         expect(output).toContain('ImGui::EndGroup()');
-        expect(output).toContain('BeginDragDropSource()');
+        expect(output).toContain('BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID)');
         expect(output).toContain('SetDragDropPayload("item"');
         expect(output).toContain('EndDragDropSource()');
     });

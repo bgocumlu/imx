@@ -885,7 +885,7 @@ function emitEndContainer(node: IREndContainer, lines: string[], indent: string)
             const typeStr = asCharPtr(props['type'] ?? '""');
             const payload = props['payload'] ?? '0';
             lines.push(`${indent}ImGui::EndGroup();`);
-            lines.push(`${indent}if (ImGui::BeginDragDropSource()) {`);
+            lines.push(`${indent}if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID)) {`);
             lines.push(`${indent}    float _dd_payload = static_cast<float>(${payload});`);
             lines.push(`${indent}    ImGui::SetDragDropPayload(${typeStr}, &_dd_payload, sizeof(_dd_payload));`);
             lines.push(`${indent}    ImGui::Text("Dragging...");`);
