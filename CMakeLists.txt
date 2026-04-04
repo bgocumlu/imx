@@ -56,6 +56,7 @@ add_library(reimgui_runtime STATIC
     runtime/component_instance.cpp
 )
 target_include_directories(reimgui_runtime PUBLIC include/)
+target_link_libraries(reimgui_runtime PUBLIC imgui_lib)
 
 # --- reimgui_renderer ---
 add_library(reimgui_renderer STATIC
