@@ -3,6 +3,10 @@
 
 namespace reimgui::renderer {
 
+// Per-frame ID counters — reset in begin_dockspace() each frame
+static int g_table_id = 0;
+static int g_tabbar_id = 0;
+
 void begin_window(const char* title, const Style& style) {
     before_child();
     ImGui::Begin(title);
@@ -64,6 +68,9 @@ void open_popup(const char* id) {
 }
 
 void begin_dockspace(const Style& style) {
+    g_table_id = 0;
+    g_tabbar_id = 0;
+
     // Create a fullscreen invisible host window and call DockSpace
     ImGuiViewport* viewport = ImGui::GetMainViewport();
     ImGui::SetNextWindowPos(viewport->WorkPos);
@@ -108,8 +115,6 @@ bool menu_item(const char* label, const char* shortcut) {
     return ImGui::MenuItem(label, shortcut);
 }
 
-static int g_table_id = 0;
-
 bool begin_table(const char* id, int column_count, const char** column_names, const Style& style) {
     before_child();
     char table_id[64];
@@ -127,8 +132,6 @@ bool begin_table(const char* id, int column_count, const char** column_names, co
 void end_table() {
     ImGui::EndTable();
 }
-
-static int g_tabbar_id = 0;
 
 bool begin_tab_bar(const Style& style) {
     before_child();
