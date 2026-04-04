@@ -398,6 +398,8 @@ void begin_theme(const char* preset, const ThemeConfig& config) {
         style.Colors[ImGuiCol_SeparatorHovered] = hovered;
         style.Colors[ImGuiCol_SeparatorActive] = active;
         style.Colors[ImGuiCol_DockingPreview] = c;
+        style.Colors[ImGuiCol_FrameBgHovered] = ImVec4(c.x * 0.4F, c.y * 0.4F, c.z * 0.4F, 0.7F);
+        style.Colors[ImGuiCol_FrameBgActive] = ImVec4(c.x * 0.5F, c.y * 0.5F, c.z * 0.5F, 0.8F);
 
         // Push on style stack for normal widgets
         ImGui::PushStyleColor(ImGuiCol_Button, c); color_count++;
