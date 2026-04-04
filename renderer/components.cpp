@@ -378,6 +378,19 @@ void begin_theme(const char* preset, const ThemeConfig& config) {
         ImVec4 active(c.x * 0.8F, c.y * 0.8F, c.z * 0.8F, c.w);
         ImVec4 frame_bg(c.x * 0.3F, c.y * 0.3F, c.z * 0.3F, 0.5F);
 
+        // Set directly on style so docking chrome picks them up
+        ImGuiStyle& style = ImGui::GetStyle();
+        style.Colors[ImGuiCol_ScrollbarGrab] = c;
+        style.Colors[ImGuiCol_ScrollbarGrabHovered] = hovered;
+        style.Colors[ImGuiCol_ScrollbarGrabActive] = active;
+        style.Colors[ImGuiCol_ResizeGrip] = c;
+        style.Colors[ImGuiCol_ResizeGripHovered] = hovered;
+        style.Colors[ImGuiCol_ResizeGripActive] = active;
+        style.Colors[ImGuiCol_SeparatorHovered] = hovered;
+        style.Colors[ImGuiCol_SeparatorActive] = active;
+        style.Colors[ImGuiCol_DockingPreview] = c;
+
+        // Push on style stack for normal widgets
         ImGui::PushStyleColor(ImGuiCol_Button, c); color_count++;
         ImGui::PushStyleColor(ImGuiCol_ButtonHovered, hovered); color_count++;
         ImGui::PushStyleColor(ImGuiCol_ButtonActive, active); color_count++;
