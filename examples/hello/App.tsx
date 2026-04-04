@@ -20,7 +20,7 @@ export default function App() {
   const [showConfirm, setShowConfirm] = useState(false);
 
   return (
-    <Theme preset="dark" accentColor={[0.2, 0.5, 1.0, 1.0]} rounding={6}>
+    <Theme preset="dark" accentColor={[0.9, 0.2, 0.2, 1.0]} rounding={6}>
     <DockSpace>
       <DockLayout>
         <DockSplit direction="horizontal" size={0.25}>
@@ -138,6 +138,7 @@ export default function App() {
             <PlotLines label="FPS" values={[60, 58, 62, 55, 61, 63, 59]} style={{ width: 200, height: 50 }} />
             <PlotHistogram label="Distribution" values={[1, 3, 5, 7, 5, 3, 1]} style={{ width: 200, height: 50 }} />
             <Separator />
+            <Image src="image.jpg" embed width={200} height={150} />
             <Image src="flower.jpg" width={200} height={150} />
           </CollapsingHeader>
           <Button title="Show Modal" onPress={() => setShowConfirm(true)} />

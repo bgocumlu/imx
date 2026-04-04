@@ -391,6 +391,17 @@ void begin_theme(const char* preset, const ThemeConfig& config) {
         ImGui::PushStyleColor(ImGuiCol_SliderGrabActive, active); color_count++;
         ImGui::PushStyleColor(ImGuiCol_CheckMark, c); color_count++;
         ImGui::PushStyleColor(ImGuiCol_FrameBg, frame_bg); color_count++;
+        ImGui::PushStyleColor(ImGuiCol_ScrollbarGrab, c); color_count++;
+        ImGui::PushStyleColor(ImGuiCol_ScrollbarGrabHovered, hovered); color_count++;
+        ImGui::PushStyleColor(ImGuiCol_ScrollbarGrabActive, active); color_count++;
+        ImGui::PushStyleColor(ImGuiCol_ResizeGrip, c); color_count++;
+        ImGui::PushStyleColor(ImGuiCol_ResizeGripHovered, hovered); color_count++;
+        ImGui::PushStyleColor(ImGuiCol_ResizeGripActive, active); color_count++;
+        ImGui::PushStyleColor(ImGuiCol_SeparatorHovered, hovered); color_count++;
+        ImGui::PushStyleColor(ImGuiCol_SeparatorActive, active); color_count++;
+        ImGui::PushStyleColor(ImGuiCol_TextSelectedBg, frame_bg); color_count++;
+        ImGui::PushStyleColor(ImGuiCol_DragDropTarget, c); color_count++;
+        ImGui::PushStyleColor(ImGuiCol_NavHighlight, c); color_count++;
     }
     if (config.window_bg) {
         ImGui::PushStyleColor(ImGuiCol_WindowBg, *config.window_bg); color_count++;
