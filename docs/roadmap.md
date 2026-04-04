@@ -238,6 +238,7 @@ Candidates:
   - `surfaceColor` — secondary surfaces (table rows, title bars, modal dim overlay)
   - Each prop derives normal/hovered/active/dimmed variants automatically
   - Goal: 5 props → full control of all 55 ImGui color slots via smart derivation
+- **Remote Image Loading** — `<Image src="https://..." />` with async HTTP fetch, texture caching, placeholder while loading (requires networking dependency like libcurl)
 - plugin APIs
 
 Exit criteria:
