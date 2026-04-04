@@ -1,19 +1,18 @@
+import { TodoItem } from './TodoItem';
+
 function App() {
-  const [name, setName] = useState("Berkay");
-  const [enabled, setEnabled] = useState(true);
-  const [count, setCount] = useState(0);
+  const [done1, setDone1] = useState(false);
+  const [done2, setDone2] = useState(false);
+  const [done3, setDone3] = useState(true);
 
   return (
-    <Window title="Hello">
-      <Column gap={8}>
-        <Text>Hello {name}</Text>
-        <TextInput value={name} onChange={setName} />
-        <Checkbox label="Enabled" value={enabled} onChange={setEnabled} />
-        <Row gap={8}>
-          <Button title="Increment" onPress={() => setCount(count + 1)} />
-          <Text>Count: {count}</Text>
-        </Row>
-        {enabled && <Text>Status: active</Text>}
+    <Window title="Todos">
+      <Column gap={4}>
+        <Text>Todo List</Text>
+        <Separator />
+        <TodoItem text="Build runtime" done={done1} onToggle={() => setDone1(!done1)} />
+        <TodoItem text="Build renderer" done={done2} onToggle={() => setDone2(!done2)} />
+        <TodoItem text="Build compiler" done={done3} onToggle={() => setDone3(!done3)} />
       </Column>
     </Window>
   );

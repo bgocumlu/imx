@@ -87,12 +87,16 @@ add_custom_command(
     OUTPUT
         ${REIMGUI_GENERATED_DIR}/App.gen.cpp
         ${REIMGUI_GENERATED_DIR}/app_root.gen.cpp
+        ${REIMGUI_GENERATED_DIR}/TodoItem.gen.cpp
+        ${REIMGUI_GENERATED_DIR}/TodoItem.gen.h
     COMMAND node ${CMAKE_SOURCE_DIR}/compiler/dist/index.js
         ${CMAKE_SOURCE_DIR}/examples/hello/App.igx
+        ${CMAKE_SOURCE_DIR}/examples/hello/TodoItem.igx
         -o ${REIMGUI_GENERATED_DIR}
     DEPENDS
         ${CMAKE_SOURCE_DIR}/examples/hello/App.igx
-    COMMENT "Compiling App.igx -> C++"
+        ${CMAKE_SOURCE_DIR}/examples/hello/TodoItem.igx
+    COMMENT "Compiling .igx files -> C++"
 )
 
 # --- hello_app: end-to-end .igx -> native binary ---
@@ -100,5 +104,7 @@ add_executable(hello_app
     examples/hello/main.cpp
     ${REIMGUI_GENERATED_DIR}/App.gen.cpp
     ${REIMGUI_GENERATED_DIR}/app_root.gen.cpp
+    ${REIMGUI_GENERATED_DIR}/TodoItem.gen.cpp
 )
 target_link_libraries(hello_app PRIVATE reimgui_renderer)
+target_include_directories(hello_app PRIVATE ${REIMGUI_GENERATED_DIR})
