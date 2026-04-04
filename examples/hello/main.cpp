@@ -13,29 +13,6 @@ struct App {
     reimgui::Runtime runtime;
 };
 
-// --- Docking: fullscreen invisible host window + DockSpace() fills the main viewport every frame ---
-static void draw_dockspace() {
-    ImGuiViewport* viewport = ImGui::GetMainViewport();
-    ImGui::SetNextWindowPos(viewport->WorkPos);
-    ImGui::SetNextWindowSize(viewport->WorkSize);
-    ImGui::SetNextWindowViewport(viewport->ID);
-
-    ImGuiWindowFlags host_flags = ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoTitleBar |
-                                  ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize |
-                                  ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBringToFrontOnFocus |
-                                  ImGuiWindowFlags_NoNavFocus | ImGuiWindowFlags_NoBackground;
-
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0F);
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0F);
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0F, 0.0F));
-
-    ImGui::Begin("DockSpaceHost", nullptr, host_flags);
-    ImGui::PopStyleVar(3);
-
-    ImGui::DockSpace(ImGui::GetID("MainDockSpace"), ImVec2(0.0F, 0.0F), ImGuiDockNodeFlags_None);
-    ImGui::End();
-}
-
 static void render_frame(App& app) {
     // --- Resize / viewports: always use the main window's GL context for the main pass ---
     glfwMakeContextCurrent(app.window);
@@ -56,9 +33,7 @@ static void render_frame(App& app) {
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
 
-    draw_dockspace();
-
-    // --- Generated code drives the UI ---
+    // DockSpace component handles the dock host window now
     reimgui::render_root(app.runtime);
 
     ImGui::Render();

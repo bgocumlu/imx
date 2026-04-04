@@ -4,16 +4,44 @@ function App() {
   const [done1, setDone1] = useState(false);
   const [done2, setDone2] = useState(false);
   const [done3, setDone3] = useState(true);
+  const [showAbout, setShowAbout] = useState(false);
 
   return (
-    <Window title="Todos">
-      <Column gap={4}>
-        <Text>Todo List</Text>
-        <Separator />
-        <TodoItem text="Build runtime" done={done1} onToggle={() => setDone1(!done1)} />
-        <TodoItem text="Build renderer" done={done2} onToggle={() => setDone2(!done2)} />
-        <TodoItem text="Build compiler" done={done3} onToggle={() => setDone3(!done3)} />
-      </Column>
-    </Window>
+    <DockSpace>
+      <MenuBar>
+        <Menu label="File">
+          <MenuItem label="New" shortcut="Ctrl+N" />
+          <MenuItem label="Open" shortcut="Ctrl+O" />
+          <Separator />
+          <MenuItem label="Exit" onPress={() => setShowAbout(false)} />
+        </Menu>
+        <Menu label="Help">
+          <MenuItem label="About" onPress={() => setShowAbout(!showAbout)} />
+        </Menu>
+      </MenuBar>
+      <Window title="Todos">
+        <Column gap={4}>
+          <Text>Todo List</Text>
+          <Separator />
+          <TodoItem text="Build runtime" done={done1} onToggle={() => setDone1(!done1)} />
+          <TodoItem text="Build renderer" done={done2} onToggle={() => setDone2(!done2)} />
+          <TodoItem text="Build compiler" done={done3} onToggle={() => setDone3(!done3)} />
+        </Column>
+      </Window>
+      <Window title="Inspector">
+        <Column gap={4}>
+          <Text>Properties</Text>
+          <Separator />
+          <Text>Select an item to inspect</Text>
+        </Column>
+      </Window>
+      {showAbout && <Window title="About">
+        <Column gap={8}>
+          <Text>ReImGui v0.1</Text>
+          <Text>React-Native-like authoring for Dear ImGui</Text>
+          <Button title="Close" onPress={() => setShowAbout(false)} />
+        </Column>
+      </Window>}
+    </DockSpace>
   );
 }
