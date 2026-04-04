@@ -241,6 +241,10 @@ Candidates:
 - **Remote Image Loading** — `<Image src="https://..." />` with async HTTP fetch, texture caching, placeholder while loading (requires networking dependency like libcurl)
 - plugin APIs
 
+Near-term DX:
+
+- **`imxc add`** — integrate IMX into an existing CMake project. Creates `src/App.tsx` + `imx.d.ts` + `tsconfig.json` + `public/`, prints the CMake lines to paste (FetchContent + ImxCompile) instead of overwriting their CMakeLists. Guided integration, not a full scaffold.
+
 Non-goals:
 
 - **Tauri-like CLI wrapper** — IMX integrates into existing CMake projects via FetchContent. The build stays CMake-native. `imxc` is for scaffolding and TSX compilation, not for wrapping the C++ build. Users who have existing apps (like udpstuff) just add a few CMake lines.
