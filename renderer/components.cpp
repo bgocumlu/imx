@@ -286,6 +286,23 @@ bool radio(const char* label, int* value, int v_button, const Style& style) {
     return ImGui::RadioButton(label, value, v_button);
 }
 
+bool text_input_multiline(const char* label, TextBuffer& buffer, const Style& style) {
+    before_child();
+    ImVec2 size(0, 0);
+    if (style.width) size.x = *style.width;
+    if (style.height) size.y = *style.height;
+    float item_width = style.width.value_or(0.0f);
+    if (item_width > 0.0f) ImGui::SetNextItemWidth(item_width);
+    bool changed = ImGui::InputTextMultiline(label, buffer.data(), buffer.capacity(), size);
+    if (changed) buffer.mark_modified();
+    return changed;
+}
+
+bool color_picker(const char* label, float color[4], const Style& style) {
+    before_child();
+    return ImGui::ColorPicker4(label, color);
+}
+
 void begin_theme(const char* preset, const ThemeConfig& config) {
     before_child();
 

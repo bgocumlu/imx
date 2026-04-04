@@ -256,6 +256,22 @@ export const HOST_COMPONENTS: Record<string, HostComponentDef> = {
         },
         hasChildren: false, isContainer: false,
     },
+    InputTextMultiline: {
+        props: {
+            label: { type: 'string', required: true },
+            value: { type: 'string', required: true },
+            style: { type: 'style', required: false },
+        },
+        hasChildren: false, isContainer: false,
+    },
+    ColorPicker: {
+        props: {
+            label: { type: 'string', required: true },
+            value: { type: 'string', required: true },
+            style: { type: 'style', required: false },
+        },
+        hasChildren: false, isContainer: false,
+    },
     DockLayout: {
         props: {},
         hasChildren: true, isContainer: true,

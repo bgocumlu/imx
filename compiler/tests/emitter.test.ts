@@ -298,6 +298,29 @@ function App() {
         expect(output).toContain('imx::renderer::radio("Large", &val, 1)');
         expect(output).toContain('size.set(val)');
     });
+
+    it('emits InputTextMultiline with state binding', () => {
+        const output = compile(`
+function App() {
+  const [notes, setNotes] = useState("");
+  return <Window title="Test"><InputTextMultiline label="Notes" value={notes} /></Window>;
+}
+        `);
+        expect(output).toContain('imx::renderer::text_input_multiline("Notes", buf)');
+        expect(output).toContain('buf.sync_from(notes.get())');
+        expect(output).toContain('notes.set(buf.value())');
+    });
+
+    it('emits ColorPicker with state binding', () => {
+        const output = compile(`
+function App() {
+  const [col, setCol] = useState([1.0, 0.0, 0.0, 1.0]);
+  return <Window title="Test"><ColorPicker label="Color" value={col} /></Window>;
+}
+        `);
+        expect(output).toContain('imx::renderer::color_picker("Color", val.data())');
+        expect(output).toContain('col.set(val)');
+    });
 });
 
 describe('source location comments', () => {

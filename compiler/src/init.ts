@@ -191,6 +191,8 @@ interface BulletTextProps { style?: Style; children?: any; }
 interface LabelTextProps { label: string; value: string; }
 interface SelectableProps { label: string; selected?: boolean; onSelect?: () => void; style?: Style; }
 interface RadioProps { label: string; value: number; index: number; onChange?: (v: number) => void; style?: Style; }
+interface InputTextMultilineProps { label: string; value: string; style?: Style; }
+interface ColorPickerProps { label: string; value: number[]; style?: Style; }
 
 declare function Window(props: WindowProps): any;
 declare function View(props: ViewProps): any;
@@ -231,6 +233,8 @@ declare function BulletText(props: BulletTextProps): any;
 declare function LabelText(props: LabelTextProps): any;
 declare function Selectable(props: SelectableProps): any;
 declare function Radio(props: RadioProps): any;
+declare function InputTextMultiline(props: InputTextMultilineProps): any;
+declare function ColorPicker(props: ColorPickerProps): any;
 
 declare function resetLayout(): void;
 

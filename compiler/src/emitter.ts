@@ -8,6 +8,7 @@ import type {
     IRDockLayout, IRDockSplit, IRDockPanel, IRNativeWidget,
     IRBulletText, IRLabelText,
     IRSelectable, IRRadio,
+    IRInputTextMultiline, IRColorPicker,
 } from './ir.js';
 
 const INDENT = '    ';
@@ -348,6 +349,12 @@ function emitNode(node: IRNode, lines: string[], depth: number): void {
             break;
         case 'radio':
             emitRadio(node, lines, indent);
+            break;
+        case 'input_text_multiline':
+            emitInputTextMultiline(node, lines, indent);
+            break;
+        case 'color_picker':
+            emitColorPicker(node, lines, indent);
             break;
         case 'native_widget':
             emitNativeWidget(node, lines, indent);
@@ -1046,6 +1053,34 @@ function emitRadio(node: IRRadio, lines: string[], indent: string): void {
         if (node.onChangeExpr) {
             lines.push(`${indent}${INDENT}${INDENT}${node.onChangeExpr};`);
         }
+        lines.push(`${indent}${INDENT}}`);
+        lines.push(`${indent}}`);
+    }
+}
+
+function emitInputTextMultiline(node: IRInputTextMultiline, lines: string[], indent: string): void {
+    emitLocComment(node.loc, 'InputTextMultiline', lines, indent);
+    lines.push(`${indent}{`);
+    lines.push(`${indent}${INDENT}auto& buf = ctx.get_buffer(${node.bufferIndex});`);
+    if (node.stateVar) {
+        lines.push(`${indent}${INDENT}buf.sync_from(${node.stateVar}.get());`);
+    }
+    const styleArg = node.style ? `, ${node.style}` : '';
+    lines.push(`${indent}${INDENT}if (imx::renderer::text_input_multiline(${node.label}, buf${styleArg})) {`);
+    if (node.stateVar) {
+        lines.push(`${indent}${INDENT}${INDENT}${node.stateVar}.set(buf.value());`);
+    }
+    lines.push(`${indent}${INDENT}}`);
+    lines.push(`${indent}}`);
+}
+
+function emitColorPicker(node: IRColorPicker, lines: string[], indent: string): void {
+    emitLocComment(node.loc, 'ColorPicker', lines, indent);
+    if (node.stateVar) {
+        lines.push(`${indent}{`);
+        lines.push(`${indent}${INDENT}auto val = ${node.stateVar}.get();`);
+        lines.push(`${indent}${INDENT}if (imx::renderer::color_picker(${node.label}, val.data())) {`);
+        lines.push(`${indent}${INDENT}${INDENT}${node.stateVar}.set(val);`);
         lines.push(`${indent}${INDENT}}`);
         lines.push(`${indent}}`);
     }

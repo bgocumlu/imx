@@ -12,6 +12,7 @@ import type {
     IRDockLayout, IRDockSplit, IRDockPanel, IRNativeWidget,
     IRBulletText, IRLabelText,
     IRSelectable, IRRadio,
+    IRInputTextMultiline, IRColorPicker,
 } from './ir.js';
 
 interface LoweringContext {
@@ -497,6 +498,12 @@ function lowerJsxSelfClosing(node: ts.JsxSelfClosingElement, body: IRNode[], ctx
         case 'Radio':
             lowerRadio(attrs, rawAttrs, body, ctx, loc);
             break;
+        case 'InputTextMultiline':
+            lowerInputTextMultiline(attrs, rawAttrs, body, ctx, loc);
+            break;
+        case 'ColorPicker':
+            lowerColorPicker(attrs, rawAttrs, body, ctx, loc);
+            break;
         default:
             // Container self-closing (e.g., <Window title="X"/>)
             if (HOST_COMPONENTS[name]?.isContainer) {
@@ -905,6 +912,32 @@ function lowerRadio(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expr
     const style = attrs['style'];
     const { stateVar, valueExpr, onChangeExpr } = lowerValueOnChange(rawAttrs, ctx);
     body.push({ kind: 'radio', label, stateVar, valueExpr, onChangeExpr, index, style, loc });
+}
+
+function lowerInputTextMultiline(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext, loc: SourceLoc): void {
+    const label = attrs['label'] ?? '""';
+    const bufferIndex = ctx.bufferIndex++;
+    let stateVar = '';
+    const valueExpr = rawAttrs.get('value');
+    if (valueExpr && ts.isIdentifier(valueExpr)) {
+        const varName = valueExpr.text;
+        if (ctx.stateVars.has(varName)) {
+            stateVar = varName;
+        }
+    }
+    const style = attrs['style'];
+    body.push({ kind: 'input_text_multiline', label, bufferIndex, stateVar, style, loc });
+}
+
+function lowerColorPicker(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext, loc: SourceLoc): void {
+    const label = attrs['label'] ?? '""';
+    const style = attrs['style'];
+    let stateVar = '';
+    const valueRaw = rawAttrs.get('value');
+    if (valueRaw && ts.isIdentifier(valueRaw) && ctx.stateVars.has(valueRaw.text)) {
+        stateVar = valueRaw.text;
+    }
+    body.push({ kind: 'color_picker', label, stateVar, style, loc });
 }
 
 function getAttributes(attributes: ts.JsxAttributes, ctx: LoweringContext): Record<string, string> {
