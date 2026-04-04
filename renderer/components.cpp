@@ -389,6 +389,7 @@ void begin_theme(const char* preset, const ThemeConfig& config) {
         style.Colors[ImGuiCol_SeparatorHovered] = hovered;
         style.Colors[ImGuiCol_SeparatorActive] = active;
         style.Colors[ImGuiCol_DockingPreview] = c;
+        style.Colors[ImGuiCol_TitleBgActive] = active;
 
         // Push on style stack for normal widgets
         ImGui::PushStyleColor(ImGuiCol_Button, c); color_count++;
