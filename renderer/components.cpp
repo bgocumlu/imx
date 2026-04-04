@@ -16,6 +16,33 @@ struct ThemeState {
 };
 static std::vector<ThemeState> g_theme_stack;
 
+} // temporarily close namespace imx::renderer
+
+namespace imx {
+
+static std::unordered_map<std::string, WidgetFunc> g_widget_registry;
+static std::unordered_map<std::string, ThemeFunc> g_theme_registry;
+
+void register_widget(const std::string& name, WidgetFunc func) {
+    g_widget_registry[name] = std::move(func);
+}
+
+void call_widget(const std::string& name, WidgetArgs& args) {
+    auto it = g_widget_registry.find(name);
+    if (it != g_widget_registry.end()) {
+        renderer::before_child();
+        it->second(args);
+    }
+}
+
+void register_theme(const std::string& name, ThemeFunc func) {
+    g_theme_registry[name] = std::move(func);
+}
+
+} // namespace imx
+
+namespace imx::renderer {
+
 void begin_window(const char* title, int flags, bool* p_open, const Style& style) {
     before_child();
     ImGui::Begin(title, p_open, flags);
@@ -239,10 +266,17 @@ void tooltip(const char* text) {
 void begin_theme(const char* preset, const ThemeConfig& config) {
     before_child();
 
-    // Apply preset
-    if (std::strcmp(preset, "dark") == 0) ImGui::StyleColorsDark();
-    else if (std::strcmp(preset, "light") == 0) ImGui::StyleColorsLight();
-    else if (std::strcmp(preset, "classic") == 0) ImGui::StyleColorsClassic();
+    // Apply preset — check custom registry first, then built-ins
+    auto it = g_theme_registry.find(preset);
+    if (it != g_theme_registry.end()) {
+        it->second();
+    } else if (std::strcmp(preset, "dark") == 0) {
+        ImGui::StyleColorsDark();
+    } else if (std::strcmp(preset, "light") == 0) {
+        ImGui::StyleColorsLight();
+    } else if (std::strcmp(preset, "classic") == 0) {
+        ImGui::StyleColorsClassic();
+    }
 
     int color_count = 0;
     int var_count = 0;
