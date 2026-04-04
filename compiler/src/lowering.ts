@@ -1,0 +1,620 @@
+import ts from 'typescript';
+import type { ParsedFile } from './parser.js';
+import type { ValidationResult, UseStateInfo } from './validator.js';
+import { HOST_COMPONENTS, isHostComponent } from './components.js';
+import type {
+    IRComponent, IRNode, IRStateSlot, IRPropParam, IRType, IRExpr,
+    IRBeginContainer, IREndContainer, IRText, IRButton, IRTextInput,
+    IRCheckbox, IRSeparator, IRConditional, IRListMap, IRCustomComponent,
+    IRBeginPopup, IREndPopup, IROpenPopup,
+} from './ir.js';
+
+interface LoweringContext {
+    stateVars: Map<string, IRStateSlot>;
+    setterMap: Map<string, string>;  // setter name -> state var name
+    propsParam: string | null;       // name of props parameter, if any
+    bufferIndex: number;
+    sourceFile: ts.SourceFile;
+}
+
+export function lowerComponent(parsed: ParsedFile, validation: ValidationResult): IRComponent {
+    const func = parsed.component!;
+    const name = func.name!.text;
+
+    // Build state slots
+    const stateSlots: IRStateSlot[] = validation.useStateCalls.map(u => ({
+        name: u.name,
+        setter: u.setter,
+        type: inferTypeFromExpr(u.initializer),
+        initialValue: exprToLiteral(u.initializer),
+        index: u.index,
+    }));
+
+    // Build state lookup maps
+    const stateVars = new Map<string, IRStateSlot>();
+    const setterMap = new Map<string, string>();
+    for (const slot of stateSlots) {
+        stateVars.set(slot.name, slot);
+        setterMap.set(slot.setter, slot.name);
+    }
+
+    // Detect props parameter
+    let propsParam: string | null = null;
+    const params: IRPropParam[] = [];
+    if (func.parameters.length > 0) {
+        const param = func.parameters[0];
+        if (ts.isIdentifier(param.name)) {
+            propsParam = param.name.text;
+        }
+        // Extract prop types from type annotation
+        if (param.type && ts.isTypeLiteralNode(param.type)) {
+            for (const member of param.type.members) {
+                if (ts.isPropertySignature(member) && member.name && ts.isIdentifier(member.name)) {
+                    const propName = member.name.text;
+                    const propType = inferPropType(member);
+                    params.push({ name: propName, type: propType });
+                }
+            }
+        }
+    }
+
+    const ctx: LoweringContext = {
+        stateVars,
+        setterMap,
+        propsParam,
+        bufferIndex: 0,
+        sourceFile: parsed.sourceFile,
+    };
+
+    // Find return statement and lower its JSX
+    const body: IRNode[] = [];
+    if (func.body) {
+        const returnStmt = func.body.statements.find(ts.isReturnStatement);
+        if (returnStmt && returnStmt.expression) {
+            lowerJsxExpression(returnStmt.expression, body, ctx);
+        }
+    }
+
+    return {
+        name,
+        stateSlots,
+        bufferCount: ctx.bufferIndex,
+        params,
+        body,
+    };
+}
+
+function inferPropType(member: ts.PropertySignature): IRType | 'callback' {
+    if (!member.type) return 'string';
+    if (ts.isFunctionTypeNode(member.type)) return 'callback';
+    const text = member.type.getText();
+    if (text === 'number') return 'int';
+    if (text === 'boolean') return 'bool';
+    if (text === 'string') return 'string';
+    return 'string';
+}
+
+function inferTypeFromExpr(expr: ts.Expression): IRType {
+    if (ts.isNumericLiteral(expr)) {
+        return expr.text.includes('.') ? 'float' : 'int';
+    }
+    if (ts.isStringLiteral(expr) || ts.isNoSubstitutionTemplateLiteral(expr)) return 'string';
+    if (expr.kind === ts.SyntaxKind.TrueKeyword || expr.kind === ts.SyntaxKind.FalseKeyword) return 'bool';
+    // Default to int
+    return 'int';
+}
+
+function exprToLiteral(expr: ts.Expression): string {
+    if (ts.isNumericLiteral(expr)) return expr.text;
+    if (ts.isStringLiteral(expr)) return JSON.stringify(expr.text);
+    if (expr.kind === ts.SyntaxKind.TrueKeyword) return 'true';
+    if (expr.kind === ts.SyntaxKind.FalseKeyword) return 'false';
+    // Fallback: use text as-is
+    return expr.getText();
+}
+
+/**
+ * Convert a TypeScript expression to C++ code string.
+ */
+export function exprToCpp(node: ts.Expression, ctx: LoweringContext): string {
+    // Numeric literal
+    if (ts.isNumericLiteral(node)) {
+        return node.text;
+    }
+
+    // String literal
+    if (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)) {
+        return JSON.stringify(node.text);
+    }
+
+    // Boolean literals
+    if (node.kind === ts.SyntaxKind.TrueKeyword) return 'true';
+    if (node.kind === ts.SyntaxKind.FalseKeyword) return 'false';
+
+    // Identifier
+    if (ts.isIdentifier(node)) {
+        const name = node.text;
+        if (ctx.stateVars.has(name)) {
+            return `${name}.get()`;
+        }
+        return name;
+    }
+
+    // Property access (e.g., props.name)
+    if (ts.isPropertyAccessExpression(node)) {
+        const obj = exprToCpp(node.expression, ctx);
+        const prop = node.name.text;
+        return `${obj}.${prop}`;
+    }
+
+    // Parenthesized expression
+    if (ts.isParenthesizedExpression(node)) {
+        return `(${exprToCpp(node.expression, ctx)})`;
+    }
+
+    // Binary expression
+    if (ts.isBinaryExpression(node)) {
+        const left = exprToCpp(node.left, ctx);
+        const right = exprToCpp(node.right, ctx);
+        const op = node.operatorToken.getText();
+        return `${left} ${op} ${right}`;
+    }
+
+    // Prefix unary expression (e.g., !show)
+    if (ts.isPrefixUnaryExpression(node)) {
+        const operand = exprToCpp(node.operand, ctx);
+        const opStr = node.operator === ts.SyntaxKind.ExclamationToken ? '!' :
+                      node.operator === ts.SyntaxKind.MinusToken ? '-' :
+                      node.operator === ts.SyntaxKind.PlusToken ? '+' : '';
+        return `${opStr}${operand}`;
+    }
+
+    // Call expression
+    if (ts.isCallExpression(node)) {
+        const callee = node.expression;
+
+        // Check for state setter: setCount(x) -> count.set(x)
+        if (ts.isIdentifier(callee)) {
+            const setterName = callee.text;
+            const stateVarName = ctx.setterMap.get(setterName);
+            if (stateVarName !== undefined) {
+                const arg = node.arguments.length > 0 ? exprToCpp(node.arguments[0], ctx) : '';
+                return `${stateVarName}.set(${arg})`;
+            }
+        }
+
+        // General call expression
+        const fn = exprToCpp(callee as ts.Expression, ctx);
+        const args = node.arguments.map(a => exprToCpp(a as ts.Expression, ctx)).join(', ');
+        return `${fn}(${args})`;
+    }
+
+    // Arrow function
+    if (ts.isArrowFunction(node)) {
+        // Return the body as statements
+        if (ts.isBlock(node.body)) {
+            const stmts: string[] = [];
+            for (const stmt of node.body.statements) {
+                stmts.push(stmtToCpp(stmt, ctx));
+            }
+            return stmts.join(' ');
+        } else {
+            return exprToCpp(node.body as ts.Expression, ctx);
+        }
+    }
+
+    // Template literal
+    if (ts.isTemplateExpression(node)) {
+        let result = JSON.stringify(node.head.text);
+        for (const span of node.templateSpans) {
+            const expr = exprToCpp(span.expression, ctx);
+            result = `${result} + std::to_string(${expr}) + ${JSON.stringify(span.literal.text)}`;
+        }
+        return result;
+    }
+
+    // Fallback: use text representation
+    return node.getText();
+}
+
+function stmtToCpp(stmt: ts.Statement, ctx: LoweringContext): string {
+    if (ts.isExpressionStatement(stmt)) {
+        return exprToCpp(stmt.expression, ctx) + ';';
+    }
+    if (ts.isReturnStatement(stmt)) {
+        if (stmt.expression) {
+            return 'return ' + exprToCpp(stmt.expression, ctx) + ';';
+        }
+        return 'return;';
+    }
+    return stmt.getText() + ';';
+}
+
+/**
+ * Extract action statements from an arrow function callback for button onPress etc.
+ */
+function extractActionStatements(expr: ts.Expression, ctx: LoweringContext): string[] {
+    if (ts.isArrowFunction(expr)) {
+        if (ts.isBlock(expr.body)) {
+            return expr.body.statements.map(s => stmtToCpp(s, ctx));
+        } else {
+            // Expression body: () => setCount(count + 1)
+            return [exprToCpp(expr.body as ts.Expression, ctx) + ';'];
+        }
+    }
+    // If not an arrow function, just call it
+    return [exprToCpp(expr, ctx) + ';'];
+}
+
+/**
+ * Lower a JSX expression (possibly wrapped in parenthesized expr) into IR nodes.
+ */
+function lowerJsxExpression(node: ts.Node, body: IRNode[], ctx: LoweringContext): void {
+    if (ts.isParenthesizedExpression(node)) {
+        lowerJsxExpression(node.expression, body, ctx);
+        return;
+    }
+
+    if (ts.isJsxElement(node)) {
+        lowerJsxElement(node, body, ctx);
+        return;
+    }
+
+    if (ts.isJsxSelfClosingElement(node)) {
+        lowerJsxSelfClosing(node, body, ctx);
+        return;
+    }
+
+    if (ts.isJsxFragment(node)) {
+        for (const child of node.children) {
+            lowerJsxChild(child, body, ctx);
+        }
+        return;
+    }
+
+    // Conditional: condition && <Element/>
+    if (ts.isBinaryExpression(node) && node.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandToken) {
+        const condition = exprToCpp(node.left, ctx);
+        const condBody: IRNode[] = [];
+        lowerJsxExpression(node.right, condBody, ctx);
+        body.push({ kind: 'conditional', condition, body: condBody });
+        return;
+    }
+
+    // Ternary: condition ? <A/> : <B/>
+    if (ts.isConditionalExpression(node)) {
+        const condition = exprToCpp(node.condition, ctx);
+        const thenBody: IRNode[] = [];
+        const elseBody: IRNode[] = [];
+        lowerJsxExpression(node.whenTrue, thenBody, ctx);
+        lowerJsxExpression(node.whenFalse, elseBody, ctx);
+        body.push({ kind: 'conditional', condition, body: thenBody, elseBody });
+        return;
+    }
+
+    // items.map(item => <Comp/>)
+    if (ts.isCallExpression(node) && ts.isPropertyAccessExpression(node.expression) && node.expression.name.text === 'map') {
+        lowerListMap(node, body, ctx);
+        return;
+    }
+
+    // JsxExpression wrapper
+    if (ts.isJsxExpression(node) && node.expression) {
+        lowerJsxExpression(node.expression, body, ctx);
+        return;
+    }
+}
+
+function lowerJsxElement(node: ts.JsxElement, body: IRNode[], ctx: LoweringContext): void {
+    const tagName = node.openingElement.tagName;
+    if (!ts.isIdentifier(tagName)) return;
+    const name = tagName.text;
+
+    if (name === 'Text') {
+        lowerTextElement(node, body, ctx);
+        return;
+    }
+
+    if (isHostComponent(name)) {
+        const def = HOST_COMPONENTS[name];
+        const attrs = getAttributes(node.openingElement.attributes, ctx);
+
+        if (def.isContainer) {
+            const containerTag = name as IRBeginContainer['tag'];
+            body.push({ kind: 'begin_container', tag: containerTag, props: attrs });
+            for (const child of node.children) {
+                lowerJsxChild(child, body, ctx);
+            }
+            body.push({ kind: 'end_container', tag: containerTag });
+            return;
+        }
+
+        // Popup
+        if (name === 'Popup') {
+            const id = attrs['id'] ?? '';
+            body.push({ kind: 'begin_popup', id });
+            for (const child of node.children) {
+                lowerJsxChild(child, body, ctx);
+            }
+            body.push({ kind: 'end_popup' });
+            return;
+        }
+    }
+
+    // Custom component with children - treat as container-like (not common but handle gracefully)
+    if (!isHostComponent(name)) {
+        lowerCustomComponent(name, node.openingElement.attributes, body, ctx);
+        return;
+    }
+}
+
+function lowerJsxSelfClosing(node: ts.JsxSelfClosingElement, body: IRNode[], ctx: LoweringContext): void {
+    const tagName = node.tagName;
+    if (!ts.isIdentifier(tagName)) return;
+    const name = tagName.text;
+
+    if (!isHostComponent(name)) {
+        lowerCustomComponent(name, node.attributes, body, ctx);
+        return;
+    }
+
+    const attrs = getAttributes(node.attributes, ctx);
+    const rawAttrs = getRawAttributes(node.attributes);
+
+    switch (name) {
+        case 'Button':
+            lowerButton(attrs, rawAttrs, body, ctx);
+            break;
+        case 'TextInput':
+            lowerTextInput(attrs, rawAttrs, body, ctx);
+            break;
+        case 'Checkbox':
+            lowerCheckbox(attrs, rawAttrs, body, ctx);
+            break;
+        case 'Separator':
+            body.push({ kind: 'separator' });
+            break;
+        case 'Text':
+            // Self-closing <Text /> - empty text
+            body.push({ kind: 'text', format: '', args: [] });
+            break;
+        default:
+            // Container self-closing (e.g., <Window title="X"/>)
+            if (HOST_COMPONENTS[name]?.isContainer) {
+                const containerTag = name as IRBeginContainer['tag'];
+                body.push({ kind: 'begin_container', tag: containerTag, props: attrs });
+                body.push({ kind: 'end_container', tag: containerTag });
+            }
+            break;
+    }
+}
+
+function lowerButton(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext): void {
+    const title = attrs['title'] ?? '""';
+    const onPressExpr = rawAttrs.get('onPress');
+    let action: string[] = [];
+    if (onPressExpr) {
+        action = extractActionStatements(onPressExpr, ctx);
+    }
+    const style = attrs['style'];
+    body.push({ kind: 'button', title, action, style });
+}
+
+function lowerTextInput(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext): void {
+    const label = attrs['label'] ?? '""';
+    const bufferIndex = ctx.bufferIndex++;
+
+    // Detect bound state variable from value prop
+    let stateVar = '';
+    const valueExpr = rawAttrs.get('value');
+    if (valueExpr && ts.isIdentifier(valueExpr)) {
+        const varName = valueExpr.text;
+        if (ctx.stateVars.has(varName)) {
+            stateVar = varName;
+        }
+    }
+
+    const style = attrs['style'];
+    body.push({ kind: 'text_input', label, bufferIndex, stateVar, style });
+}
+
+function lowerCheckbox(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext): void {
+    const label = attrs['label'] ?? '""';
+
+    // Detect bound state variable from value prop
+    let stateVar = '';
+    const valueExpr = rawAttrs.get('value');
+    if (valueExpr && ts.isIdentifier(valueExpr)) {
+        const varName = valueExpr.text;
+        if (ctx.stateVars.has(varName)) {
+            stateVar = varName;
+        }
+    }
+
+    const style = attrs['style'];
+    body.push({ kind: 'checkbox', label, stateVar, style });
+}
+
+function lowerTextElement(node: ts.JsxElement, body: IRNode[], ctx: LoweringContext): void {
+    let format = '';
+    const args: string[] = [];
+
+    for (const child of node.children) {
+        if (ts.isJsxText(child)) {
+            // Escape percent signs and add text
+            const text = child.text.replace(/%/g, '%%').trim();
+            if (text) format += text;
+        } else if (ts.isJsxExpression(child) && child.expression) {
+            const expr = child.expression;
+            const cppExpr = exprToCpp(expr, ctx);
+            const exprType = inferExprType(expr, ctx);
+
+            switch (exprType) {
+                case 'int':
+                    format += '%d';
+                    args.push(cppExpr);
+                    break;
+                case 'float':
+                    format += '%.2f';
+                    args.push(cppExpr);
+                    break;
+                case 'bool':
+                    format += '%s';
+                    args.push(`${cppExpr} ? "true" : "false"`);
+                    break;
+                case 'string':
+                    format += '%s';
+                    args.push(`${cppExpr}.c_str()`);
+                    break;
+                default:
+                    format += '%s';
+                    args.push(`std::to_string(${cppExpr}).c_str()`);
+                    break;
+            }
+        }
+    }
+
+    body.push({ kind: 'text', format, args });
+}
+
+function inferExprType(expr: ts.Expression, ctx: LoweringContext): IRType {
+    if (ts.isNumericLiteral(expr)) {
+        return expr.text.includes('.') ? 'float' : 'int';
+    }
+    if (ts.isStringLiteral(expr)) return 'string';
+    if (expr.kind === ts.SyntaxKind.TrueKeyword || expr.kind === ts.SyntaxKind.FalseKeyword) return 'bool';
+
+    // Identifier: check state var type
+    if (ts.isIdentifier(expr)) {
+        const slot = ctx.stateVars.get(expr.text);
+        if (slot) return slot.type;
+    }
+
+    // Property access: props.name -> look for string by default
+    if (ts.isPropertyAccessExpression(expr)) {
+        return 'string';
+    }
+
+    // Binary expression: infer from operands
+    if (ts.isBinaryExpression(expr)) {
+        const op = expr.operatorToken.kind;
+        // Comparison operators return bool
+        if (op === ts.SyntaxKind.EqualsEqualsToken || op === ts.SyntaxKind.EqualsEqualsEqualsToken ||
+            op === ts.SyntaxKind.ExclamationEqualsToken || op === ts.SyntaxKind.ExclamationEqualsEqualsToken ||
+            op === ts.SyntaxKind.LessThanToken || op === ts.SyntaxKind.LessThanEqualsToken ||
+            op === ts.SyntaxKind.GreaterThanToken || op === ts.SyntaxKind.GreaterThanEqualsToken ||
+            op === ts.SyntaxKind.AmpersandAmpersandToken || op === ts.SyntaxKind.BarBarToken) {
+            return 'bool';
+        }
+        // Arithmetic: infer from left side
+        return inferExprType(expr.left, ctx);
+    }
+
+    // Call expression that is a state getter
+    if (ts.isCallExpression(expr) && ts.isIdentifier(expr.expression)) {
+        const name = expr.expression.text;
+        if (ctx.setterMap.has(name)) {
+            const stateVarName = ctx.setterMap.get(name)!;
+            const slot = ctx.stateVars.get(stateVarName);
+            if (slot) return slot.type;
+        }
+    }
+
+    return 'int'; // default
+}
+
+function lowerListMap(node: ts.CallExpression, body: IRNode[], ctx: LoweringContext): void {
+    const propAccess = node.expression as ts.PropertyAccessExpression;
+    const array = exprToCpp(propAccess.expression, ctx);
+    const callback = node.arguments[0];
+
+    let itemVar = 'item';
+    let mapBody: IRNode[] = [];
+
+    if (callback && (ts.isArrowFunction(callback) || ts.isFunctionExpression(callback))) {
+        if (callback.parameters.length > 0 && ts.isIdentifier(callback.parameters[0].name)) {
+            itemVar = callback.parameters[0].name.text;
+        }
+        if (ts.isBlock(callback.body)) {
+            const ret = callback.body.statements.find(ts.isReturnStatement);
+            if (ret?.expression) {
+                lowerJsxExpression(ret.expression, mapBody, ctx);
+            }
+        } else if (callback.body) {
+            lowerJsxExpression(callback.body as ts.Expression, mapBody, ctx);
+        }
+    }
+
+    body.push({
+        kind: 'list_map',
+        array,
+        itemVar,
+        key: 'i',
+        componentName: 'ListItem',
+        stateCount: 0,
+        bufferCount: 0,
+        body: mapBody,
+    });
+}
+
+function lowerCustomComponent(name: string, attributes: ts.JsxAttributes, body: IRNode[], ctx: LoweringContext): void {
+    const attrs = getAttributes(attributes, ctx);
+    body.push({
+        kind: 'custom_component',
+        name,
+        props: attrs,
+        stateCount: 0,
+        bufferCount: 0,
+    });
+}
+
+function lowerJsxChild(child: ts.JsxChild, body: IRNode[], ctx: LoweringContext): void {
+    if (ts.isJsxElement(child)) {
+        lowerJsxElement(child, body, ctx);
+    } else if (ts.isJsxSelfClosingElement(child)) {
+        lowerJsxSelfClosing(child, body, ctx);
+    } else if (ts.isJsxExpression(child)) {
+        if (child.expression) {
+            lowerJsxExpression(child.expression, body, ctx);
+        }
+    } else if (ts.isJsxText(child)) {
+        // Standalone text not inside <Text> — usually whitespace, skip
+    }
+}
+
+function getAttributes(attributes: ts.JsxAttributes, ctx: LoweringContext): Record<string, string> {
+    const result: Record<string, string> = {};
+    for (const attr of attributes.properties) {
+        if (ts.isJsxAttribute(attr) && attr.name && ts.isIdentifier(attr.name)) {
+            const name = attr.name.text;
+            if (attr.initializer) {
+                if (ts.isStringLiteral(attr.initializer)) {
+                    result[name] = JSON.stringify(attr.initializer.text);
+                } else if (ts.isJsxExpression(attr.initializer) && attr.initializer.expression) {
+                    result[name] = exprToCpp(attr.initializer.expression, ctx);
+                }
+            } else {
+                // Boolean shorthand: <X disabled /> means disabled={true}
+                result[name] = 'true';
+            }
+        }
+    }
+    return result;
+}
+
+function getRawAttributes(attributes: ts.JsxAttributes): Map<string, ts.Expression | null> {
+    const result = new Map<string, ts.Expression | null>();
+    for (const attr of attributes.properties) {
+        if (ts.isJsxAttribute(attr) && attr.name && ts.isIdentifier(attr.name)) {
+            const name = attr.name.text;
+            if (attr.initializer && ts.isJsxExpression(attr.initializer)) {
+                result.set(name, attr.initializer.expression ?? null);
+            } else if (attr.initializer && ts.isStringLiteral(attr.initializer)) {
+                result.set(name, attr.initializer);
+            } else {
+                result.set(name, null);
+            }
+        }
+    }
+    return result;
+}
