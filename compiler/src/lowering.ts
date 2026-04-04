@@ -213,6 +213,11 @@ export function exprToCpp(node: ts.Expression, ctx: LoweringContext): string {
         return result;
     }
 
+    // Array literal: ["a", "b"] -> "\"a\", \"b\""
+    if (ts.isArrayLiteralExpression(node)) {
+        return node.elements.map(e => exprToCpp(e as ts.Expression, ctx)).join(', ');
+    }
+
     // Fallback: use text representation
     return node.getText();
 }

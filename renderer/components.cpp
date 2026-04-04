@@ -108,4 +108,63 @@ bool menu_item(const char* label, const char* shortcut) {
     return ImGui::MenuItem(label, shortcut);
 }
 
+static int g_table_id = 0;
+
+bool begin_table(const char* id, int column_count, const char** column_names, const Style& style) {
+    before_child();
+    char table_id[64];
+    snprintf(table_id, sizeof(table_id), "##table_%d", g_table_id++);
+    if (ImGui::BeginTable(table_id, column_count, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_Resizable)) {
+        for (int i = 0; i < column_count; i++) {
+            ImGui::TableSetupColumn(column_names[i]);
+        }
+        ImGui::TableHeadersRow();
+        return true;
+    }
+    return false;
+}
+
+void end_table() {
+    ImGui::EndTable();
+}
+
+static int g_tabbar_id = 0;
+
+bool begin_tab_bar(const Style& style) {
+    before_child();
+    char id[64];
+    snprintf(id, sizeof(id), "##tabbar_%d", g_tabbar_id++);
+    return ImGui::BeginTabBar(id);
+}
+
+void end_tab_bar() {
+    ImGui::EndTabBar();
+}
+
+bool begin_tab_item(const char* label) {
+    return ImGui::BeginTabItem(label);
+}
+
+void end_tab_item() {
+    ImGui::EndTabItem();
+}
+
+bool begin_tree_node(const char* label) {
+    before_child();
+    return ImGui::TreeNode(label);
+}
+
+void end_tree_node() {
+    ImGui::TreePop();
+}
+
+bool begin_collapsing_header(const char* label) {
+    before_child();
+    return ImGui::CollapsingHeader(label);
+}
+
+void end_collapsing_header() {
+    // CollapsingHeader doesn't need a matching close call
+}
+
 } // namespace reimgui::renderer

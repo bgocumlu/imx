@@ -88,6 +88,30 @@ export const HOST_COMPONENTS: Record<string, HostComponentDef> = {
         },
         hasChildren: false, isContainer: false,
     },
+    Table: {
+        props: { columns: { type: 'string', required: true }, style: { type: 'style', required: false } },
+        hasChildren: true, isContainer: true,
+    },
+    TableRow: {
+        props: {},
+        hasChildren: true, isContainer: true,
+    },
+    TabBar: {
+        props: { style: { type: 'style', required: false } },
+        hasChildren: true, isContainer: true,
+    },
+    TabItem: {
+        props: { label: { type: 'string', required: true } },
+        hasChildren: true, isContainer: true,
+    },
+    TreeNode: {
+        props: { label: { type: 'string', required: true } },
+        hasChildren: true, isContainer: true,
+    },
+    CollapsingHeader: {
+        props: { label: { type: 'string', required: true } },
+        hasChildren: true, isContainer: true,
+    },
 };
 
 export function isHostComponent(name: string): boolean {

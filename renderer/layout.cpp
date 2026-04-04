@@ -4,7 +4,7 @@
 namespace reimgui::renderer {
 
 struct LayoutState {
-    enum class Direction { Vertical, Horizontal };
+    enum class Direction { Vertical, Horizontal, TableRow };
     Direction direction = Direction::Vertical;
     float gap = 0.0f;
     int child_count = 0;
@@ -15,6 +15,11 @@ static std::vector<LayoutState> g_layout_stack;
 void before_child() {
     if (g_layout_stack.empty()) return;
     auto& ls = g_layout_stack.back();
+    if (ls.direction == LayoutState::Direction::TableRow) {
+        ImGui::TableNextColumn();
+        ls.child_count++;
+        return;
+    }
     if (ls.child_count > 0) {
         if (ls.direction == LayoutState::Direction::Horizontal) {
             ImGui::SameLine(0.0f, ls.gap);
@@ -65,6 +70,19 @@ void begin_view(const Style& style) {
 
 void end_view() {
     end_column();
+}
+
+void begin_table_row() {
+    ImGui::TableNextRow();
+    LayoutState ls;
+    ls.direction = LayoutState::Direction::TableRow;
+    ls.gap = 0.0f;
+    ls.child_count = 0;
+    g_layout_stack.push_back(ls);
+}
+
+void end_table_row() {
+    if (!g_layout_stack.empty()) g_layout_stack.pop_back();
 }
 
 } // namespace reimgui::renderer

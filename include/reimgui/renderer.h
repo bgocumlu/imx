@@ -61,5 +61,21 @@ void end_menu();
 
 bool menu_item(const char* label, const char* shortcut = nullptr);
 
+bool begin_table(const char* id, int column_count, const char** column_names, const Style& style = {});
+void end_table();
+void begin_table_row();
+void end_table_row();
+void table_next_column();
+
+bool begin_tab_bar(const Style& style = {});
+void end_tab_bar();
+bool begin_tab_item(const char* label);
+void end_tab_item();
+
+bool begin_tree_node(const char* label);
+void end_tree_node();
+bool begin_collapsing_header(const char* label);
+void end_collapsing_header();
+
 } // namespace renderer
 } // namespace reimgui

@@ -278,6 +278,38 @@ function emitBeginContainer(node: IRBeginContainer, lines: string[], indent: str
             lines.push(`${indent}if (reimgui::renderer::begin_menu(${label})) {`);
             break;
         }
+        case 'Table': {
+            const columnsRaw = node.props['columns'] ?? '';
+            const columnNames = columnsRaw.split(',').map(s => s.trim()).filter(s => s.length > 0);
+            const count = columnNames.length;
+            const varName = `table_cols_${styleCounter++}`;
+            lines.push(`${indent}const char* ${varName}[] = {${columnNames.join(', ')}};`);
+            lines.push(`${indent}if (reimgui::renderer::begin_table("##table", ${count}, ${varName})) {`);
+            break;
+        }
+        case 'TableRow': {
+            lines.push(`${indent}reimgui::renderer::begin_table_row();`);
+            break;
+        }
+        case 'TabBar': {
+            lines.push(`${indent}if (reimgui::renderer::begin_tab_bar()) {`);
+            break;
+        }
+        case 'TabItem': {
+            const label = node.props['label'] ?? '""';
+            lines.push(`${indent}if (reimgui::renderer::begin_tab_item(${label})) {`);
+            break;
+        }
+        case 'TreeNode': {
+            const label = node.props['label'] ?? '""';
+            lines.push(`${indent}if (reimgui::renderer::begin_tree_node(${label})) {`);
+            break;
+        }
+        case 'CollapsingHeader': {
+            const label = node.props['label'] ?? '""';
+            lines.push(`${indent}if (reimgui::renderer::begin_collapsing_header(${label})) {`);
+            break;
+        }
     }
 }
 
@@ -304,6 +336,29 @@ function emitEndContainer(node: IREndContainer, lines: string[], indent: string)
             break;
         case 'Menu':
             lines.push(`${indent}reimgui::renderer::end_menu();`);
+            lines.push(`${indent}}`);
+            break;
+        case 'Table':
+            lines.push(`${indent}reimgui::renderer::end_table();`);
+            lines.push(`${indent}}`);
+            break;
+        case 'TableRow':
+            lines.push(`${indent}reimgui::renderer::end_table_row();`);
+            break;
+        case 'TabBar':
+            lines.push(`${indent}reimgui::renderer::end_tab_bar();`);
+            lines.push(`${indent}}`);
+            break;
+        case 'TabItem':
+            lines.push(`${indent}reimgui::renderer::end_tab_item();`);
+            lines.push(`${indent}}`);
+            break;
+        case 'TreeNode':
+            lines.push(`${indent}reimgui::renderer::end_tree_node();`);
+            lines.push(`${indent}}`);
+            break;
+        case 'CollapsingHeader':
+            lines.push(`${indent}reimgui::renderer::end_collapsing_header();`);
             lines.push(`${indent}}`);
             break;
     }

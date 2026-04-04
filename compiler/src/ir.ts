@@ -32,11 +32,16 @@ export type IRNode =
 
 export interface IRBeginContainer {
     kind: 'begin_container';
-    tag: 'Window' | 'View' | 'Row' | 'Column' | 'DockSpace' | 'MenuBar' | 'Menu';
+    tag: 'Window' | 'View' | 'Row' | 'Column' | 'DockSpace' | 'MenuBar' | 'Menu'
+       | 'Table' | 'TableRow' | 'TabBar' | 'TabItem' | 'TreeNode' | 'CollapsingHeader';
     props: Record<string, string>;
     style?: string;
 }
-export interface IREndContainer { kind: 'end_container'; tag: 'Window' | 'View' | 'Row' | 'Column' | 'DockSpace' | 'MenuBar' | 'Menu'; }
+export interface IREndContainer {
+    kind: 'end_container';
+    tag: 'Window' | 'View' | 'Row' | 'Column' | 'DockSpace' | 'MenuBar' | 'Menu'
+       | 'Table' | 'TableRow' | 'TabBar' | 'TabItem' | 'TreeNode' | 'CollapsingHeader';
+}
 export interface IRText { kind: 'text'; format: string; args: string[]; }
 export interface IRButton { kind: 'button'; title: string; action: string[]; style?: string; }
 export interface IRTextInput { kind: 'text_input'; label: string; bufferIndex: number; stateVar: string; style?: string; }
