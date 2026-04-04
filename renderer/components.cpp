@@ -380,6 +380,15 @@ void begin_theme(const char* preset, const ThemeConfig& config) {
 
         // Set directly on style so docking chrome picks them up
         ImGuiStyle& style = ImGui::GetStyle();
+        // Direct style assignment for docking chrome (not affected by PushStyleColor)
+        style.Colors[ImGuiCol_TitleBgActive] = active;
+        style.Colors[ImGuiCol_Tab] = active;
+        style.Colors[ImGuiCol_TabSelected] = c;
+        style.Colors[ImGuiCol_TabSelectedOverline] = c;
+        style.Colors[ImGuiCol_TabHovered] = hovered;
+        style.Colors[ImGuiCol_TabDimmed] = ImVec4(c.x * 0.4F, c.y * 0.4F, c.z * 0.4F, 0.8F);
+        style.Colors[ImGuiCol_TabDimmedSelected] = active;
+        style.Colors[ImGuiCol_TabDimmedSelectedOverline] = c;
         style.Colors[ImGuiCol_ScrollbarGrab] = c;
         style.Colors[ImGuiCol_ScrollbarGrabHovered] = hovered;
         style.Colors[ImGuiCol_ScrollbarGrabActive] = active;
@@ -389,7 +398,6 @@ void begin_theme(const char* preset, const ThemeConfig& config) {
         style.Colors[ImGuiCol_SeparatorHovered] = hovered;
         style.Colors[ImGuiCol_SeparatorActive] = active;
         style.Colors[ImGuiCol_DockingPreview] = c;
-        style.Colors[ImGuiCol_TitleBgActive] = active;
 
         // Push on style stack for normal widgets
         ImGui::PushStyleColor(ImGuiCol_Button, c); color_count++;
