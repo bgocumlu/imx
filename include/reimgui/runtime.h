@@ -33,4 +33,23 @@ private:
     bool& dirty_;
 };
 
+// Persistent text buffer for TextInput components.
+// Syncs from state each frame, provides mutable char* for ImGui::InputText,
+// and reports whether the user modified the buffer.
+class TextBuffer {
+public:
+    TextBuffer() : buf_(256, '\0') {}
+
+    void sync_from(const std::string& value);
+    std::string value() const;
+    char* data();
+    int capacity() const;
+    bool modified() const;
+    void mark_modified();
+
+private:
+    std::vector<char> buf_;
+    bool modified_ = false;
+};
+
 } // namespace reimgui
