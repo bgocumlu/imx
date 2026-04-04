@@ -35,12 +35,14 @@ export type IRNode =
     | IRConditional | IRListMap | IRCustomComponent
     | IRMenuItem
     | IRSliderFloat | IRSliderInt | IRDragFloat | IRDragInt | IRCombo
-    | IRInputInt | IRInputFloat | IRColorEdit | IRListBox | IRProgressBar | IRTooltip;
+    | IRInputInt | IRInputFloat | IRColorEdit | IRListBox | IRProgressBar | IRTooltip
+    | IRDockLayout;
 
 export interface IRBeginContainer {
     kind: 'begin_container';
     tag: 'Window' | 'View' | 'Row' | 'Column' | 'DockSpace' | 'MenuBar' | 'Menu'
-       | 'Table' | 'TableRow' | 'TabBar' | 'TabItem' | 'TreeNode' | 'CollapsingHeader';
+       | 'Table' | 'TableRow' | 'TabBar' | 'TabItem' | 'TreeNode' | 'CollapsingHeader'
+       | 'Theme' | 'DockLayout' | 'DockSplit' | 'DockPanel';
     props: Record<string, string>;
     style?: string;
     loc?: SourceLoc;
@@ -48,7 +50,8 @@ export interface IRBeginContainer {
 export interface IREndContainer {
     kind: 'end_container';
     tag: 'Window' | 'View' | 'Row' | 'Column' | 'DockSpace' | 'MenuBar' | 'Menu'
-       | 'Table' | 'TableRow' | 'TabBar' | 'TabItem' | 'TreeNode' | 'CollapsingHeader';
+       | 'Table' | 'TableRow' | 'TabBar' | 'TabItem' | 'TreeNode' | 'CollapsingHeader'
+       | 'Theme' | 'DockLayout' | 'DockSplit' | 'DockPanel';
 }
 export interface IRText { kind: 'text'; format: string; args: string[]; loc?: SourceLoc; }
 export interface IRButton { kind: 'button'; title: string; action: string[]; style?: string; loc?: SourceLoc; }
@@ -73,3 +76,21 @@ export interface IRColorEdit { kind: 'color_edit'; label: string; stateVar: stri
 export interface IRListBox { kind: 'list_box'; label: string; stateVar: string; valueExpr?: string; onChangeExpr?: string; items: string; style?: string; loc?: SourceLoc; }
 export interface IRProgressBar { kind: 'progress_bar'; value: string; overlay?: string; style?: string; loc?: SourceLoc; }
 export interface IRTooltip { kind: 'tooltip'; text: string; loc?: SourceLoc; }
+
+export interface IRDockLayout {
+    kind: 'dock_layout';
+    children: (IRDockSplit | IRDockPanel)[];
+    loc?: SourceLoc;
+}
+
+export interface IRDockSplit {
+    kind: 'dock_split';
+    direction: string;
+    size: string;
+    children: (IRDockSplit | IRDockPanel)[];
+}
+
+export interface IRDockPanel {
+    kind: 'dock_panel';
+    windows: string[];
+}

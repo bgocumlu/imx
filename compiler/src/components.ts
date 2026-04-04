@@ -215,6 +215,30 @@ export const HOST_COMPONENTS: Record<string, HostComponentDef> = {
         },
         hasChildren: false, isContainer: false,
     },
+    DockLayout: {
+        props: {},
+        hasChildren: true, isContainer: true,
+    },
+    DockSplit: {
+        props: { direction: { type: 'string', required: true }, size: { type: 'number', required: true } },
+        hasChildren: true, isContainer: true,
+    },
+    DockPanel: {
+        props: {},
+        hasChildren: true, isContainer: true,
+    },
+    Theme: {
+        props: {
+            preset: { type: 'string', required: true },
+            accentColor: { type: 'style', required: false },
+            windowBg: { type: 'style', required: false },
+            textColor: { type: 'style', required: false },
+            rounding: { type: 'number', required: false },
+            borderSize: { type: 'number', required: false },
+            spacing: { type: 'number', required: false },
+        },
+        hasChildren: true, isContainer: true,
+    },
 };
 
 export function isHostComponent(name: string): boolean {
