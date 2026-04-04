@@ -539,4 +539,31 @@ void end_style_var() {
     }
 }
 
+static std::vector<ImVec2> g_canvas_origin_stack;
+
+void begin_canvas(float width, float height, const Style& style) {
+    before_child();
+    ImVec2 pos = ImGui::GetCursorScreenPos();
+    g_canvas_origin_stack.push_back(pos);
+    if (style.background_color) {
+        ImGui::GetWindowDrawList()->AddRectFilled(
+            pos, ImVec2(pos.x + width, pos.y + height),
+            ImGui::ColorConvertFloat4ToU32(*style.background_color));
+    }
+    ImGui::Dummy(ImVec2(width, height));
+}
+
+void end_canvas() {
+    if (!g_canvas_origin_stack.empty()) {
+        g_canvas_origin_stack.pop_back();
+    }
+}
+
+ImVec2 canvas_origin() {
+    if (!g_canvas_origin_stack.empty()) {
+        return g_canvas_origin_stack.back();
+    }
+    return ImVec2(0, 0);
+}
+
 } // namespace imx::renderer

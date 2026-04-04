@@ -385,6 +385,28 @@ export const HOST_COMPONENTS: Record<string, HostComponentDef> = {
         },
         hasChildren: true, isContainer: true,
     },
+    DragDropSource: {
+        props: {
+            type: { type: 'string', required: true },
+            payload: { type: 'number', required: true },
+        },
+        hasChildren: true, isContainer: true,
+    },
+    DragDropTarget: {
+        props: {
+            type: { type: 'string', required: true },
+            onDrop: { type: 'callback', required: true },
+        },
+        hasChildren: true, isContainer: true,
+    },
+    Canvas: {
+        props: {
+            width: { type: 'number', required: true },
+            height: { type: 'number', required: true },
+            style: { type: 'style', required: false },
+        },
+        hasChildren: true, isContainer: true,
+    },
 };
 
 export function isHostComponent(name: string): boolean {

@@ -220,5 +220,9 @@ void end_style_color();
 void begin_style_var(const StyleVarOverrides& overrides);
 void end_style_var();
 
+void begin_canvas(float width, float height, const Style& style = {});
+void end_canvas();
+ImVec2 canvas_origin();
+
 } // namespace renderer
 } // namespace imx
