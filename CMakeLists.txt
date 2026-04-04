@@ -91,13 +91,13 @@ add_custom_command(
         ${REIMGUI_GENERATED_DIR}/TodoItem.gen.cpp
         ${REIMGUI_GENERATED_DIR}/TodoItem.gen.h
     COMMAND node ${CMAKE_SOURCE_DIR}/compiler/dist/index.js
-        ${CMAKE_SOURCE_DIR}/examples/hello/App.igx
-        ${CMAKE_SOURCE_DIR}/examples/hello/TodoItem.igx
+        ${CMAKE_SOURCE_DIR}/examples/hello/App.tsx
+        ${CMAKE_SOURCE_DIR}/examples/hello/TodoItem.tsx
         -o ${REIMGUI_GENERATED_DIR}
     DEPENDS
-        ${CMAKE_SOURCE_DIR}/examples/hello/App.igx
-        ${CMAKE_SOURCE_DIR}/examples/hello/TodoItem.igx
-    COMMENT "Compiling .igx files -> C++"
+        ${CMAKE_SOURCE_DIR}/examples/hello/App.tsx
+        ${CMAKE_SOURCE_DIR}/examples/hello/TodoItem.tsx
+    COMMENT "Compiling .tsx -> C++"
 )
 
 # --- hello_app: end-to-end .igx -> native binary ---

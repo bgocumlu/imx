@@ -14,7 +14,7 @@ const { values, positionals } = parseArgs({
 });
 
 if (positionals.length === 0) {
-    console.error('Usage: reimgui-compiler <input.igx ...> -o <output-dir>');
+    console.error('Usage: reimgui-compiler <input.igx|.tsx ...> -o <output-dir>');
     process.exit(1);
 }
 
