@@ -6,11 +6,12 @@ import { lowerComponent } from './lowering.js';
 import { emitComponent, emitComponentHeader, emitRoot } from './emitter.js';
 import { formatDiagnostic } from './diagnostics.js';
 import type { ImportInfo } from './emitter.js';
-import type { IRComponent, IRNode } from './ir.js';
+import type { IRComponent, IRNode, IRImage } from './ir.js';
 
 interface CompiledComponent {
     name: string;
     sourceFile: string;
+    sourcePath: string;
     stateCount: number;
     bufferCount: number;
     ir: IRComponent;
@@ -65,6 +66,7 @@ export function compile(files: string[], outputDir: string): CompileResult {
         compiled.push({
             name: ir.name,
             sourceFile: path.basename(file),
+            sourcePath: file,
             stateCount: ir.stateSlots.length,
             bufferCount: ir.bufferCount,
             ir,
@@ -104,6 +106,13 @@ export function compile(files: string[], outputDir: string): CompileResult {
         fs.writeFileSync(outPath, cppOutput);
         console.log(`  ${baseName} -> ${outPath}`);
 
+        // Generate embed headers for any <Image embed> nodes
+        const embedImages = collectEmbedImages(comp.ir.body);
+        if (embedImages.length > 0) {
+            const sourceDir = path.dirname(path.resolve(comp.sourcePath));
+            generateEmbedHeaders(embedImages, sourceDir, outputDir);
+        }
+
         if (comp.hasProps) {
             const headerOutput = emitComponentHeader(comp.ir, comp.sourceFile);
             const headerPath = path.join(outputDir, `${baseName}.gen.h`);
@@ -138,5 +147,60 @@ function resolveCustomComponents(nodes: IRNode[], map: Map<string, CompiledCompo
         } else if (node.kind === 'list_map') {
             resolveCustomComponents(node.body, map);
         }
+    }
+}
+
+function collectEmbedImages(nodes: IRNode[]): IRImage[] {
+    const images: IRImage[] = [];
+    for (const node of nodes) {
+        if (node.kind === 'image' && node.embed && node.embedKey) {
+            images.push(node as IRImage);
+        } else if (node.kind === 'conditional') {
+            images.push(...collectEmbedImages(node.body));
+            if (node.elseBody) images.push(...collectEmbedImages(node.elseBody));
+        } else if (node.kind === 'list_map') {
+            images.push(...collectEmbedImages(node.body));
+        }
+    }
+    return images;
+}
+
+function generateEmbedHeaders(images: IRImage[], sourceDir: string, outputDir: string): void {
+    for (const img of images) {
+        if (!img.embedKey) continue;
+
+        const rawSrc = img.src.replace(/^"|"$/g, '');
+        const imagePath = path.resolve(sourceDir, rawSrc);
+        const headerPath = path.join(outputDir, `${img.embedKey}.embed.h`);
+
+        // Mtime caching: skip if header exists and is newer than image
+        if (fs.existsSync(headerPath) && fs.existsSync(imagePath)) {
+            const imgStat = fs.statSync(imagePath);
+            const hdrStat = fs.statSync(headerPath);
+            if (hdrStat.mtimeMs >= imgStat.mtimeMs) {
+                continue; // Header is up to date
+            }
+        }
+
+        if (!fs.existsSync(imagePath)) {
+            console.warn(`  warning: embedded image not found: ${imagePath}`);
+            continue;
+        }
+
+        const imageData = fs.readFileSync(imagePath);
+        const bytes = Array.from(imageData)
+            .map(b => `0x${b.toString(16).padStart(2, '0')}`)
+            .join(', ');
+
+        const header = [
+            `// Generated from ${rawSrc} by imxc`,
+            `#pragma once`,
+            `static const unsigned char ${img.embedKey}_data[] = { ${bytes} };`,
+            `static const unsigned int ${img.embedKey}_size = ${imageData.length};`,
+            '',
+        ].join('\n');
+
+        fs.writeFileSync(headerPath, header);
+        console.log(`  ${rawSrc} -> ${headerPath} (embed)`);
     }
 }
