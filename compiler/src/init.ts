@@ -196,6 +196,7 @@ interface ColorPickerProps { label: string; value: number[]; style?: Style; }
 interface PlotLinesProps { label: string; values: number[]; overlay?: string; style?: Style; }
 interface PlotHistogramProps { label: string; values: number[]; overlay?: string; style?: Style; }
 interface ModalProps { title: string; open?: boolean; onClose?: () => void; style?: Style; children?: any; }
+interface ImageProps { src: string; embed?: boolean; width?: number; height?: number; }
 
 declare function Window(props: WindowProps): any;
 declare function View(props: ViewProps): any;
@@ -241,6 +242,7 @@ declare function ColorPicker(props: ColorPickerProps): any;
 declare function PlotLines(props: PlotLinesProps): any;
 declare function PlotHistogram(props: PlotHistogramProps): any;
 declare function Modal(props: ModalProps): any;
+declare function Image(props: ImageProps): any;
 
 declare function resetLayout(): void;
 

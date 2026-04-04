@@ -40,7 +40,8 @@ export type IRNode =
     | IRBulletText | IRLabelText
     | IRSelectable | IRRadio
     | IRInputTextMultiline | IRColorPicker
-    | IRPlotLines | IRPlotHistogram;
+    | IRPlotLines | IRPlotHistogram
+    | IRImage;
 
 export interface IRBeginContainer {
     kind: 'begin_container';
@@ -98,6 +99,16 @@ export interface IRInputTextMultiline { kind: 'input_text_multiline'; label: str
 export interface IRColorPicker { kind: 'color_picker'; label: string; stateVar: string; style?: string; loc?: SourceLoc; }
 export interface IRPlotLines { kind: 'plot_lines'; label: string; values: string; overlay?: string; style?: string; loc?: SourceLoc; }
 export interface IRPlotHistogram { kind: 'plot_histogram'; label: string; values: string; overlay?: string; style?: string; loc?: SourceLoc; }
+
+export interface IRImage {
+    kind: 'image';
+    src: string;
+    embed: boolean;
+    embedKey?: string;
+    width?: string;
+    height?: string;
+    loc?: SourceLoc;
+}
 
 export interface IRDockLayout {
     kind: 'dock_layout';

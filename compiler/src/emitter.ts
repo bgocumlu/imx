@@ -10,6 +10,7 @@ import type {
     IRSelectable, IRRadio,
     IRInputTextMultiline, IRColorPicker,
     IRPlotLines, IRPlotHistogram,
+    IRImage,
 } from './ir.js';
 
 const INDENT = '    ';
@@ -168,6 +169,11 @@ export function emitComponent(comp: IRComponent, imports?: ImportInfo[], sourceF
         if (hasColorType) {
             lines.push('#include <array>');
         }
+        // Embed image includes
+        const embedKeysProps = collectEmbedKeys(comp.body);
+        for (const key of embedKeysProps) {
+            lines.push(`#include "${key}.embed.h"`);
+        }
         lines.push('');
     } else {
         // No props: standard headers
@@ -182,6 +188,12 @@ export function emitComponent(comp: IRComponent, imports?: ImportInfo[], sourceF
             for (const imp of imports) {
                 lines.push(`#include "${imp.headerFile}"`);
             }
+        }
+
+        // Embed image includes
+        const embedKeys = collectEmbedKeys(comp.body);
+        for (const key of embedKeys) {
+            lines.push(`#include "${key}.embed.h"`);
         }
 
         lines.push('');
@@ -363,6 +375,9 @@ function emitNode(node: IRNode, lines: string[], depth: number): void {
             break;
         case 'plot_histogram':
             emitPlotHistogram(node, lines, indent);
+            break;
+        case 'image':
+            emitImage(node, lines, indent);
             break;
         case 'native_widget':
             emitNativeWidget(node, lines, indent);
@@ -1147,4 +1162,33 @@ function emitPlotHistogram(node: IRPlotHistogram, lines: string[], indent: strin
     const styleArg = node.style ? `, ${node.style}` : '';
     lines.push(`${indent}${INDENT}imx::renderer::plot_histogram(${node.label}, ${varName}, ${count}${overlay}${styleArg});`);
     lines.push(`${indent}}`);
+}
+
+function emitImage(node: IRImage, lines: string[], indent: string): void {
+    emitLocComment(node.loc, 'Image', lines, indent);
+    const width = node.width ? ensureFloatLiteral(node.width) : '0';
+    const height = node.height ? ensureFloatLiteral(node.height) : '0';
+
+    if (node.embed && node.embedKey) {
+        // Embedded mode: reference the data from the .embed.h header
+        lines.push(`${indent}imx::renderer::image_embedded("${node.embedKey}", ${node.embedKey}_data, ${node.embedKey}_size, ${width}, ${height});`);
+    } else {
+        // File mode: pass the path string
+        lines.push(`${indent}imx::renderer::image(${node.src}, ${width}, ${height});`);
+    }
+}
+
+function collectEmbedKeys(nodes: IRNode[]): string[] {
+    const keys: string[] = [];
+    for (const node of nodes) {
+        if (node.kind === 'image' && node.embed && node.embedKey) {
+            keys.push(node.embedKey);
+        } else if (node.kind === 'conditional') {
+            keys.push(...collectEmbedKeys(node.body));
+            if (node.elseBody) keys.push(...collectEmbedKeys(node.elseBody));
+        } else if (node.kind === 'list_map') {
+            keys.push(...collectEmbedKeys(node.body));
+        }
+    }
+    return keys;
 }

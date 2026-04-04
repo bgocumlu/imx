@@ -14,6 +14,7 @@ import type {
     IRSelectable, IRRadio,
     IRInputTextMultiline, IRColorPicker,
     IRPlotLines, IRPlotHistogram,
+    IRImage,
 } from './ir.js';
 
 interface LoweringContext {
@@ -511,6 +512,9 @@ function lowerJsxSelfClosing(node: ts.JsxSelfClosingElement, body: IRNode[], ctx
         case 'PlotHistogram':
             lowerPlotHistogram(attrs, body, ctx, loc);
             break;
+        case 'Image':
+            lowerImage(attrs, body, ctx, loc);
+            break;
         default:
             // Container self-closing (e.g., <Window title="X"/>)
             if (HOST_COMPONENTS[name]?.isContainer) {
@@ -961,6 +965,22 @@ function lowerPlotHistogram(attrs: Record<string, string>, body: IRNode[], ctx: 
     const overlay = attrs['overlay'];
     const style = attrs['style'];
     body.push({ kind: 'plot_histogram', label, values, overlay, style, loc });
+}
+
+function lowerImage(attrs: Record<string, string>, body: IRNode[], ctx: LoweringContext, loc: SourceLoc): void {
+    const src = attrs['src'] ?? '""';
+    const embed = attrs['embed'] === 'true';
+    const width = attrs['width'];
+    const height = attrs['height'];
+
+    let embedKey: string | undefined;
+    if (embed) {
+        // Derive key from src: strip quotes, replace non-alnum with underscore
+        const rawSrc = src.replace(/^"|"$/g, '');
+        embedKey = rawSrc.replace(/[^a-zA-Z0-9]/g, '_');
+    }
+
+    body.push({ kind: 'image', src, embed, embedKey, width, height, loc });
 }
 
 function getAttributes(attributes: ts.JsxAttributes, ctx: LoweringContext): Record<string, string> {

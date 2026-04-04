@@ -299,6 +299,15 @@ export const HOST_COMPONENTS: Record<string, HostComponentDef> = {
         },
         hasChildren: true, isContainer: true,
     },
+    Image: {
+        props: {
+            src: { type: 'string', required: true },
+            embed: { type: 'boolean', required: false },
+            width: { type: 'number', required: false },
+            height: { type: 'number', required: false },
+        },
+        hasChildren: false, isContainer: false,
+    },
     DockLayout: {
         props: {},
         hasChildren: true, isContainer: true,

@@ -414,4 +414,23 @@ describe('emitRoot', () => {
         expect(output).toContain('runtime.end_frame()');
         expect(output).toContain('} // namespace imx');
     });
+
+    it('emits Image with file path', () => {
+        const output = compile(`
+function App() {
+  return <Window title="Test"><Image src="logo.png" width={100} height={50} /></Window>;
+}
+        `);
+        expect(output).toContain('imx::renderer::image("logo.png", 100.0f, 50.0f)');
+    });
+
+    it('emits Image with embed mode', () => {
+        const output = compile(`
+function App() {
+  return <Window title="Test"><Image src="logo.png" embed width={100} height={50} /></Window>;
+}
+        `);
+        expect(output).toContain('#include "logo_png.embed.h"');
+        expect(output).toContain('imx::renderer::image_embedded("logo_png", logo_png_data, logo_png_size, 100.0f, 50.0f)');
+    });
 });
