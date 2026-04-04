@@ -237,6 +237,15 @@ export const HOST_COMPONENTS: Record<string, HostComponentDef> = {
         },
         hasChildren: false, isContainer: false,
     },
+    Selectable: {
+        props: {
+            label: { type: 'string', required: true },
+            selected: { type: 'boolean', required: false },
+            onSelect: { type: 'callback', required: false },
+            style: { type: 'style', required: false },
+        },
+        hasChildren: false, isContainer: false,
+    },
     DockLayout: {
         props: {},
         hasChildren: true, isContainer: true,

@@ -37,7 +37,8 @@ export type IRNode =
     | IRSliderFloat | IRSliderInt | IRDragFloat | IRDragInt | IRCombo
     | IRInputInt | IRInputFloat | IRColorEdit | IRListBox | IRProgressBar | IRTooltip
     | IRDockLayout | IRNativeWidget
-    | IRBulletText | IRLabelText;
+    | IRBulletText | IRLabelText
+    | IRSelectable;
 
 export interface IRBeginContainer {
     kind: 'begin_container';
@@ -89,6 +90,7 @@ export interface IRNativeWidget {
 
 export interface IRBulletText { kind: 'bullet_text'; format: string; args: string[]; loc?: SourceLoc; }
 export interface IRLabelText { kind: 'label_text'; label: string; value: string; loc?: SourceLoc; }
+export interface IRSelectable { kind: 'selectable'; label: string; selected: string; action: string[]; style?: string; loc?: SourceLoc; }
 
 export interface IRDockLayout {
     kind: 'dock_layout';

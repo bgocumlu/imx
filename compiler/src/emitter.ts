@@ -7,6 +7,7 @@ import type {
     IRInputInt, IRInputFloat, IRColorEdit, IRListBox, IRProgressBar, IRTooltip,
     IRDockLayout, IRDockSplit, IRDockPanel, IRNativeWidget,
     IRBulletText, IRLabelText,
+    IRSelectable,
 } from './ir.js';
 
 const INDENT = '    ';
@@ -341,6 +342,9 @@ function emitNode(node: IRNode, lines: string[], depth: number): void {
             break;
         case 'label_text':
             emitLabelText(node, lines, indent);
+            break;
+        case 'selectable':
+            emitSelectable(node, lines, indent);
             break;
         case 'native_widget':
             emitNativeWidget(node, lines, indent);
@@ -1006,4 +1010,18 @@ function emitBulletText(node: IRBulletText, lines: string[], indent: string): vo
 function emitLabelText(node: IRLabelText, lines: string[], indent: string): void {
     emitLocComment(node.loc, 'LabelText', lines, indent);
     lines.push(`${indent}imx::renderer::label_text(${asCharPtr(node.label)}, ${asCharPtr(node.value)});`);
+}
+
+function emitSelectable(node: IRSelectable, lines: string[], indent: string): void {
+    emitLocComment(node.loc, 'Selectable', lines, indent);
+    const label = asCharPtr(node.label);
+    if (node.action.length > 0) {
+        lines.push(`${indent}if (imx::renderer::selectable(${label}, ${node.selected})) {`);
+        for (const stmt of node.action) {
+            lines.push(`${indent}${INDENT}${stmt}`);
+        }
+        lines.push(`${indent}}`);
+    } else {
+        lines.push(`${indent}imx::renderer::selectable(${label}, ${node.selected});`);
+    }
 }

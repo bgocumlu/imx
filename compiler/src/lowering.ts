@@ -11,6 +11,7 @@ import type {
     IRInputInt, IRInputFloat, IRColorEdit, IRListBox, IRProgressBar, IRTooltip,
     IRDockLayout, IRDockSplit, IRDockPanel, IRNativeWidget,
     IRBulletText, IRLabelText,
+    IRSelectable,
 } from './ir.js';
 
 interface LoweringContext {
@@ -490,6 +491,9 @@ function lowerJsxSelfClosing(node: ts.JsxSelfClosingElement, body: IRNode[], ctx
         case 'LabelText':
             lowerLabelText(attrs, body, ctx, loc);
             break;
+        case 'Selectable':
+            lowerSelectable(attrs, rawAttrs, body, ctx, loc);
+            break;
         default:
             // Container self-closing (e.g., <Window title="X"/>)
             if (HOST_COMPONENTS[name]?.isContainer) {
@@ -878,6 +882,18 @@ function lowerLabelText(attrs: Record<string, string>, body: IRNode[], ctx: Lowe
     const label = attrs['label'] ?? '""';
     const value = attrs['value'] ?? '""';
     body.push({ kind: 'label_text', label, value, loc });
+}
+
+function lowerSelectable(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext, loc: SourceLoc): void {
+    const label = attrs['label'] ?? '""';
+    const selected = attrs['selected'] ?? 'false';
+    const onSelectExpr = rawAttrs.get('onSelect');
+    let action: string[] = [];
+    if (onSelectExpr) {
+        action = extractActionStatements(onSelectExpr, ctx);
+    }
+    const style = attrs['style'];
+    body.push({ kind: 'selectable', label, selected, action, style, loc });
 }
 
 function getAttributes(attributes: ts.JsxAttributes, ctx: LoweringContext): Record<string, string> {

@@ -276,6 +276,11 @@ void label_text(const char* label, const char* text) {
     ImGui::LabelText(label, "%s", text);
 }
 
+bool selectable(const char* label, bool selected, const Style& style) {
+    before_child();
+    return ImGui::Selectable(label, selected);
+}
+
 void begin_theme(const char* preset, const ThemeConfig& config) {
     before_child();
 

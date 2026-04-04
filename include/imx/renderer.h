@@ -161,6 +161,7 @@ void tooltip(const char* text);
 
 void bullet_text(const char* fmt, ...) IM_FMTARGS(1);
 void label_text(const char* label, const char* text);
+bool selectable(const char* label, bool selected = false, const Style& style = {});
 
 void begin_theme(const char* preset, const ThemeConfig& config = {});
 void end_theme();

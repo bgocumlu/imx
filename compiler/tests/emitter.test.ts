@@ -270,6 +270,17 @@ function App() {
         `);
         expect(output).toContain('imx::renderer::label_text("Name", "John")');
     });
+
+    it('emits Selectable with onSelect', () => {
+        const output = compile(`
+function App() {
+  const [sel, setSel] = useState(0);
+  return <Window title="Test"><Selectable label="A" selected={sel === 0} onSelect={() => setSel(0)} /></Window>;
+}
+        `);
+        expect(output).toContain('imx::renderer::selectable("A"');
+        expect(output).toContain('sel.set(0)');
+    });
 });
 
 describe('source location comments', () => {
