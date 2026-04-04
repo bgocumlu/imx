@@ -190,6 +190,7 @@ interface TooltipProps { text: string; }
 interface BulletTextProps { style?: Style; children?: any; }
 interface LabelTextProps { label: string; value: string; }
 interface SelectableProps { label: string; selected?: boolean; onSelect?: () => void; style?: Style; }
+interface RadioProps { label: string; value: number; index: number; onChange?: (v: number) => void; style?: Style; }
 
 declare function Window(props: WindowProps): any;
 declare function View(props: ViewProps): any;
@@ -229,6 +230,7 @@ declare function Tooltip(props: TooltipProps): any;
 declare function BulletText(props: BulletTextProps): any;
 declare function LabelText(props: LabelTextProps): any;
 declare function Selectable(props: SelectableProps): any;
+declare function Radio(props: RadioProps): any;
 
 declare function resetLayout(): void;
 

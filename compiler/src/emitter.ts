@@ -7,7 +7,7 @@ import type {
     IRInputInt, IRInputFloat, IRColorEdit, IRListBox, IRProgressBar, IRTooltip,
     IRDockLayout, IRDockSplit, IRDockPanel, IRNativeWidget,
     IRBulletText, IRLabelText,
-    IRSelectable,
+    IRSelectable, IRRadio,
 } from './ir.js';
 
 const INDENT = '    ';
@@ -345,6 +345,9 @@ function emitNode(node: IRNode, lines: string[], depth: number): void {
             break;
         case 'selectable':
             emitSelectable(node, lines, indent);
+            break;
+        case 'radio':
+            emitRadio(node, lines, indent);
             break;
         case 'native_widget':
             emitNativeWidget(node, lines, indent);
@@ -1023,5 +1026,27 @@ function emitSelectable(node: IRSelectable, lines: string[], indent: string): vo
         lines.push(`${indent}}`);
     } else {
         lines.push(`${indent}imx::renderer::selectable(${label}, ${node.selected});`);
+    }
+}
+
+function emitRadio(node: IRRadio, lines: string[], indent: string): void {
+    emitLocComment(node.loc, 'Radio', lines, indent);
+    const label = asCharPtr(node.label);
+    if (node.stateVar) {
+        lines.push(`${indent}{`);
+        lines.push(`${indent}${INDENT}int val = ${node.stateVar}.get();`);
+        lines.push(`${indent}${INDENT}if (imx::renderer::radio(${label}, &val, ${node.index})) {`);
+        lines.push(`${indent}${INDENT}${INDENT}${node.stateVar}.set(val);`);
+        lines.push(`${indent}${INDENT}}`);
+        lines.push(`${indent}}`);
+    } else if (node.valueExpr !== undefined) {
+        lines.push(`${indent}{`);
+        lines.push(`${indent}${INDENT}int val = ${node.valueExpr};`);
+        lines.push(`${indent}${INDENT}if (imx::renderer::radio(${label}, &val, ${node.index})) {`);
+        if (node.onChangeExpr) {
+            lines.push(`${indent}${INDENT}${INDENT}${node.onChangeExpr};`);
+        }
+        lines.push(`${indent}${INDENT}}`);
+        lines.push(`${indent}}`);
     }
 }

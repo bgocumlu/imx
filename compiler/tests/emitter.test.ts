@@ -281,6 +281,23 @@ function App() {
         expect(output).toContain('imx::renderer::selectable("A"');
         expect(output).toContain('sel.set(0)');
     });
+
+    it('emits Radio with state binding', () => {
+        const output = compile(`
+function App() {
+  const [size, setSize] = useState(0);
+  return (
+    <Window title="Test">
+      <Radio label="Small" value={size} index={0} />
+      <Radio label="Large" value={size} index={1} />
+    </Window>
+  );
+}
+        `);
+        expect(output).toContain('imx::renderer::radio("Small", &val, 0)');
+        expect(output).toContain('imx::renderer::radio("Large", &val, 1)');
+        expect(output).toContain('size.set(val)');
+    });
 });
 
 describe('source location comments', () => {

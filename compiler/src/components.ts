@@ -246,6 +246,16 @@ export const HOST_COMPONENTS: Record<string, HostComponentDef> = {
         },
         hasChildren: false, isContainer: false,
     },
+    Radio: {
+        props: {
+            label: { type: 'string', required: true },
+            value: { type: 'number', required: true },
+            index: { type: 'number', required: true },
+            onChange: { type: 'callback', required: false },
+            style: { type: 'style', required: false },
+        },
+        hasChildren: false, isContainer: false,
+    },
     DockLayout: {
         props: {},
         hasChildren: true, isContainer: true,

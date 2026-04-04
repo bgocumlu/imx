@@ -11,7 +11,7 @@ import type {
     IRInputInt, IRInputFloat, IRColorEdit, IRListBox, IRProgressBar, IRTooltip,
     IRDockLayout, IRDockSplit, IRDockPanel, IRNativeWidget,
     IRBulletText, IRLabelText,
-    IRSelectable,
+    IRSelectable, IRRadio,
 } from './ir.js';
 
 interface LoweringContext {
@@ -494,6 +494,9 @@ function lowerJsxSelfClosing(node: ts.JsxSelfClosingElement, body: IRNode[], ctx
         case 'Selectable':
             lowerSelectable(attrs, rawAttrs, body, ctx, loc);
             break;
+        case 'Radio':
+            lowerRadio(attrs, rawAttrs, body, ctx, loc);
+            break;
         default:
             // Container self-closing (e.g., <Window title="X"/>)
             if (HOST_COMPONENTS[name]?.isContainer) {
@@ -894,6 +897,14 @@ function lowerSelectable(attrs: Record<string, string>, rawAttrs: Map<string, ts
     }
     const style = attrs['style'];
     body.push({ kind: 'selectable', label, selected, action, style, loc });
+}
+
+function lowerRadio(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext, loc: SourceLoc): void {
+    const label = attrs['label'] ?? '""';
+    const index = attrs['index'] ?? '0';
+    const style = attrs['style'];
+    const { stateVar, valueExpr, onChangeExpr } = lowerValueOnChange(rawAttrs, ctx);
+    body.push({ kind: 'radio', label, stateVar, valueExpr, onChangeExpr, index, style, loc });
 }
 
 function getAttributes(attributes: ts.JsxAttributes, ctx: LoweringContext): Record<string, string> {

@@ -281,6 +281,11 @@ bool selectable(const char* label, bool selected, const Style& style) {
     return ImGui::Selectable(label, selected);
 }
 
+bool radio(const char* label, int* value, int v_button, const Style& style) {
+    before_child();
+    return ImGui::RadioButton(label, value, v_button);
+}
+
 void begin_theme(const char* preset, const ThemeConfig& config) {
     before_child();
 
