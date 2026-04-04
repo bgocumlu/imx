@@ -28,7 +28,8 @@ export type IRNode =
     | IRTextInput | IRCheckbox | IRSeparator
     | IRBeginPopup | IREndPopup | IROpenPopup
     | IRConditional | IRListMap | IRCustomComponent
-    | IRMenuItem;
+    | IRMenuItem
+    | IRSliderFloat | IRSliderInt | IRDragFloat | IRDragInt | IRCombo;
 
 export interface IRBeginContainer {
     kind: 'begin_container';
@@ -54,3 +55,8 @@ export interface IRConditional { kind: 'conditional'; condition: string; body: I
 export interface IRListMap { kind: 'list_map'; array: string; itemVar: string; key: string; componentName: string; stateCount: number; bufferCount: number; body: IRNode[]; }
 export interface IRCustomComponent { kind: 'custom_component'; name: string; props: Record<string, string>; key?: string; stateCount: number; bufferCount: number; }
 export interface IRMenuItem { kind: 'menu_item'; label: string; shortcut?: string; action: string[]; }
+export interface IRSliderFloat { kind: 'slider_float'; label: string; stateVar: string; valueExpr?: string; onChangeExpr?: string; min: string; max: string; style?: string; }
+export interface IRSliderInt { kind: 'slider_int'; label: string; stateVar: string; valueExpr?: string; onChangeExpr?: string; min: string; max: string; style?: string; }
+export interface IRDragFloat { kind: 'drag_float'; label: string; stateVar: string; valueExpr?: string; onChangeExpr?: string; speed: string; style?: string; }
+export interface IRDragInt { kind: 'drag_int'; label: string; stateVar: string; valueExpr?: string; onChangeExpr?: string; speed: string; style?: string; }
+export interface IRCombo { kind: 'combo'; label: string; stateVar: string; valueExpr?: string; onChangeExpr?: string; items: string; style?: string; }

@@ -7,6 +7,7 @@ import type {
     IRBeginContainer, IREndContainer, IRText, IRButton, IRTextInput,
     IRCheckbox, IRSeparator, IRConditional, IRListMap, IRCustomComponent,
     IRBeginPopup, IREndPopup, IROpenPopup, IRMenuItem,
+    IRSliderFloat, IRSliderInt, IRDragFloat, IRDragInt, IRCombo,
 } from './ir.js';
 
 interface LoweringContext {
@@ -96,7 +97,9 @@ function inferPropType(member: ts.PropertySignature): IRType | 'callback' {
 
 function inferTypeFromExpr(expr: ts.Expression): IRType {
     if (ts.isNumericLiteral(expr)) {
-        return expr.text.includes('.') ? 'float' : 'int';
+        // Use getText() to check original source text, since TS normalizes 5.0 to "5" in .text
+        const rawText = expr.getText();
+        return rawText.includes('.') ? 'float' : 'int';
     }
     if (ts.isStringLiteral(expr) || ts.isNoSubstitutionTemplateLiteral(expr)) return 'string';
     if (expr.kind === ts.SyntaxKind.TrueKeyword || expr.kind === ts.SyntaxKind.FalseKeyword) return 'bool';
@@ -105,7 +108,10 @@ function inferTypeFromExpr(expr: ts.Expression): IRType {
 }
 
 function exprToLiteral(expr: ts.Expression): string {
-    if (ts.isNumericLiteral(expr)) return expr.text;
+    if (ts.isNumericLiteral(expr)) {
+        // Use getText() to preserve original source (e.g., "5.0" instead of "5")
+        return expr.getText();
+    }
     if (ts.isStringLiteral(expr)) return JSON.stringify(expr.text);
     if (expr.kind === ts.SyntaxKind.TrueKeyword) return 'true';
     if (expr.kind === ts.SyntaxKind.FalseKeyword) return 'false';
@@ -378,6 +384,21 @@ function lowerJsxSelfClosing(node: ts.JsxSelfClosingElement, body: IRNode[], ctx
             break;
         case 'MenuItem':
             lowerMenuItem(attrs, rawAttrs, body, ctx);
+            break;
+        case 'SliderFloat':
+            lowerSliderFloat(attrs, rawAttrs, body, ctx);
+            break;
+        case 'SliderInt':
+            lowerSliderInt(attrs, rawAttrs, body, ctx);
+            break;
+        case 'DragFloat':
+            lowerDragFloat(attrs, rawAttrs, body, ctx);
+            break;
+        case 'DragInt':
+            lowerDragInt(attrs, rawAttrs, body, ctx);
+            break;
+        case 'Combo':
+            lowerCombo(attrs, rawAttrs, body, ctx);
             break;
         case 'Separator':
             body.push({ kind: 'separator' });
@@ -664,4 +685,66 @@ function getRawAttributes(attributes: ts.JsxAttributes): Map<string, ts.Expressi
         }
     }
     return result;
+}
+
+function lowerValueOnChange(rawAttrs: Map<string, ts.Expression | null>, ctx: LoweringContext): { stateVar: string; valueExpr?: string; onChangeExpr?: string } {
+    let stateVar = '';
+    let valueExpr: string | undefined;
+    let onChangeExpr: string | undefined;
+    const valueRaw = rawAttrs.get('value');
+    if (valueRaw && ts.isIdentifier(valueRaw) && ctx.stateVars.has(valueRaw.text)) {
+        stateVar = valueRaw.text;
+    } else if (valueRaw) {
+        valueExpr = exprToCpp(valueRaw, ctx);
+        const onChangeRaw = rawAttrs.get('onChange');
+        if (onChangeRaw) {
+            onChangeExpr = exprToCpp(onChangeRaw, ctx);
+            if (!onChangeExpr.startsWith('[') && !onChangeExpr.endsWith(')')) {
+                onChangeExpr = `${onChangeExpr}()`;
+            }
+        }
+    }
+    return { stateVar, valueExpr, onChangeExpr };
+}
+
+function lowerSliderFloat(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext): void {
+    const label = attrs['label'] ?? '""';
+    const min = attrs['min'] ?? '0.0f';
+    const max = attrs['max'] ?? '1.0f';
+    const style = attrs['style'];
+    const { stateVar, valueExpr, onChangeExpr } = lowerValueOnChange(rawAttrs, ctx);
+    body.push({ kind: 'slider_float', label, stateVar, valueExpr, onChangeExpr, min, max, style });
+}
+
+function lowerSliderInt(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext): void {
+    const label = attrs['label'] ?? '""';
+    const min = attrs['min'] ?? '0';
+    const max = attrs['max'] ?? '100';
+    const style = attrs['style'];
+    const { stateVar, valueExpr, onChangeExpr } = lowerValueOnChange(rawAttrs, ctx);
+    body.push({ kind: 'slider_int', label, stateVar, valueExpr, onChangeExpr, min, max, style });
+}
+
+function lowerDragFloat(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext): void {
+    const label = attrs['label'] ?? '""';
+    const speed = attrs['speed'] ?? '1.0f';
+    const style = attrs['style'];
+    const { stateVar, valueExpr, onChangeExpr } = lowerValueOnChange(rawAttrs, ctx);
+    body.push({ kind: 'drag_float', label, stateVar, valueExpr, onChangeExpr, speed, style });
+}
+
+function lowerDragInt(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext): void {
+    const label = attrs['label'] ?? '""';
+    const speed = attrs['speed'] ?? '1.0f';
+    const style = attrs['style'];
+    const { stateVar, valueExpr, onChangeExpr } = lowerValueOnChange(rawAttrs, ctx);
+    body.push({ kind: 'drag_int', label, stateVar, valueExpr, onChangeExpr, speed, style });
+}
+
+function lowerCombo(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext): void {
+    const label = attrs['label'] ?? '""';
+    const items = attrs['items'] ?? '';
+    const style = attrs['style'];
+    const { stateVar, valueExpr, onChangeExpr } = lowerValueOnChange(rawAttrs, ctx);
+    body.push({ kind: 'combo', label, stateVar, valueExpr, onChangeExpr, items, style });
 }

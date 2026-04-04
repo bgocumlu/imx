@@ -77,5 +77,11 @@ void end_tree_node();
 bool begin_collapsing_header(const char* label);
 void end_collapsing_header();
 
+bool slider_float(const char* label, float* value, float min, float max, const Style& style = {});
+bool slider_int(const char* label, int* value, int min, int max, const Style& style = {});
+bool drag_float(const char* label, float* value, float speed = 1.0f, const Style& style = {});
+bool drag_int(const char* label, int* value, float speed = 1.0f, const Style& style = {});
+bool combo(const char* label, int* current_item, const char* const items[], int items_count, const Style& style = {});
+
 } // namespace renderer
 } // namespace reimgui

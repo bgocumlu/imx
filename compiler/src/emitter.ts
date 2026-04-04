@@ -3,6 +3,7 @@ import type {
     IRBeginContainer, IREndContainer, IRText, IRButton, IRTextInput,
     IRCheckbox, IRSeparator, IRConditional, IRListMap, IRCustomComponent,
     IRBeginPopup, IREndPopup, IROpenPopup, IRMenuItem,
+    IRSliderFloat, IRSliderInt, IRDragFloat, IRDragInt, IRCombo,
 } from './ir.js';
 
 const INDENT = '    ';
@@ -62,6 +63,7 @@ export function emitComponent(comp: IRComponent, imports?: ImportInfo[]): string
     styleCounter = 0;
     customComponentCounter = 0;
     checkboxCounter = 0;
+    comboCounter = 0;
 
     const hasProps = comp.params.length > 0;
 
@@ -183,12 +185,28 @@ function emitNode(node: IRNode, lines: string[], depth: number): void {
         case 'custom_component':
             emitCustomComponent(node, lines, indent);
             break;
+        case 'slider_float':
+            emitSliderFloat(node, lines, indent);
+            break;
+        case 'slider_int':
+            emitSliderInt(node, lines, indent);
+            break;
+        case 'drag_float':
+            emitDragFloat(node, lines, indent);
+            break;
+        case 'drag_int':
+            emitDragInt(node, lines, indent);
+            break;
+        case 'combo':
+            emitCombo(node, lines, indent);
+            break;
     }
 }
 
 let styleCounter = 0;
 let customComponentCounter = 0;
 let checkboxCounter = 0;
+let comboCounter = 0;
 
 function buildStyleBlock(node: IRBeginContainer, indent: string, lines: string[]): string | null {
     // Check for style-related props (gap, padding, width, height, etc.)
@@ -487,4 +505,121 @@ function emitCustomComponent(node: IRCustomComponent, lines: string[], indent: s
     }
 
     lines.push(`${indent}ctx.end_instance();`);
+}
+
+function ensureFloatLiteral(val: string): string {
+    // If already has 'f' suffix or '.', leave as-is
+    if (val.endsWith('f') || val.endsWith('F') || val.includes('.')) return val;
+    // Append .0f to make it a float literal
+    return `${val}.0f`;
+}
+
+function emitSliderFloat(node: IRSliderFloat, lines: string[], indent: string): void {
+    const min = ensureFloatLiteral(node.min);
+    const max = ensureFloatLiteral(node.max);
+    if (node.stateVar) {
+        lines.push(`${indent}{`);
+        lines.push(`${indent}${INDENT}float val = ${node.stateVar}.get();`);
+        lines.push(`${indent}${INDENT}if (reimgui::renderer::slider_float(${node.label}, &val, ${min}, ${max})) {`);
+        lines.push(`${indent}${INDENT}${INDENT}${node.stateVar}.set(val);`);
+        lines.push(`${indent}${INDENT}}`);
+        lines.push(`${indent}}`);
+    } else if (node.valueExpr !== undefined) {
+        lines.push(`${indent}{`);
+        lines.push(`${indent}${INDENT}float val = ${node.valueExpr};`);
+        lines.push(`${indent}${INDENT}if (reimgui::renderer::slider_float(${node.label}, &val, ${min}, ${max})) {`);
+        if (node.onChangeExpr) {
+            lines.push(`${indent}${INDENT}${INDENT}${node.onChangeExpr};`);
+        }
+        lines.push(`${indent}${INDENT}}`);
+        lines.push(`${indent}}`);
+    }
+}
+
+function emitSliderInt(node: IRSliderInt, lines: string[], indent: string): void {
+    if (node.stateVar) {
+        lines.push(`${indent}{`);
+        lines.push(`${indent}${INDENT}int val = ${node.stateVar}.get();`);
+        lines.push(`${indent}${INDENT}if (reimgui::renderer::slider_int(${node.label}, &val, ${node.min}, ${node.max})) {`);
+        lines.push(`${indent}${INDENT}${INDENT}${node.stateVar}.set(val);`);
+        lines.push(`${indent}${INDENT}}`);
+        lines.push(`${indent}}`);
+    } else if (node.valueExpr !== undefined) {
+        lines.push(`${indent}{`);
+        lines.push(`${indent}${INDENT}int val = ${node.valueExpr};`);
+        lines.push(`${indent}${INDENT}if (reimgui::renderer::slider_int(${node.label}, &val, ${node.min}, ${node.max})) {`);
+        if (node.onChangeExpr) {
+            lines.push(`${indent}${INDENT}${INDENT}${node.onChangeExpr};`);
+        }
+        lines.push(`${indent}${INDENT}}`);
+        lines.push(`${indent}}`);
+    }
+}
+
+function emitDragFloat(node: IRDragFloat, lines: string[], indent: string): void {
+    const speed = ensureFloatLiteral(node.speed);
+    if (node.stateVar) {
+        lines.push(`${indent}{`);
+        lines.push(`${indent}${INDENT}float val = ${node.stateVar}.get();`);
+        lines.push(`${indent}${INDENT}if (reimgui::renderer::drag_float(${node.label}, &val, ${speed})) {`);
+        lines.push(`${indent}${INDENT}${INDENT}${node.stateVar}.set(val);`);
+        lines.push(`${indent}${INDENT}}`);
+        lines.push(`${indent}}`);
+    } else if (node.valueExpr !== undefined) {
+        lines.push(`${indent}{`);
+        lines.push(`${indent}${INDENT}float val = ${node.valueExpr};`);
+        lines.push(`${indent}${INDENT}if (reimgui::renderer::drag_float(${node.label}, &val, ${speed})) {`);
+        if (node.onChangeExpr) {
+            lines.push(`${indent}${INDENT}${INDENT}${node.onChangeExpr};`);
+        }
+        lines.push(`${indent}${INDENT}}`);
+        lines.push(`${indent}}`);
+    }
+}
+
+function emitDragInt(node: IRDragInt, lines: string[], indent: string): void {
+    const speed = ensureFloatLiteral(node.speed);
+    if (node.stateVar) {
+        lines.push(`${indent}{`);
+        lines.push(`${indent}${INDENT}int val = ${node.stateVar}.get();`);
+        lines.push(`${indent}${INDENT}if (reimgui::renderer::drag_int(${node.label}, &val, ${speed})) {`);
+        lines.push(`${indent}${INDENT}${INDENT}${node.stateVar}.set(val);`);
+        lines.push(`${indent}${INDENT}}`);
+        lines.push(`${indent}}`);
+    } else if (node.valueExpr !== undefined) {
+        lines.push(`${indent}{`);
+        lines.push(`${indent}${INDENT}int val = ${node.valueExpr};`);
+        lines.push(`${indent}${INDENT}if (reimgui::renderer::drag_int(${node.label}, &val, ${speed})) {`);
+        if (node.onChangeExpr) {
+            lines.push(`${indent}${INDENT}${INDENT}${node.onChangeExpr};`);
+        }
+        lines.push(`${indent}${INDENT}}`);
+        lines.push(`${indent}}`);
+    }
+}
+
+function emitCombo(node: IRCombo, lines: string[], indent: string): void {
+    const itemsList = node.items.split(',').map(s => s.trim()).filter(s => s.length > 0);
+    const count = itemsList.length;
+    const varName = `combo_items_${comboCounter++}`;
+
+    if (node.stateVar) {
+        lines.push(`${indent}{`);
+        lines.push(`${indent}${INDENT}const char* ${varName}[] = {${itemsList.join(', ')}};`);
+        lines.push(`${indent}${INDENT}int val = ${node.stateVar}.get();`);
+        lines.push(`${indent}${INDENT}if (reimgui::renderer::combo(${node.label}, &val, ${varName}, ${count})) {`);
+        lines.push(`${indent}${INDENT}${INDENT}${node.stateVar}.set(val);`);
+        lines.push(`${indent}${INDENT}}`);
+        lines.push(`${indent}}`);
+    } else if (node.valueExpr !== undefined) {
+        lines.push(`${indent}{`);
+        lines.push(`${indent}${INDENT}const char* ${varName}[] = {${itemsList.join(', ')}};`);
+        lines.push(`${indent}${INDENT}int val = ${node.valueExpr};`);
+        lines.push(`${indent}${INDENT}if (reimgui::renderer::combo(${node.label}, &val, ${varName}, ${count})) {`);
+        if (node.onChangeExpr) {
+            lines.push(`${indent}${INDENT}${INDENT}${node.onChangeExpr};`);
+        }
+        lines.push(`${indent}${INDENT}}`);
+        lines.push(`${indent}}`);
+    }
 }

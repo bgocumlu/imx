@@ -112,6 +112,58 @@ export const HOST_COMPONENTS: Record<string, HostComponentDef> = {
         props: { label: { type: 'string', required: true } },
         hasChildren: true, isContainer: true,
     },
+    SliderFloat: {
+        props: {
+            label: { type: 'string', required: true },
+            value: { type: 'number', required: true },
+            onChange: { type: 'callback', required: true },
+            min: { type: 'number', required: true },
+            max: { type: 'number', required: true },
+            style: { type: 'style', required: false },
+        },
+        hasChildren: false, isContainer: false,
+    },
+    SliderInt: {
+        props: {
+            label: { type: 'string', required: true },
+            value: { type: 'number', required: true },
+            onChange: { type: 'callback', required: true },
+            min: { type: 'number', required: true },
+            max: { type: 'number', required: true },
+            style: { type: 'style', required: false },
+        },
+        hasChildren: false, isContainer: false,
+    },
+    DragFloat: {
+        props: {
+            label: { type: 'string', required: true },
+            value: { type: 'number', required: true },
+            onChange: { type: 'callback', required: true },
+            speed: { type: 'number', required: false },
+            style: { type: 'style', required: false },
+        },
+        hasChildren: false, isContainer: false,
+    },
+    DragInt: {
+        props: {
+            label: { type: 'string', required: true },
+            value: { type: 'number', required: true },
+            onChange: { type: 'callback', required: true },
+            speed: { type: 'number', required: false },
+            style: { type: 'style', required: false },
+        },
+        hasChildren: false, isContainer: false,
+    },
+    Combo: {
+        props: {
+            label: { type: 'string', required: true },
+            value: { type: 'number', required: true },
+            onChange: { type: 'callback', required: true },
+            items: { type: 'string', required: true },
+            style: { type: 'style', required: false },
+        },
+        hasChildren: false, isContainer: false,
+    },
 };
 
 export function isHostComponent(name: string): boolean {

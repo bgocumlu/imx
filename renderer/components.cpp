@@ -167,4 +167,29 @@ void end_collapsing_header() {
     // CollapsingHeader doesn't need a matching close call
 }
 
+bool slider_float(const char* label, float* value, float min, float max, const Style& style) {
+    before_child();
+    return ImGui::SliderFloat(label, value, min, max);
+}
+
+bool slider_int(const char* label, int* value, int min, int max, const Style& style) {
+    before_child();
+    return ImGui::SliderInt(label, value, min, max);
+}
+
+bool drag_float(const char* label, float* value, float speed, const Style& style) {
+    before_child();
+    return ImGui::DragFloat(label, value, speed);
+}
+
+bool drag_int(const char* label, int* value, float speed, const Style& style) {
+    before_child();
+    return ImGui::DragInt(label, value, speed);
+}
+
+bool combo(const char* label, int* current_item, const char* const items[], int items_count, const Style& style) {
+    before_child();
+    return ImGui::Combo(label, current_item, items, items_count);
+}
+
 } // namespace reimgui::renderer
