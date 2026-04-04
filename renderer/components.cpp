@@ -320,7 +320,7 @@ void plot_histogram(const char* label, const float* values, int count, const cha
 }
 
 bool begin_modal(const char* title, bool open, bool* p_open, const Style& style) {
-    before_child();
+    // No before_child() — modals are overlays, not part of parent layout
     if (open && !ImGui::IsPopupOpen(title)) {
         ImGui::OpenPopup(title);
     }
