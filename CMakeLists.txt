@@ -109,3 +109,14 @@ add_executable(hello_app
 )
 target_link_libraries(hello_app PRIVATE reimgui_renderer)
 target_include_directories(hello_app PRIVATE ${REIMGUI_GENERATED_DIR})
+
+# --- settings_app: LLM prompt reference test ---
+set(SETTINGS_GEN_DIR ${CMAKE_BINARY_DIR}/settings_generated)
+add_executable(settings_app
+    examples/settings/main.cpp
+    ${SETTINGS_GEN_DIR}/App.gen.cpp
+    ${SETTINGS_GEN_DIR}/app_root.gen.cpp
+    ${SETTINGS_GEN_DIR}/SettingGroup.gen.cpp
+)
+target_link_libraries(settings_app PRIVATE reimgui_renderer)
+target_include_directories(settings_app PRIVATE ${SETTINGS_GEN_DIR})
