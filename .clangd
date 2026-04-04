@@ -16,7 +16,7 @@ CompileFlags:
 
 Diagnostics:
   UnusedIncludes: Strict
-  MissingIncludes: Strict
+  MissingIncludes: None
   ClangTidy:
     Add:
       - modernize-*
