@@ -6,8 +6,17 @@ import { parseFile, extractImports } from './parser.js';
 import { validate } from './validator.js';
 import { lowerComponent } from './lowering.js';
 import { emitComponent, emitComponentHeader, emitRoot } from './emitter.js';
+import { initProject } from './init.js';
 import type { ImportInfo } from './emitter.js';
 import type { IRComponent } from './ir.js';
+
+// Handle `imxc init [dir]` subcommand
+if (process.argv[2] === 'init') {
+    const dir = process.argv[3] ?? '.';
+    const absDir = path.resolve(dir);
+    initProject(absDir, path.basename(absDir));
+    process.exit(0);
+}
 
 const { values, positionals } = parseArgs({
     allowPositionals: true,
@@ -16,6 +25,7 @@ const { values, positionals } = parseArgs({
 
 if (positionals.length === 0) {
     console.error('Usage: imxc <input.tsx ...> -o <output-dir>');
+    console.error('       imxc init [project-dir]');
     process.exit(1);
 }
 
