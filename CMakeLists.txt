@@ -110,33 +110,21 @@ if(IMX_BUILD_EXAMPLES)
     target_link_libraries(app PRIVATE imgui_lib)
 
     # --- hello_app: codegen + native binary ---
-    set(IMX_GENERATED_DIR ${CMAKE_BINARY_DIR}/generated)
-    file(MAKE_DIRECTORY ${IMX_GENERATED_DIR})
+    include(ImxCompile)
 
-    add_custom_command(
-        OUTPUT
-            ${IMX_GENERATED_DIR}/App.gen.cpp
-            ${IMX_GENERATED_DIR}/app_root.gen.cpp
-            ${IMX_GENERATED_DIR}/TodoItem.gen.cpp
-            ${IMX_GENERATED_DIR}/TodoItem.gen.h
-        COMMAND node ${CMAKE_CURRENT_SOURCE_DIR}/compiler/dist/index.js
-            ${CMAKE_CURRENT_SOURCE_DIR}/examples/hello/App.tsx
-            ${CMAKE_CURRENT_SOURCE_DIR}/examples/hello/TodoItem.tsx
-            -o ${IMX_GENERATED_DIR}
-        DEPENDS
-            ${CMAKE_CURRENT_SOURCE_DIR}/examples/hello/App.tsx
-            ${CMAKE_CURRENT_SOURCE_DIR}/examples/hello/TodoItem.tsx
-        COMMENT "Compiling hello .tsx -> C++"
+    imx_compile_tsx(HELLO_GENERATED
+        SOURCES
+            examples/hello/App.tsx
+            examples/hello/TodoItem.tsx
+        OUTPUT_DIR ${CMAKE_BINARY_DIR}/generated
     )
 
     add_executable(hello_app
         examples/hello/main.cpp
-        ${IMX_GENERATED_DIR}/App.gen.cpp
-        ${IMX_GENERATED_DIR}/app_root.gen.cpp
-        ${IMX_GENERATED_DIR}/TodoItem.gen.cpp
+        ${HELLO_GENERATED}
     )
     target_link_libraries(hello_app PRIVATE imx_renderer)
-    target_include_directories(hello_app PRIVATE ${IMX_GENERATED_DIR})
+    target_include_directories(hello_app PRIVATE ${CMAKE_BINARY_DIR}/generated)
 
     # Copy public/ assets to output directory
     add_custom_command(TARGET hello_app POST_BUILD
