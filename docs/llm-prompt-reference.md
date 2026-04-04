@@ -1,6 +1,6 @@
-# ReImGui LLM Prompt Reference
+# IMX LLM Prompt Reference
 
-ReImGui: write .tsx with JSX components and useState hooks. Compiles to native Dear ImGui C++ apps.
+IMX: write .tsx with JSX components and useState hooks. Compiles to native Dear ImGui C++ apps.
 Compile: `node compiler/dist/index.js App.tsx [Other.tsx ...] -o build/generated`
 
 ## Components
@@ -165,7 +165,7 @@ export default function App() {
         </Column>
       </Window>
       {showAbout && <Window title="About">
-        <Text>ReImGui v0.1</Text>
+        <Text>IMX v0.1</Text>
         <Button title="Close" onPress={() => setShowAbout(false)} />
       </Window>}
     </DockSpace>
@@ -175,6 +175,6 @@ export default function App() {
 
 ## File Setup
 
-Required files per app directory: `App.tsx`, `reimgui.d.ts`, `tsconfig.json`, `main.cpp`.
+Required files per app directory: `App.tsx`, `imx.d.ts`, `tsconfig.json`, `main.cpp`.
 Compile all .tsx files together: `node compiler/dist/index.js App.tsx TodoItem.tsx -o build/generated`
 First .tsx argument is the root component (must use `export default`).

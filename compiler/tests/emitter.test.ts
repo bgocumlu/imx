@@ -35,12 +35,12 @@ function App() {
 }
         `);
 
-        expect(output).toContain('#include <reimgui/runtime.h>');
-        expect(output).toContain('#include <reimgui/renderer.h>');
-        expect(output).toContain('void App_render(reimgui::RenderContext& ctx)');
+        expect(output).toContain('#include <imx/runtime.h>');
+        expect(output).toContain('#include <imx/renderer.h>');
+        expect(output).toContain('void App_render(imx::RenderContext& ctx)');
         expect(output).toContain('use_state<int>(0, 0)');
         expect(output).toContain('begin_window("Hello")');
-        expect(output).toContain('reimgui::renderer::button("Click")');
+        expect(output).toContain('imx::renderer::button("Click")');
         expect(output).toContain('count.set(count.get() + 1)');
         expect(output).toContain('end_window()');
     });
@@ -58,7 +58,7 @@ function App() {
         `);
 
         expect(output).toContain('if (show.get())');
-        expect(output).toContain('reimgui::renderer::text("Visible")');
+        expect(output).toContain('imx::renderer::text("Visible")');
     });
 
     it('emits component with props struct', () => {
@@ -72,14 +72,14 @@ function Greeting(props: { name: string, age: number }) {
         const output = compile(source);
         expect(output).toContain('#include "Greeting.gen.h"');
         expect(output).toContain('const GreetingProps& props');
-        expect(output).toContain('reimgui::renderer::text(');
+        expect(output).toContain('imx::renderer::text(');
 
         // The struct is in the header
         const header = compileHeader(source);
         expect(header).toContain('struct GreetingProps');
         expect(header).toContain('std::string name;');
         expect(header).toContain('int age;');
-        expect(header).toContain('void Greeting_render(reimgui::RenderContext& ctx, const GreetingProps& props);');
+        expect(header).toContain('void Greeting_render(imx::RenderContext& ctx, const GreetingProps& props);');
     });
 
     it('emits ternary conditional with else', () => {
@@ -114,7 +114,7 @@ function App() {
 
         expect(output).toContain('ctx.get_buffer(0)');
         expect(output).toContain('sync_from(name.get())');
-        expect(output).toContain('reimgui::renderer::text_input("Name"');
+        expect(output).toContain('imx::renderer::text_input("Name"');
         expect(output).toContain('name.set(buf.value())');
     });
 
@@ -131,7 +131,7 @@ function App() {
         `);
 
         expect(output).toContain('bool val = checked.get()');
-        expect(output).toContain('reimgui::renderer::checkbox("Check", &val)');
+        expect(output).toContain('imx::renderer::checkbox("Check", &val)');
         expect(output).toContain('checked.set(val)');
     });
     it('emits Theme with preset and overrides', () => {
@@ -149,11 +149,11 @@ function App() {
 }
         `);
 
-        expect(output).toContain('reimgui::renderer::begin_theme(');
+        expect(output).toContain('imx::renderer::begin_theme(');
         expect(output).toContain('"dark"');
         expect(output).toContain('accent_color = ImVec4(');
         expect(output).toContain('rounding =');
-        expect(output).toContain('reimgui::renderer::end_theme()');
+        expect(output).toContain('imx::renderer::end_theme()');
     });
 
     it('emits DockLayout with setup function and conditional', () => {
@@ -180,7 +180,7 @@ function App() {
 
         expect(output).toContain('static bool g_layout_applied = false');
         expect(output).toContain('static bool g_reset_layout = false');
-        expect(output).toContain('void reimgui_reset_layout()');
+        expect(output).toContain('void imx_reset_layout()');
         expect(output).toContain('g_reset_layout = true');
         expect(output).toContain('App_setup_dock_layout(ImGuiID dockspace_id)');
         expect(output).toContain('DockBuilderRemoveNode');
@@ -193,7 +193,7 @@ function App() {
         expect(output).toContain('#include <imgui_internal.h>');
     });
 
-    it('emits resetLayout as reimgui_reset_layout', () => {
+    it('emits resetLayout as imx_reset_layout', () => {
         const output = compile(`
 function App() {
   return (
@@ -209,7 +209,7 @@ function App() {
 }
         `);
 
-        expect(output).toContain('reimgui_reset_layout()');
+        expect(output).toContain('imx_reset_layout()');
     });
 });
 
@@ -254,15 +254,15 @@ describe('emitRoot', () => {
     it('emits root entry point function', () => {
         const output = emitRoot('App', 2, 1);
 
-        expect(output).toContain('#include <reimgui/runtime.h>');
-        expect(output).toContain('void App_render(reimgui::RenderContext& ctx);');
-        expect(output).toContain('namespace reimgui {');
+        expect(output).toContain('#include <imx/runtime.h>');
+        expect(output).toContain('void App_render(imx::RenderContext& ctx);');
+        expect(output).toContain('namespace imx {');
         expect(output).toContain('void render_root(Runtime& runtime)');
         expect(output).toContain('runtime.begin_frame()');
         expect(output).toContain('ctx.begin_instance("App", 0, 2, 1)');
         expect(output).toContain('App_render(ctx)');
         expect(output).toContain('ctx.end_instance()');
         expect(output).toContain('runtime.end_frame()');
-        expect(output).toContain('} // namespace reimgui');
+        expect(output).toContain('} // namespace imx');
     });
 });

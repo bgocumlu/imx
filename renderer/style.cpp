@@ -1,6 +1,6 @@
-#include <reimgui/renderer.h>
+#include <imx/renderer.h>
 
-namespace reimgui::renderer {
+namespace imx::renderer {
 
 struct StyleGuard {
     int var_count = 0;
@@ -35,4 +35,4 @@ struct StyleGuard {
     }
 };
 
-} // namespace reimgui::renderer
+} // namespace imx::renderer

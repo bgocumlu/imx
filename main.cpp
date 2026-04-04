@@ -108,7 +108,7 @@ int main() {
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 #endif
 
-    GLFWwindow* window = glfwCreateWindow(400, 300, "reimgui", nullptr, nullptr);
+    GLFWwindow* window = glfwCreateWindow(400, 300, "imx", nullptr, nullptr);
     if (window == nullptr) {
         glfwTerminate();
         return 1;

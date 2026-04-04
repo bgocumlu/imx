@@ -111,8 +111,8 @@ export function emitComponentHeader(comp: IRComponent, sourceFile?: string): str
         lines.push(`// Generated from ${sourceFile} by imxc`);
     }
     lines.push('#pragma once');
-    lines.push('#include <reimgui/runtime.h>');
-    lines.push('#include <reimgui/renderer.h>');
+    lines.push('#include <imx/runtime.h>');
+    lines.push('#include <imx/renderer.h>');
     lines.push('#include <functional>');
     lines.push('#include <string>');
     lines.push('');
@@ -126,7 +126,7 @@ export function emitComponentHeader(comp: IRComponent, sourceFile?: string): str
     lines.push('');
 
     // Function forward declaration
-    lines.push(`void ${comp.name}_render(reimgui::RenderContext& ctx, const ${comp.name}Props& props);`);
+    lines.push(`void ${comp.name}_render(imx::RenderContext& ctx, const ${comp.name}Props& props);`);
     lines.push('');
 
     return lines.join('\n');
@@ -165,8 +165,8 @@ export function emitComponent(comp: IRComponent, imports?: ImportInfo[], sourceF
         lines.push('');
     } else {
         // No props: standard headers
-        lines.push('#include <reimgui/runtime.h>');
-        lines.push('#include <reimgui/renderer.h>');
+        lines.push('#include <imx/runtime.h>');
+        lines.push('#include <imx/renderer.h>');
         if (hasColorType) {
             lines.push('#include <array>');
         }
@@ -188,7 +188,7 @@ export function emitComponent(comp: IRComponent, imports?: ImportInfo[], sourceF
         lines.push('static bool g_layout_applied = false;');
         lines.push('static bool g_reset_layout = false;');
         lines.push('');
-        lines.push('void reimgui_reset_layout() {');
+        lines.push('void imx_reset_layout() {');
         lines.push(`${INDENT}g_reset_layout = true;`);
         lines.push('}');
         lines.push('');
@@ -197,7 +197,7 @@ export function emitComponent(comp: IRComponent, imports?: ImportInfo[], sourceF
 
     // Function signature
     const propsArg = hasProps ? `, const ${comp.name}Props& props` : '';
-    lines.push(`void ${comp.name}_render(reimgui::RenderContext& ctx${propsArg}) {`);
+    lines.push(`void ${comp.name}_render(imx::RenderContext& ctx${propsArg}) {`);
 
     // State declarations
     for (const slot of comp.stateSlots) {
@@ -228,11 +228,11 @@ export function emitRoot(rootName: string, stateCount: number, bufferCount: numb
     if (sourceFile) {
         lines.push(`// Generated from ${sourceFile} by imxc`);
     }
-    lines.push('#include <reimgui/runtime.h>');
+    lines.push('#include <imx/runtime.h>');
     lines.push('');
-    lines.push(`void ${rootName}_render(reimgui::RenderContext& ctx);`);
+    lines.push(`void ${rootName}_render(imx::RenderContext& ctx);`);
     lines.push('');
-    lines.push('namespace reimgui {');
+    lines.push('namespace imx {');
     lines.push('void render_root(Runtime& runtime) {');
     lines.push(`${INDENT}auto& ctx = runtime.begin_frame();`);
     lines.push(`${INDENT}ctx.begin_instance("${rootName}", 0, ${stateCount}, ${bufferCount});`);
@@ -240,7 +240,7 @@ export function emitRoot(rootName: string, stateCount: number, bufferCount: numb
     lines.push(`${INDENT}ctx.end_instance();`);
     lines.push(`${INDENT}runtime.end_frame();`);
     lines.push('}');
-    lines.push('} // namespace reimgui');
+    lines.push('} // namespace imx');
     lines.push('');
 
     return lines.join('\n');
@@ -275,19 +275,19 @@ function emitNode(node: IRNode, lines: string[], depth: number): void {
             emitCheckbox(node, lines, indent);
             break;
         case 'separator':
-            lines.push(`${indent}reimgui::renderer::separator();`);
+            lines.push(`${indent}imx::renderer::separator();`);
             break;
         case 'begin_popup':
             emitLocComment(node.loc, 'Popup', lines, indent);
-            lines.push(`${indent}if (reimgui::renderer::begin_popup(${node.id})) {`);
+            lines.push(`${indent}if (imx::renderer::begin_popup(${node.id})) {`);
             break;
         case 'end_popup':
-            lines.push(`${indent}reimgui::renderer::end_popup();`);
+            lines.push(`${indent}imx::renderer::end_popup();`);
             lines.push(`${indent}}`);
             break;
         case 'open_popup':
             emitLocComment(node.loc, 'OpenPopup', lines, indent);
-            lines.push(`${indent}reimgui::renderer::open_popup(${node.id});`);
+            lines.push(`${indent}imx::renderer::open_popup(${node.id});`);
             break;
         case 'conditional':
             emitConditional(node, lines, indent, depth);
@@ -386,7 +386,7 @@ function buildStyleBlock(node: IRBeginContainer, indent: string, lines: string[]
 
     // Generate MSVC-compatible style construction
     const varName = `style_${styleCounter++}`;
-    lines.push(`${indent}reimgui::Style ${varName};`);
+    lines.push(`${indent}imx::Style ${varName};`);
     for (const [key, val] of Object.entries(styleProps)) {
         // Ensure the value is a float literal (e.g., 8 -> 8.0F, 8.5 -> 8.5F)
         const floatVal = val.includes('.') ? `${val}F` : `${val}.0F`;
@@ -400,52 +400,52 @@ function emitBeginContainer(node: IRBeginContainer, lines: string[], indent: str
     switch (node.tag) {
         case 'Window': {
             const title = asCharPtr(node.props['title'] ?? '""');
-            lines.push(`${indent}reimgui::renderer::begin_window(${title});`);
+            lines.push(`${indent}imx::renderer::begin_window(${title});`);
             break;
         }
         case 'Row': {
             const style = buildStyleBlock(node, indent, lines);
             if (style) {
-                lines.push(`${indent}reimgui::renderer::begin_row(${style});`);
+                lines.push(`${indent}imx::renderer::begin_row(${style});`);
             } else {
-                lines.push(`${indent}reimgui::renderer::begin_row();`);
+                lines.push(`${indent}imx::renderer::begin_row();`);
             }
             break;
         }
         case 'Column': {
             const style = buildStyleBlock(node, indent, lines);
             if (style) {
-                lines.push(`${indent}reimgui::renderer::begin_column(${style});`);
+                lines.push(`${indent}imx::renderer::begin_column(${style});`);
             } else {
-                lines.push(`${indent}reimgui::renderer::begin_column();`);
+                lines.push(`${indent}imx::renderer::begin_column();`);
             }
             break;
         }
         case 'View': {
             const style = buildStyleBlock(node, indent, lines);
             if (style) {
-                lines.push(`${indent}reimgui::renderer::begin_view(${style});`);
+                lines.push(`${indent}imx::renderer::begin_view(${style});`);
             } else {
-                lines.push(`${indent}reimgui::renderer::begin_view();`);
+                lines.push(`${indent}imx::renderer::begin_view();`);
             }
             break;
         }
         case 'DockSpace': {
             const style = buildStyleBlock(node, indent, lines);
             if (style) {
-                lines.push(`${indent}reimgui::renderer::begin_dockspace(${style});`);
+                lines.push(`${indent}imx::renderer::begin_dockspace(${style});`);
             } else {
-                lines.push(`${indent}reimgui::renderer::begin_dockspace();`);
+                lines.push(`${indent}imx::renderer::begin_dockspace();`);
             }
             break;
         }
         case 'MenuBar': {
-            lines.push(`${indent}if (reimgui::renderer::begin_menu_bar()) {`);
+            lines.push(`${indent}if (imx::renderer::begin_menu_bar()) {`);
             break;
         }
         case 'Menu': {
             const label = asCharPtr(node.props['label'] ?? '""');
-            lines.push(`${indent}if (reimgui::renderer::begin_menu(${label})) {`);
+            lines.push(`${indent}if (imx::renderer::begin_menu(${label})) {`);
             break;
         }
         case 'Table': {
@@ -454,36 +454,36 @@ function emitBeginContainer(node: IRBeginContainer, lines: string[], indent: str
             const count = columnNames.length;
             const varName = `table_cols_${styleCounter++}`;
             lines.push(`${indent}const char* ${varName}[] = {${columnNames.join(', ')}};`);
-            lines.push(`${indent}if (reimgui::renderer::begin_table("##table", ${count}, ${varName})) {`);
+            lines.push(`${indent}if (imx::renderer::begin_table("##table", ${count}, ${varName})) {`);
             break;
         }
         case 'TableRow': {
-            lines.push(`${indent}reimgui::renderer::begin_table_row();`);
+            lines.push(`${indent}imx::renderer::begin_table_row();`);
             break;
         }
         case 'TabBar': {
-            lines.push(`${indent}if (reimgui::renderer::begin_tab_bar()) {`);
+            lines.push(`${indent}if (imx::renderer::begin_tab_bar()) {`);
             break;
         }
         case 'TabItem': {
             const label = asCharPtr(node.props['label'] ?? '""');
-            lines.push(`${indent}if (reimgui::renderer::begin_tab_item(${label})) {`);
+            lines.push(`${indent}if (imx::renderer::begin_tab_item(${label})) {`);
             break;
         }
         case 'TreeNode': {
             const label = asCharPtr(node.props['label'] ?? '""');
-            lines.push(`${indent}if (reimgui::renderer::begin_tree_node(${label})) {`);
+            lines.push(`${indent}if (imx::renderer::begin_tree_node(${label})) {`);
             break;
         }
         case 'CollapsingHeader': {
             const label = asCharPtr(node.props['label'] ?? '""');
-            lines.push(`${indent}if (reimgui::renderer::begin_collapsing_header(${label})) {`);
+            lines.push(`${indent}if (imx::renderer::begin_collapsing_header(${label})) {`);
             break;
         }
         case 'Theme': {
             const preset = asCharPtr(node.props['preset'] ?? '"dark"');
             const varName = `theme_${styleCounter++}`;
-            lines.push(`${indent}reimgui::ThemeConfig ${varName};`);
+            lines.push(`${indent}imx::ThemeConfig ${varName};`);
             if (node.props['accentColor']) {
                 lines.push(`${indent}${varName}.accent_color = ${emitImVec4(node.props['accentColor'])};`);
             }
@@ -502,7 +502,7 @@ function emitBeginContainer(node: IRBeginContainer, lines: string[], indent: str
             if (node.props['spacing']) {
                 lines.push(`${indent}${varName}.spacing = ${emitFloat(node.props['spacing'])};`);
             }
-            lines.push(`${indent}reimgui::renderer::begin_theme(${preset}, ${varName});`);
+            lines.push(`${indent}imx::renderer::begin_theme(${preset}, ${varName});`);
             break;
         }
         case 'DockLayout':
@@ -515,53 +515,53 @@ function emitBeginContainer(node: IRBeginContainer, lines: string[], indent: str
 function emitEndContainer(node: IREndContainer, lines: string[], indent: string): void {
     switch (node.tag) {
         case 'Window':
-            lines.push(`${indent}reimgui::renderer::end_window();`);
+            lines.push(`${indent}imx::renderer::end_window();`);
             break;
         case 'Row':
-            lines.push(`${indent}reimgui::renderer::end_row();`);
+            lines.push(`${indent}imx::renderer::end_row();`);
             break;
         case 'Column':
-            lines.push(`${indent}reimgui::renderer::end_column();`);
+            lines.push(`${indent}imx::renderer::end_column();`);
             break;
         case 'View':
-            lines.push(`${indent}reimgui::renderer::end_view();`);
+            lines.push(`${indent}imx::renderer::end_view();`);
             break;
         case 'DockSpace':
-            lines.push(`${indent}reimgui::renderer::end_dockspace();`);
+            lines.push(`${indent}imx::renderer::end_dockspace();`);
             break;
         case 'MenuBar':
-            lines.push(`${indent}reimgui::renderer::end_menu_bar();`);
+            lines.push(`${indent}imx::renderer::end_menu_bar();`);
             lines.push(`${indent}}`);
             break;
         case 'Menu':
-            lines.push(`${indent}reimgui::renderer::end_menu();`);
+            lines.push(`${indent}imx::renderer::end_menu();`);
             lines.push(`${indent}}`);
             break;
         case 'Table':
-            lines.push(`${indent}reimgui::renderer::end_table();`);
+            lines.push(`${indent}imx::renderer::end_table();`);
             lines.push(`${indent}}`);
             break;
         case 'TableRow':
-            lines.push(`${indent}reimgui::renderer::end_table_row();`);
+            lines.push(`${indent}imx::renderer::end_table_row();`);
             break;
         case 'TabBar':
-            lines.push(`${indent}reimgui::renderer::end_tab_bar();`);
+            lines.push(`${indent}imx::renderer::end_tab_bar();`);
             lines.push(`${indent}}`);
             break;
         case 'TabItem':
-            lines.push(`${indent}reimgui::renderer::end_tab_item();`);
+            lines.push(`${indent}imx::renderer::end_tab_item();`);
             lines.push(`${indent}}`);
             break;
         case 'TreeNode':
-            lines.push(`${indent}reimgui::renderer::end_tree_node();`);
+            lines.push(`${indent}imx::renderer::end_tree_node();`);
             lines.push(`${indent}}`);
             break;
         case 'CollapsingHeader':
-            lines.push(`${indent}reimgui::renderer::end_collapsing_header();`);
+            lines.push(`${indent}imx::renderer::end_collapsing_header();`);
             lines.push(`${indent}}`);
             break;
         case 'Theme':
-            lines.push(`${indent}reimgui::renderer::end_theme();`);
+            lines.push(`${indent}imx::renderer::end_theme();`);
             break;
         case 'DockLayout':
         case 'DockSplit':
@@ -573,10 +573,10 @@ function emitEndContainer(node: IREndContainer, lines: string[], indent: string)
 function emitText(node: IRText, lines: string[], indent: string): void {
     emitLocComment(node.loc, 'Text', lines, indent);
     if (node.args.length === 0) {
-        lines.push(`${indent}reimgui::renderer::text(${JSON.stringify(node.format)});`);
+        lines.push(`${indent}imx::renderer::text(${JSON.stringify(node.format)});`);
     } else {
         const argsStr = node.args.join(', ');
-        lines.push(`${indent}reimgui::renderer::text(${JSON.stringify(node.format)}, ${argsStr});`);
+        lines.push(`${indent}imx::renderer::text(${JSON.stringify(node.format)}, ${argsStr});`);
     }
 }
 
@@ -584,9 +584,9 @@ function emitButton(node: IRButton, lines: string[], indent: string, depth: numb
     emitLocComment(node.loc, 'Button', lines, indent);
     const title = asCharPtr(node.title);
     if (node.action.length === 0) {
-        lines.push(`${indent}reimgui::renderer::button(${title});`);
+        lines.push(`${indent}imx::renderer::button(${title});`);
     } else {
-        lines.push(`${indent}if (reimgui::renderer::button(${title})) {`);
+        lines.push(`${indent}if (imx::renderer::button(${title})) {`);
         for (const stmt of node.action) {
             lines.push(`${indent}${INDENT}${stmt}`);
         }
@@ -600,15 +600,15 @@ function emitMenuItem(node: IRMenuItem, lines: string[], indent: string, depth: 
     const shortcut = node.shortcut ? asCharPtr(node.shortcut) : undefined;
     if (node.action.length === 0) {
         if (shortcut) {
-            lines.push(`${indent}reimgui::renderer::menu_item(${label}, ${shortcut});`);
+            lines.push(`${indent}imx::renderer::menu_item(${label}, ${shortcut});`);
         } else {
-            lines.push(`${indent}reimgui::renderer::menu_item(${label});`);
+            lines.push(`${indent}imx::renderer::menu_item(${label});`);
         }
     } else {
         if (shortcut) {
-            lines.push(`${indent}if (reimgui::renderer::menu_item(${label}, ${shortcut})) {`);
+            lines.push(`${indent}if (imx::renderer::menu_item(${label}, ${shortcut})) {`);
         } else {
-            lines.push(`${indent}if (reimgui::renderer::menu_item(${label})) {`);
+            lines.push(`${indent}if (imx::renderer::menu_item(${label})) {`);
         }
         for (const stmt of node.action) {
             lines.push(`${indent}    ${stmt}`);
@@ -625,13 +625,13 @@ function emitTextInput(node: IRTextInput, lines: string[], indent: string): void
         lines.push(`${indent}{`);
         lines.push(`${indent}${INDENT}auto& buf = ctx.get_buffer(${node.bufferIndex});`);
         lines.push(`${indent}${INDENT}buf.sync_from(${node.stateVar}.get());`);
-        lines.push(`${indent}${INDENT}if (reimgui::renderer::text_input(${label}, buf)) {`);
+        lines.push(`${indent}${INDENT}if (imx::renderer::text_input(${label}, buf)) {`);
         lines.push(`${indent}${INDENT}${INDENT}${node.stateVar}.set(buf.value());`);
         lines.push(`${indent}${INDENT}}`);
         lines.push(`${indent}}`);
     } else {
         lines.push(`${indent}auto& buf_${node.bufferIndex} = ctx.get_buffer(${node.bufferIndex});`);
-        lines.push(`${indent}reimgui::renderer::text_input(${label}, buf_${node.bufferIndex});`);
+        lines.push(`${indent}imx::renderer::text_input(${label}, buf_${node.bufferIndex});`);
     }
 }
 
@@ -644,7 +644,7 @@ function emitCheckbox(node: IRCheckbox, lines: string[], indent: string): void {
         // State-bound case
         lines.push(`${indent}{`);
         lines.push(`${indent}${INDENT}bool val = ${node.stateVar}.get();`);
-        lines.push(`${indent}${INDENT}if (reimgui::renderer::checkbox(${label}, &val)) {`);
+        lines.push(`${indent}${INDENT}if (imx::renderer::checkbox(${label}, &val)) {`);
         lines.push(`${indent}${INDENT}${INDENT}${node.stateVar}.set(val);`);
         lines.push(`${indent}${INDENT}}`);
         lines.push(`${indent}}`);
@@ -652,14 +652,14 @@ function emitCheckbox(node: IRCheckbox, lines: string[], indent: string): void {
         // Props-bound / expression-bound case
         lines.push(`${indent}{`);
         lines.push(`${indent}${INDENT}bool val = ${node.valueExpr};`);
-        lines.push(`${indent}${INDENT}if (reimgui::renderer::checkbox(${label}, &val)) {`);
+        lines.push(`${indent}${INDENT}if (imx::renderer::checkbox(${label}, &val)) {`);
         if (node.onChangeExpr) {
             lines.push(`${indent}${INDENT}${INDENT}${node.onChangeExpr};`);
         }
         lines.push(`${indent}${INDENT}}`);
         lines.push(`${indent}}`);
     } else {
-        lines.push(`${indent}reimgui::renderer::checkbox(${label}, nullptr);`);
+        lines.push(`${indent}imx::renderer::checkbox(${label}, nullptr);`);
     }
 }
 
@@ -725,14 +725,14 @@ function emitSliderFloat(node: IRSliderFloat, lines: string[], indent: string): 
     if (node.stateVar) {
         lines.push(`${indent}{`);
         lines.push(`${indent}${INDENT}float val = ${node.stateVar}.get();`);
-        lines.push(`${indent}${INDENT}if (reimgui::renderer::slider_float(${node.label}, &val, ${min}, ${max})) {`);
+        lines.push(`${indent}${INDENT}if (imx::renderer::slider_float(${node.label}, &val, ${min}, ${max})) {`);
         lines.push(`${indent}${INDENT}${INDENT}${node.stateVar}.set(val);`);
         lines.push(`${indent}${INDENT}}`);
         lines.push(`${indent}}`);
     } else if (node.valueExpr !== undefined) {
         lines.push(`${indent}{`);
         lines.push(`${indent}${INDENT}float val = ${node.valueExpr};`);
-        lines.push(`${indent}${INDENT}if (reimgui::renderer::slider_float(${node.label}, &val, ${min}, ${max})) {`);
+        lines.push(`${indent}${INDENT}if (imx::renderer::slider_float(${node.label}, &val, ${min}, ${max})) {`);
         if (node.onChangeExpr) {
             lines.push(`${indent}${INDENT}${INDENT}${node.onChangeExpr};`);
         }
@@ -746,14 +746,14 @@ function emitSliderInt(node: IRSliderInt, lines: string[], indent: string): void
     if (node.stateVar) {
         lines.push(`${indent}{`);
         lines.push(`${indent}${INDENT}int val = ${node.stateVar}.get();`);
-        lines.push(`${indent}${INDENT}if (reimgui::renderer::slider_int(${node.label}, &val, ${node.min}, ${node.max})) {`);
+        lines.push(`${indent}${INDENT}if (imx::renderer::slider_int(${node.label}, &val, ${node.min}, ${node.max})) {`);
         lines.push(`${indent}${INDENT}${INDENT}${node.stateVar}.set(val);`);
         lines.push(`${indent}${INDENT}}`);
         lines.push(`${indent}}`);
     } else if (node.valueExpr !== undefined) {
         lines.push(`${indent}{`);
         lines.push(`${indent}${INDENT}int val = ${node.valueExpr};`);
-        lines.push(`${indent}${INDENT}if (reimgui::renderer::slider_int(${node.label}, &val, ${node.min}, ${node.max})) {`);
+        lines.push(`${indent}${INDENT}if (imx::renderer::slider_int(${node.label}, &val, ${node.min}, ${node.max})) {`);
         if (node.onChangeExpr) {
             lines.push(`${indent}${INDENT}${INDENT}${node.onChangeExpr};`);
         }
@@ -768,14 +768,14 @@ function emitDragFloat(node: IRDragFloat, lines: string[], indent: string): void
     if (node.stateVar) {
         lines.push(`${indent}{`);
         lines.push(`${indent}${INDENT}float val = ${node.stateVar}.get();`);
-        lines.push(`${indent}${INDENT}if (reimgui::renderer::drag_float(${node.label}, &val, ${speed})) {`);
+        lines.push(`${indent}${INDENT}if (imx::renderer::drag_float(${node.label}, &val, ${speed})) {`);
         lines.push(`${indent}${INDENT}${INDENT}${node.stateVar}.set(val);`);
         lines.push(`${indent}${INDENT}}`);
         lines.push(`${indent}}`);
     } else if (node.valueExpr !== undefined) {
         lines.push(`${indent}{`);
         lines.push(`${indent}${INDENT}float val = ${node.valueExpr};`);
-        lines.push(`${indent}${INDENT}if (reimgui::renderer::drag_float(${node.label}, &val, ${speed})) {`);
+        lines.push(`${indent}${INDENT}if (imx::renderer::drag_float(${node.label}, &val, ${speed})) {`);
         if (node.onChangeExpr) {
             lines.push(`${indent}${INDENT}${INDENT}${node.onChangeExpr};`);
         }
@@ -790,14 +790,14 @@ function emitDragInt(node: IRDragInt, lines: string[], indent: string): void {
     if (node.stateVar) {
         lines.push(`${indent}{`);
         lines.push(`${indent}${INDENT}int val = ${node.stateVar}.get();`);
-        lines.push(`${indent}${INDENT}if (reimgui::renderer::drag_int(${node.label}, &val, ${speed})) {`);
+        lines.push(`${indent}${INDENT}if (imx::renderer::drag_int(${node.label}, &val, ${speed})) {`);
         lines.push(`${indent}${INDENT}${INDENT}${node.stateVar}.set(val);`);
         lines.push(`${indent}${INDENT}}`);
         lines.push(`${indent}}`);
     } else if (node.valueExpr !== undefined) {
         lines.push(`${indent}{`);
         lines.push(`${indent}${INDENT}int val = ${node.valueExpr};`);
-        lines.push(`${indent}${INDENT}if (reimgui::renderer::drag_int(${node.label}, &val, ${speed})) {`);
+        lines.push(`${indent}${INDENT}if (imx::renderer::drag_int(${node.label}, &val, ${speed})) {`);
         if (node.onChangeExpr) {
             lines.push(`${indent}${INDENT}${INDENT}${node.onChangeExpr};`);
         }
@@ -816,7 +816,7 @@ function emitCombo(node: IRCombo, lines: string[], indent: string): void {
         lines.push(`${indent}{`);
         lines.push(`${indent}${INDENT}const char* ${varName}[] = {${itemsList.join(', ')}};`);
         lines.push(`${indent}${INDENT}int val = ${node.stateVar}.get();`);
-        lines.push(`${indent}${INDENT}if (reimgui::renderer::combo(${node.label}, &val, ${varName}, ${count})) {`);
+        lines.push(`${indent}${INDENT}if (imx::renderer::combo(${node.label}, &val, ${varName}, ${count})) {`);
         lines.push(`${indent}${INDENT}${INDENT}${node.stateVar}.set(val);`);
         lines.push(`${indent}${INDENT}}`);
         lines.push(`${indent}}`);
@@ -824,7 +824,7 @@ function emitCombo(node: IRCombo, lines: string[], indent: string): void {
         lines.push(`${indent}{`);
         lines.push(`${indent}${INDENT}const char* ${varName}[] = {${itemsList.join(', ')}};`);
         lines.push(`${indent}${INDENT}int val = ${node.valueExpr};`);
-        lines.push(`${indent}${INDENT}if (reimgui::renderer::combo(${node.label}, &val, ${varName}, ${count})) {`);
+        lines.push(`${indent}${INDENT}if (imx::renderer::combo(${node.label}, &val, ${varName}, ${count})) {`);
         if (node.onChangeExpr) {
             lines.push(`${indent}${INDENT}${INDENT}${node.onChangeExpr};`);
         }
@@ -838,14 +838,14 @@ function emitInputInt(node: IRInputInt, lines: string[], indent: string): void {
     if (node.stateVar) {
         lines.push(`${indent}{`);
         lines.push(`${indent}${INDENT}int val = ${node.stateVar}.get();`);
-        lines.push(`${indent}${INDENT}if (reimgui::renderer::input_int(${node.label}, &val)) {`);
+        lines.push(`${indent}${INDENT}if (imx::renderer::input_int(${node.label}, &val)) {`);
         lines.push(`${indent}${INDENT}${INDENT}${node.stateVar}.set(val);`);
         lines.push(`${indent}${INDENT}}`);
         lines.push(`${indent}}`);
     } else if (node.valueExpr !== undefined) {
         lines.push(`${indent}{`);
         lines.push(`${indent}${INDENT}int val = ${node.valueExpr};`);
-        lines.push(`${indent}${INDENT}if (reimgui::renderer::input_int(${node.label}, &val)) {`);
+        lines.push(`${indent}${INDENT}if (imx::renderer::input_int(${node.label}, &val)) {`);
         if (node.onChangeExpr) {
             lines.push(`${indent}${INDENT}${INDENT}${node.onChangeExpr};`);
         }
@@ -859,14 +859,14 @@ function emitInputFloat(node: IRInputFloat, lines: string[], indent: string): vo
     if (node.stateVar) {
         lines.push(`${indent}{`);
         lines.push(`${indent}${INDENT}float val = ${node.stateVar}.get();`);
-        lines.push(`${indent}${INDENT}if (reimgui::renderer::input_float(${node.label}, &val)) {`);
+        lines.push(`${indent}${INDENT}if (imx::renderer::input_float(${node.label}, &val)) {`);
         lines.push(`${indent}${INDENT}${INDENT}${node.stateVar}.set(val);`);
         lines.push(`${indent}${INDENT}}`);
         lines.push(`${indent}}`);
     } else if (node.valueExpr !== undefined) {
         lines.push(`${indent}{`);
         lines.push(`${indent}${INDENT}float val = ${node.valueExpr};`);
-        lines.push(`${indent}${INDENT}if (reimgui::renderer::input_float(${node.label}, &val)) {`);
+        lines.push(`${indent}${INDENT}if (imx::renderer::input_float(${node.label}, &val)) {`);
         if (node.onChangeExpr) {
             lines.push(`${indent}${INDENT}${INDENT}${node.onChangeExpr};`);
         }
@@ -880,7 +880,7 @@ function emitColorEdit(node: IRColorEdit, lines: string[], indent: string): void
     if (node.stateVar) {
         lines.push(`${indent}{`);
         lines.push(`${indent}${INDENT}auto val = ${node.stateVar}.get();`);
-        lines.push(`${indent}${INDENT}if (reimgui::renderer::color_edit(${node.label}, val.data())) {`);
+        lines.push(`${indent}${INDENT}if (imx::renderer::color_edit(${node.label}, val.data())) {`);
         lines.push(`${indent}${INDENT}${INDENT}${node.stateVar}.set(val);`);
         lines.push(`${indent}${INDENT}}`);
         lines.push(`${indent}}`);
@@ -897,7 +897,7 @@ function emitListBox(node: IRListBox, lines: string[], indent: string): void {
         lines.push(`${indent}{`);
         lines.push(`${indent}${INDENT}const char* ${varName}[] = {${itemsList.join(', ')}};`);
         lines.push(`${indent}${INDENT}int val = ${node.stateVar}.get();`);
-        lines.push(`${indent}${INDENT}if (reimgui::renderer::list_box(${node.label}, &val, ${varName}, ${count})) {`);
+        lines.push(`${indent}${INDENT}if (imx::renderer::list_box(${node.label}, &val, ${varName}, ${count})) {`);
         lines.push(`${indent}${INDENT}${INDENT}${node.stateVar}.set(val);`);
         lines.push(`${indent}${INDENT}}`);
         lines.push(`${indent}}`);
@@ -905,7 +905,7 @@ function emitListBox(node: IRListBox, lines: string[], indent: string): void {
         lines.push(`${indent}{`);
         lines.push(`${indent}${INDENT}const char* ${varName}[] = {${itemsList.join(', ')}};`);
         lines.push(`${indent}${INDENT}int val = ${node.valueExpr};`);
-        lines.push(`${indent}${INDENT}if (reimgui::renderer::list_box(${node.label}, &val, ${varName}, ${count})) {`);
+        lines.push(`${indent}${INDENT}if (imx::renderer::list_box(${node.label}, &val, ${varName}, ${count})) {`);
         if (node.onChangeExpr) {
             lines.push(`${indent}${INDENT}${INDENT}${node.onChangeExpr};`);
         }
@@ -917,13 +917,13 @@ function emitListBox(node: IRListBox, lines: string[], indent: string): void {
 function emitProgressBar(node: IRProgressBar, lines: string[], indent: string): void {
     emitLocComment(node.loc, 'ProgressBar', lines, indent);
     if (node.overlay) {
-        lines.push(`${indent}reimgui::renderer::progress_bar(${node.value}, ${node.overlay});`);
+        lines.push(`${indent}imx::renderer::progress_bar(${node.value}, ${node.overlay});`);
     } else {
-        lines.push(`${indent}reimgui::renderer::progress_bar(${node.value});`);
+        lines.push(`${indent}imx::renderer::progress_bar(${node.value});`);
     }
 }
 
 function emitTooltip(node: IRTooltip, lines: string[], indent: string): void {
     emitLocComment(node.loc, 'Tooltip', lines, indent);
-    lines.push(`${indent}reimgui::renderer::tooltip(${node.text});`);
+    lines.push(`${indent}imx::renderer::tooltip(${node.text});`);
 }

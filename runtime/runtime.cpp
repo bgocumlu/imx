@@ -1,6 +1,6 @@
-#include <reimgui/runtime.h>
+#include <imx/runtime.h>
 
-namespace reimgui {
+namespace imx {
 
 Runtime::Runtime()
     : root_(std::make_unique<ComponentInstance>(0, 0))
@@ -23,4 +23,4 @@ void Runtime::mark_dirty() { dirty_ = true; }
 void Runtime::clear_dirty() { dirty_ = false; }
 ComponentInstance& Runtime::root() { return *root_; }
 
-} // namespace reimgui
+} // namespace imx

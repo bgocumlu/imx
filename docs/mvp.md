@@ -1,4 +1,4 @@
-# ReImGui MVP
+# IMX MVP
 
 ## 1. MVP Goal
 
@@ -224,9 +224,9 @@ It should avoid:
 
 The MVP should be implemented as library-style modules:
 
-- `reimgui_runtime`
-- `reimgui_renderer_imgui`
-- a minimal `reimgui_codegen`
+- `imx_runtime`
+- `imx_renderer_imgui`
+- a minimal `imx_codegen`
 
 ## 10. Example MVP App
 
@@ -257,13 +257,13 @@ function App() {
 
 ## 11. Technical Fit with Current Repo
 
-The MVP should integrate with the existing Dear ImGui + GLFW + OpenGL frame loop in [main.cpp](C:\Users\Berkay\Downloads\reimgui\main.cpp).
+The MVP should integrate with the existing Dear ImGui + GLFW + OpenGL frame loop in [main.cpp](C:\Users\Berkay\Downloads\imx\main.cpp).
 
 The replacement target is the hardcoded sample UI, not the low-level backend initialization.
 
 Recommended MVP repo shape:
 
-- `include/reimgui/`
+- `include/imx/`
 - `runtime/`
 - `renderer/`
 - `compiler/`

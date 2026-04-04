@@ -105,7 +105,7 @@ export default function App() {
       </Window>
       {showAbout && <Window title="About">
         <Column gap={8}>
-          <Text>ReImGui v0.1</Text>
+          <Text>IMX v0.1</Text>
           <Text>React-Native-like authoring for Dear ImGui</Text>
           <Button title="Close" onPress={() => setShowAbout(false)} />
         </Column>

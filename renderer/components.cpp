@@ -1,10 +1,10 @@
-#include <reimgui/renderer.h>
+#include <imx/renderer.h>
 #include <cstdarg>
 #include <cfloat>
 #include <cstring>
 #include <vector>
 
-namespace reimgui::renderer {
+namespace imx::renderer {
 
 // Per-frame ID counters — reset in begin_dockspace() each frame
 static int g_table_id = 0;
@@ -310,4 +310,4 @@ void end_theme() {
     }
 }
 
-} // namespace reimgui::renderer
+} // namespace imx::renderer

@@ -1,8 +1,8 @@
-#include <reimgui/runtime.h>
+#include <imx/runtime.h>
 #include <imgui.h>
 #include <cassert>
 
-namespace reimgui {
+namespace imx {
 
 RenderContext::RenderContext(Runtime& runtime) : runtime_(runtime) {}
 
@@ -47,4 +47,4 @@ ComponentInstance* RenderContext::current() {
     return stack_.back();
 }
 
-} // namespace reimgui
+} // namespace imx

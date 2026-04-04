@@ -1,10 +1,10 @@
-# ReImGui - Development Notes
+# IMX - Development Notes
 
 ## What this is
 React-Native-like authoring model for Dear ImGui. Write .tsx, compile to native C++ ImGui app. No JS runtime in shipped binary.
 
 ## Pipeline
-`.tsx` -> TypeScript compiler (`compiler/`) -> `.gen.cpp` + `.gen.h` -> links with `reimgui_runtime` + `reimgui_renderer` + ImGui -> native binary
+`.tsx` -> TypeScript compiler (`compiler/`) -> `.gen.cpp` + `.gen.h` -> links with `imx_runtime` + `imx_renderer` + ImGui -> native binary
 
 ## Build
 - C++20, Visual Studio 17 2022 generator (not Ninja — Ninja not in PATH on this machine)
@@ -38,7 +38,7 @@ React-Native-like authoring model for Dear ImGui. Write .tsx, compile to native 
 - Array literal `[1.0, 0.5]` in exprToCpp joins elements with commas
 
 ## File structure
-- `include/reimgui/` — public C++ headers (runtime.h, renderer.h)
+- `include/imx/` — public C++ headers (runtime.h, renderer.h)
 - `runtime/` — C++ runtime (state, instances, lifecycle)
 - `renderer/` — C++ renderer (ImGui host components, layout stack, style)
 - `compiler/src/` — TypeScript compiler (parser, validator, ir, lowering, emitter, index)
@@ -62,7 +62,7 @@ React-Native-like authoring model for Dear ImGui. Write .tsx, compile to native 
 - Don't use Ninja generator — it's not in PATH, use Visual Studio 17 2022
 - Don't use designated initializers in generated C++ (`{.field = val}`) — MSVC doesn't fully support them
 - Don't add `.c_str()` to string literals or ternaries of string literals — they're already `const char*`
-- Don't couple `reimgui_runtime` to `imgui_lib` more than necessary (render_context.cpp includes imgui.h only for PushID/PopID)
+- Don't couple `imx_runtime` to `imgui_lib` more than necessary (render_context.cpp includes imgui.h only for PushID/PopID)
 - Don't make runtime_tests depend on imgui_lib — guard ImGui calls with `GetCurrentContext() != nullptr`
 - Don't forget that TypeScript 5.9 normalizes float literals in AST (use `.getText()` not `.text` for float detection)
 - Don't touch unrelated files when fixing a bug — fix exactly what's broken

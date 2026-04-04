@@ -1,4 +1,4 @@
-# ReImGui Roadmap
+# IMX Roadmap
 
 ## Phase 1: Lock the Model
 
@@ -32,7 +32,7 @@ Deliverables:
 - state slot storage for `useState`
 - callback storage
 - root render entrypoint
-- initial `reimgui_runtime` target
+- initial `imx_runtime` target
 
 Exit criteria:
 
@@ -56,7 +56,7 @@ Deliverables:
 - `Checkbox`
 - `Separator`
 - `Popup`
-- initial `reimgui_renderer_imgui` target
+- initial `imx_renderer_imgui` target
 
 Exit criteria:
 
@@ -74,7 +74,7 @@ Deliverables:
 - `.igx` file loading
 - AST for components, props, expressions, and children
 - validation for supported constructs
-- initial `reimgui_codegen` target
+- initial `imx_codegen` target
 
 Exit criteria:
 

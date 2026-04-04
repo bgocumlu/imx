@@ -1,7 +1,7 @@
 {
   "name": "imxc",
   "version": "0.2.0",
-  "description": "Compiler for ReImGui — compiles React-like .tsx to native Dear ImGui C++",
+  "description": "Compiler for IMX — compiles React-like .tsx to native Dear ImGui C++",
   "type": "module",
   "bin": {
     "imxc": "dist/index.js"

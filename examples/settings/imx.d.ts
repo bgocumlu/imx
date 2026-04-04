@@ -1,4 +1,4 @@
-// reimgui.d.ts — Type definitions for ReImGui components
+// imx.d.ts — Type definitions for IMX components
 
 interface Style {
   padding?: number;
@@ -102,7 +102,7 @@ declare function Tooltip(props: TooltipProps): any;
 declare function resetLayout(): void;
 
 // JSX runtime shim for react-jsx mode
-declare module "reimgui/jsx-runtime" {
+declare module "imx/jsx-runtime" {
   export namespace JSX {
     type Element = any;
     interface IntrinsicElements { [tag: string]: any; }

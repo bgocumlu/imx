@@ -35,21 +35,21 @@ Every IR node type gets `loc?: SourceLoc`. During lowering, each node captures i
 
 ```cpp
 // Generated from App.tsx by imxc
-#include <reimgui/runtime.h>
-#include <reimgui/renderer.h>
+#include <imx/runtime.h>
+#include <imx/renderer.h>
 
-void App_render(reimgui::RenderContext& ctx) {
+void App_render(imx::RenderContext& ctx) {
     auto count = ctx.use_state<int>(0, 0);
 
     // App.tsx:8 <Window>
-    reimgui::renderer::begin_window("Hello");
+    imx::renderer::begin_window("Hello");
     // App.tsx:9 <Text>
-    reimgui::renderer::text("Count: %d", count.get());
+    imx::renderer::text("Count: %d", count.get());
     // App.tsx:10 <Button>
-    if (reimgui::renderer::button("Increment")) {
+    if (imx::renderer::button("Increment")) {
         count.set(count.get() + 1);
     }
-    reimgui::renderer::end_window();
+    imx::renderer::end_window();
 }
 ```
 

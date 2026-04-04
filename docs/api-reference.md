@@ -1,18 +1,18 @@
-# ReImGui API Reference
+# IMX API Reference
 
 ## Overview
 
-ReImGui is a React-Native-like framework that lets you write `.tsx` files and compiles them into native Dear ImGui C++ applications. You author UI with JSX components and state hooks, and the compiler generates C++ code that renders through ImGui with GLFW/OpenGL.
+IMX is a React-Native-like framework that lets you write `.tsx` files and compiles them into native Dear ImGui C++ applications. You author UI with JSX components and state hooks, and the compiler generates C++ code that renders through ImGui with GLFW/OpenGL.
 
 ### Pipeline
 
 ```
-.tsx source  -->  reimgui-compiler  -->  .gen.cpp / .gen.h  -->  CMake build  -->  native binary
+.tsx source  -->  imx-compiler  -->  .gen.cpp / .gen.h  -->  CMake build  -->  native binary
 ```
 
 ### Usage
 
-1. Write `.tsx` files using ReImGui components
+1. Write `.tsx` files using IMX components
 2. Run the compiler: `node compiler/dist/index.js App.tsx [OtherComponent.tsx ...] -o build/generated`
 3. Build with CMake: `cmake --build build`
 
@@ -613,7 +613,7 @@ A popup/modal window. Shown when opened programmatically.
 
 ### useState
 
-ReImGui provides a `useState` hook with the same signature as React:
+IMX provides a `useState` hook with the same signature as React:
 
 ```tsx
 const [value, setValue] = useState(initialValue);
@@ -779,7 +779,7 @@ const [open, setOpen] = useState(false);
 my-app/
   App.tsx                # Root component (export default)
   MyComponent.tsx        # Custom component (named export)
-  reimgui.d.ts           # Type definitions (copy from examples/hello/)
+  imx.d.ts           # Type definitions (copy from examples/hello/)
   tsconfig.json          # TypeScript config (copy from examples/hello/)
   main.cpp               # Application entry point (copy from examples/hello/)
 ```
@@ -794,34 +794,34 @@ my-app/
     "module": "ES2022",
     "moduleResolution": "bundler",
     "jsx": "react-jsx",
-    "jsxImportSource": "reimgui",
+    "jsxImportSource": "imx",
     "strict": false,
     "noEmit": true,
     "skipLibCheck": true
   },
-  "include": ["*.tsx", "reimgui.d.ts"]
+  "include": ["*.tsx", "imx.d.ts"]
 }
 ```
 
 ### CMakeLists.txt — adding a new app
 
-Add this to your project's CMakeLists.txt (after the reimgui library targets):
+Add this to your project's CMakeLists.txt (after the imx library targets):
 
 ```cmake
 # --- Code generation: .tsx -> .gen.cpp ---
-set(REIMGUI_GENERATED_DIR ${CMAKE_BINARY_DIR}/generated)
-file(MAKE_DIRECTORY ${REIMGUI_GENERATED_DIR})
+set(IMX_GENERATED_DIR ${CMAKE_BINARY_DIR}/generated)
+file(MAKE_DIRECTORY ${IMX_GENERATED_DIR})
 
 add_custom_command(
     OUTPUT
-        ${REIMGUI_GENERATED_DIR}/App.gen.cpp
-        ${REIMGUI_GENERATED_DIR}/app_root.gen.cpp
-        ${REIMGUI_GENERATED_DIR}/MyComponent.gen.cpp
-        ${REIMGUI_GENERATED_DIR}/MyComponent.gen.h
+        ${IMX_GENERATED_DIR}/App.gen.cpp
+        ${IMX_GENERATED_DIR}/app_root.gen.cpp
+        ${IMX_GENERATED_DIR}/MyComponent.gen.cpp
+        ${IMX_GENERATED_DIR}/MyComponent.gen.h
     COMMAND node ${CMAKE_SOURCE_DIR}/compiler/dist/index.js
         ${CMAKE_SOURCE_DIR}/my-app/App.tsx
         ${CMAKE_SOURCE_DIR}/my-app/MyComponent.tsx
-        -o ${REIMGUI_GENERATED_DIR}
+        -o ${IMX_GENERATED_DIR}
     DEPENDS
         ${CMAKE_SOURCE_DIR}/my-app/App.tsx
         ${CMAKE_SOURCE_DIR}/my-app/MyComponent.tsx
@@ -830,12 +830,12 @@ add_custom_command(
 
 add_executable(my_app
     my-app/main.cpp
-    ${REIMGUI_GENERATED_DIR}/App.gen.cpp
-    ${REIMGUI_GENERATED_DIR}/app_root.gen.cpp
-    ${REIMGUI_GENERATED_DIR}/MyComponent.gen.cpp
+    ${IMX_GENERATED_DIR}/App.gen.cpp
+    ${IMX_GENERATED_DIR}/app_root.gen.cpp
+    ${IMX_GENERATED_DIR}/MyComponent.gen.cpp
 )
-target_link_libraries(my_app PRIVATE reimgui_renderer)
-target_include_directories(my_app PRIVATE ${REIMGUI_GENERATED_DIR})
+target_link_libraries(my_app PRIVATE imx_renderer)
+target_include_directories(my_app PRIVATE ${IMX_GENERATED_DIR})
 ```
 
 ### Adding a new .tsx file

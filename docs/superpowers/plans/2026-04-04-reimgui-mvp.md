@@ -1,33 +1,33 @@
-# ReImGui MVP Implementation Plan
+# IMX MVP Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Build the full ReImGui MVP — `.igx` TSX-like source compiles to native C++ Dear ImGui applications via a TypeScript compiler and C++ runtime.
+**Goal:** Build the full IMX MVP — `.igx` TSX-like source compiles to native C++ Dear ImGui applications via a TypeScript compiler and C++ runtime.
 
 **Architecture:** Four layers: TypeScript compiler (dev-time, parses .igx, emits .gen.cpp), C++ runtime (state, instances, lifecycle), C++ renderer (host components mapped to ImGui calls), and app shell (existing GLFW/OpenGL loop). The compiler assigns state slot indices and instance identity at compile time. The runtime tracks component instances in a tree with mount/unmount lifecycle. The renderer maps React-Native-like components to ImGui calls with a layout stack for Row/Column spacing.
 
 **Tech Stack:** C++20, Dear ImGui (v1.92.7-docking), GLFW 3.4, OpenGL 3, TypeScript 5, Catch2 v3 (C++ tests), Vitest (TS tests), CMake 3.25+
 
-**Spec:** `docs/superpowers/specs/2026-04-04-reimgui-mvp-implementation-design.md`
+**Spec:** `docs/superpowers/specs/2026-04-04-imx-mvp-implementation-design.md`
 
 ---
 
 ## File Structure
 
-### C++ Runtime (`reimgui_runtime`)
-- `include/reimgui/runtime.h` — public header: StateSlot, TextBuffer, ComponentInstance, RenderContext, Runtime
+### C++ Runtime (`imx_runtime`)
+- `include/imx/runtime.h` — public header: StateSlot, TextBuffer, ComponentInstance, RenderContext, Runtime
 - `runtime/component_instance.cpp` — ComponentInstance implementation
 - `runtime/render_context.cpp` — RenderContext implementation
 - `runtime/runtime.cpp` — Runtime frame lifecycle
 - `runtime/text_buffer.cpp` — TextBuffer sync logic
 
-### C++ Renderer (`reimgui_renderer`)
-- `include/reimgui/renderer.h` — public header: Style struct, all host component function declarations
+### C++ Renderer (`imx_renderer`)
+- `include/imx/renderer.h` — public header: Style struct, all host component function declarations
 - `renderer/style.cpp` — Style push/pop helpers
 - `renderer/layout.cpp` — Layout stack, before_child(), Row/Column/View begin/end
 - `renderer/components.cpp` — Window, Text, Button, TextInput, Checkbox, Separator, Popup
 
-### TypeScript Compiler (`reimgui_codegen`)
+### TypeScript Compiler (`imx_codegen`)
 - `compiler/package.json` — Node project config
 - `compiler/tsconfig.json` — TypeScript config
 - `compiler/src/index.ts` — CLI entry point
@@ -60,7 +60,7 @@
 ### Task 1: Project Scaffolding
 
 **Files:**
-- Create: `include/reimgui/runtime.h`
+- Create: `include/imx/runtime.h`
 - Create: `runtime/runtime.cpp`
 - Create: `tests/runtime/test_state.cpp`
 - Modify: `CMakeLists.txt`
@@ -69,13 +69,13 @@
 
 Run:
 ```bash
-mkdir -p include/reimgui runtime renderer tests/runtime examples/hello compiler/src compiler/tests
+mkdir -p include/imx runtime renderer tests/runtime examples/hello compiler/src compiler/tests
 ```
 
 - [ ] **Step 2: Write the runtime.h header with StateSlot only**
 
 ```cpp
-// include/reimgui/runtime.h
+// include/imx/runtime.h
 #pragma once
 
 #include <any>
@@ -87,7 +87,7 @@ mkdir -p include/reimgui runtime renderer tests/runtime examples/hello compiler/
 #include <variant>
 #include <vector>
 
-namespace reimgui {
+namespace imx {
 
 // State slot — templated accessor for a single piece of component state.
 // Created by RenderContext::use_state(). Holds a reference to the underlying
@@ -110,18 +110,18 @@ private:
     bool& dirty_;
 };
 
-} // namespace reimgui
+} // namespace imx
 ```
 
 - [ ] **Step 3: Write a minimal runtime.cpp**
 
 ```cpp
 // runtime/runtime.cpp
-#include <reimgui/runtime.h>
+#include <imx/runtime.h>
 
 // Non-template implementations are added in Task 4 when Runtime is defined.
-// This file exists initially so the reimgui_runtime library target has a source.
-namespace reimgui {} // namespace reimgui
+// This file exists initially so the imx_runtime library target has a source.
+namespace imx {} // namespace imx
 ```
 
 - [ ] **Step 4: Write the first failing test**
@@ -129,12 +129,12 @@ namespace reimgui {} // namespace reimgui
 ```cpp
 // tests/runtime/test_state.cpp
 #include <catch2/catch_test_macros.hpp>
-#include <reimgui/runtime.h>
+#include <imx/runtime.h>
 
 TEST_CASE("StateSlot get returns initial value", "[state]") {
     bool dirty = false;
     std::any storage = 42;
-    reimgui::StateSlot<int> slot(storage, dirty);
+    imx::StateSlot<int> slot(storage, dirty);
 
     REQUIRE(slot.get() == 42);
 }
@@ -142,7 +142,7 @@ TEST_CASE("StateSlot get returns initial value", "[state]") {
 TEST_CASE("StateSlot set updates value and marks dirty", "[state]") {
     bool dirty = false;
     std::any storage = 0;
-    reimgui::StateSlot<int> slot(storage, dirty);
+    imx::StateSlot<int> slot(storage, dirty);
 
     REQUIRE_FALSE(dirty);
     slot.set(7);
@@ -153,7 +153,7 @@ TEST_CASE("StateSlot set updates value and marks dirty", "[state]") {
 TEST_CASE("StateSlot works with std::string", "[state]") {
     bool dirty = false;
     std::any storage = std::string("hello");
-    reimgui::StateSlot<std::string> slot(storage, dirty);
+    imx::StateSlot<std::string> slot(storage, dirty);
 
     REQUIRE(slot.get() == "hello");
     slot.set(std::string("world"));
@@ -164,7 +164,7 @@ TEST_CASE("StateSlot works with std::string", "[state]") {
 TEST_CASE("StateSlot works with bool", "[state]") {
     bool dirty = false;
     std::any storage = false;
-    reimgui::StateSlot<bool> slot(storage, dirty);
+    imx::StateSlot<bool> slot(storage, dirty);
 
     REQUIRE(slot.get() == false);
     slot.set(true);
@@ -179,7 +179,7 @@ TEST_CASE("StateSlot works with bool", "[state]") {
 # CMakeLists.txt
 cmake_minimum_required(VERSION 3.25)
 set(CMAKE_POLICY_VERSION_MINIMUM 3.5)
-project(reimgui LANGUAGES CXX)
+project(imx LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -227,17 +227,17 @@ target_include_directories(imgui_lib PUBLIC
 )
 target_link_libraries(imgui_lib PUBLIC glfw OpenGL::GL)
 
-# --- reimgui_runtime ---
-add_library(reimgui_runtime STATIC
+# --- imx_runtime ---
+add_library(imx_runtime STATIC
     runtime/runtime.cpp
 )
-target_include_directories(reimgui_runtime PUBLIC include/)
+target_include_directories(imx_runtime PUBLIC include/)
 
 # --- Tests ---
 add_executable(runtime_tests
     tests/runtime/test_state.cpp
 )
-target_link_libraries(runtime_tests PRIVATE reimgui_runtime Catch2::Catch2WithMain)
+target_link_libraries(runtime_tests PRIVATE imx_runtime Catch2::Catch2WithMain)
 
 # --- Legacy app (kept until example replaces it) ---
 add_executable(app main.cpp)
@@ -264,14 +264,14 @@ git commit -m "feat: project scaffolding with StateSlot and Catch2 tests"
 ### Task 2: TextBuffer
 
 **Files:**
-- Modify: `include/reimgui/runtime.h`
+- Modify: `include/imx/runtime.h`
 - Create: `runtime/text_buffer.cpp`
 - Create: `tests/runtime/test_text_buffer.cpp`
 - Modify: `CMakeLists.txt`
 
 - [ ] **Step 1: Add TextBuffer declaration to runtime.h**
 
-Append before the closing `} // namespace reimgui`:
+Append before the closing `} // namespace imx`:
 
 ```cpp
 // Persistent text buffer for TextInput components.
@@ -310,11 +310,11 @@ private:
 
 ```cpp
 // runtime/text_buffer.cpp
-#include <reimgui/runtime.h>
+#include <imx/runtime.h>
 #include <algorithm>
 #include <cstring>
 
-namespace reimgui {
+namespace imx {
 
 void TextBuffer::sync_from(const std::string& value) {
     modified_ = false;
@@ -344,7 +344,7 @@ void TextBuffer::mark_modified() {
     modified_ = true;
 }
 
-} // namespace reimgui
+} // namespace imx
 ```
 
 - [ ] **Step 3: Write TextBuffer tests**
@@ -352,16 +352,16 @@ void TextBuffer::mark_modified() {
 ```cpp
 // tests/runtime/test_text_buffer.cpp
 #include <catch2/catch_test_macros.hpp>
-#include <reimgui/runtime.h>
+#include <imx/runtime.h>
 
 TEST_CASE("TextBuffer sync_from copies string", "[textbuffer]") {
-    reimgui::TextBuffer buf;
+    imx::TextBuffer buf;
     buf.sync_from("hello");
     REQUIRE(buf.value() == "hello");
 }
 
 TEST_CASE("TextBuffer sync_from resets modified flag", "[textbuffer]") {
-    reimgui::TextBuffer buf;
+    imx::TextBuffer buf;
     buf.sync_from("first");
     buf.mark_modified();
     REQUIRE(buf.modified());
@@ -372,7 +372,7 @@ TEST_CASE("TextBuffer sync_from resets modified flag", "[textbuffer]") {
 }
 
 TEST_CASE("TextBuffer grows for long strings", "[textbuffer]") {
-    reimgui::TextBuffer buf;
+    imx::TextBuffer buf;
     std::string long_str(500, 'x');
     buf.sync_from(long_str);
     REQUIRE(buf.value() == long_str);
@@ -380,7 +380,7 @@ TEST_CASE("TextBuffer grows for long strings", "[textbuffer]") {
 }
 
 TEST_CASE("TextBuffer data provides mutable char*", "[textbuffer]") {
-    reimgui::TextBuffer buf;
+    imx::TextBuffer buf;
     buf.sync_from("edit me");
     char* ptr = buf.data();
     ptr[0] = 'E';
@@ -388,7 +388,7 @@ TEST_CASE("TextBuffer data provides mutable char*", "[textbuffer]") {
 }
 
 TEST_CASE("TextBuffer mark_modified tracks changes", "[textbuffer]") {
-    reimgui::TextBuffer buf;
+    imx::TextBuffer buf;
     buf.sync_from("original");
     REQUIRE_FALSE(buf.modified());
     buf.mark_modified();
@@ -398,11 +398,11 @@ TEST_CASE("TextBuffer mark_modified tracks changes", "[textbuffer]") {
 
 - [ ] **Step 4: Update CMakeLists.txt**
 
-Add `runtime/text_buffer.cpp` to reimgui_runtime sources and `tests/runtime/test_text_buffer.cpp` to runtime_tests:
+Add `runtime/text_buffer.cpp` to imx_runtime sources and `tests/runtime/test_text_buffer.cpp` to runtime_tests:
 
-In the `reimgui_runtime` target:
+In the `imx_runtime` target:
 ```cmake
-add_library(reimgui_runtime STATIC
+add_library(imx_runtime STATIC
     runtime/runtime.cpp
     runtime/text_buffer.cpp
 )
@@ -427,7 +427,7 @@ Expected: 9 tests pass (4 state + 5 text buffer).
 - [ ] **Step 6: Commit**
 
 ```bash
-git add runtime/text_buffer.cpp tests/runtime/test_text_buffer.cpp include/reimgui/runtime.h CMakeLists.txt
+git add runtime/text_buffer.cpp tests/runtime/test_text_buffer.cpp include/imx/runtime.h CMakeLists.txt
 git commit -m "feat: add TextBuffer for persistent TextInput storage"
 ```
 
@@ -436,14 +436,14 @@ git commit -m "feat: add TextBuffer for persistent TextInput storage"
 ### Task 3: ComponentInstance
 
 **Files:**
-- Modify: `include/reimgui/runtime.h`
+- Modify: `include/imx/runtime.h`
 - Create: `runtime/component_instance.cpp`
 - Create: `tests/runtime/test_instance.cpp`
 - Modify: `CMakeLists.txt`
 
 - [ ] **Step 1: Add ComponentInstance declaration to runtime.h**
 
-Append before the closing `} // namespace reimgui`:
+Append before the closing `} // namespace imx`:
 
 ```cpp
 // Identity key for component instances — either positional (int) or explicit string key.
@@ -500,11 +500,11 @@ private:
 
 ```cpp
 // runtime/component_instance.cpp
-#include <reimgui/runtime.h>
+#include <imx/runtime.h>
 #include <cassert>
 #include <functional>
 
-namespace reimgui {
+namespace imx {
 
 ComponentInstance::ComponentInstance(int state_count, int buffer_count)
     : state_slots_(state_count)
@@ -596,7 +596,7 @@ int ComponentInstance::child_count() const {
     return static_cast<int>(children_.size());
 }
 
-} // namespace reimgui
+} // namespace imx
 ```
 
 - [ ] **Step 3: Write ComponentInstance tests**
@@ -604,10 +604,10 @@ int ComponentInstance::child_count() const {
 ```cpp
 // tests/runtime/test_instance.cpp
 #include <catch2/catch_test_macros.hpp>
-#include <reimgui/runtime.h>
+#include <imx/runtime.h>
 
 TEST_CASE("ComponentInstance state slots initialize correctly", "[instance]") {
-    reimgui::ComponentInstance inst(3, 0);
+    imx::ComponentInstance inst(3, 0);
 
     REQUIRE_FALSE(inst.is_initialized(0));
     REQUIRE_FALSE(inst.is_initialized(1));
@@ -620,7 +620,7 @@ TEST_CASE("ComponentInstance state slots initialize correctly", "[instance]") {
 }
 
 TEST_CASE("ComponentInstance buffer access", "[instance]") {
-    reimgui::ComponentInstance inst(0, 2);
+    imx::ComponentInstance inst(0, 2);
     inst.buffer_at(0).sync_from("hello");
     inst.buffer_at(1).sync_from("world");
     REQUIRE(inst.buffer_at(0).value() == "hello");
@@ -628,7 +628,7 @@ TEST_CASE("ComponentInstance buffer access", "[instance]") {
 }
 
 TEST_CASE("ComponentInstance child lifecycle", "[instance]") {
-    reimgui::ComponentInstance parent(0, 0);
+    imx::ComponentInstance parent(0, 0);
 
     // Create two children
     bool created = false;
@@ -645,7 +645,7 @@ TEST_CASE("ComponentInstance child lifecycle", "[instance]") {
 }
 
 TEST_CASE("ComponentInstance sweep removes unvisited children", "[instance]") {
-    reimgui::ComponentInstance parent(0, 0);
+    imx::ComponentInstance parent(0, 0);
     bool created = false;
 
     parent.ensure_child("A", 0, 0, 0, created);
@@ -667,7 +667,7 @@ TEST_CASE("ComponentInstance sweep removes unvisited children", "[instance]") {
 }
 
 TEST_CASE("ComponentInstance string keys for stable identity", "[instance]") {
-    reimgui::ComponentInstance parent(0, 0);
+    imx::ComponentInstance parent(0, 0);
     bool created = false;
 
     auto& child = parent.ensure_child("TodoItem", std::string("item-1"), 1, 0, created);
@@ -684,10 +684,10 @@ TEST_CASE("ComponentInstance string keys for stable identity", "[instance]") {
 
 - [ ] **Step 4: Update CMakeLists.txt**
 
-Add `runtime/component_instance.cpp` to reimgui_runtime and `tests/runtime/test_instance.cpp` to runtime_tests:
+Add `runtime/component_instance.cpp` to imx_runtime and `tests/runtime/test_instance.cpp` to runtime_tests:
 
 ```cmake
-add_library(reimgui_runtime STATIC
+add_library(imx_runtime STATIC
     runtime/runtime.cpp
     runtime/text_buffer.cpp
     runtime/component_instance.cpp
@@ -713,7 +713,7 @@ Expected: 14 tests pass.
 - [ ] **Step 6: Commit**
 
 ```bash
-git add runtime/component_instance.cpp tests/runtime/test_instance.cpp include/reimgui/runtime.h CMakeLists.txt
+git add runtime/component_instance.cpp tests/runtime/test_instance.cpp include/imx/runtime.h CMakeLists.txt
 git commit -m "feat: add ComponentInstance with state slots, buffers, and child lifecycle"
 ```
 
@@ -722,7 +722,7 @@ git commit -m "feat: add ComponentInstance with state slots, buffers, and child 
 ### Task 4: RenderContext and Runtime
 
 **Files:**
-- Modify: `include/reimgui/runtime.h`
+- Modify: `include/imx/runtime.h`
 - Create: `runtime/render_context.cpp`
 - Modify: `runtime/runtime.cpp`
 - Create: `tests/runtime/test_lifecycle.cpp`
@@ -730,7 +730,7 @@ git commit -m "feat: add ComponentInstance with state slots, buffers, and child 
 
 - [ ] **Step 1: Add RenderContext and Runtime declarations to runtime.h**
 
-Append before the closing `} // namespace reimgui`:
+Append before the closing `} // namespace imx`:
 
 ```cpp
 class Runtime; // forward declaration
@@ -813,10 +813,10 @@ No code change needed — the declaration above already handles this.
 
 ```cpp
 // runtime/render_context.cpp
-#include <reimgui/runtime.h>
+#include <imx/runtime.h>
 #include <cassert>
 
-namespace reimgui {
+namespace imx {
 
 RenderContext::RenderContext(Runtime& runtime)
     : runtime_(runtime) {}
@@ -846,16 +846,16 @@ ComponentInstance* RenderContext::current() {
     return stack_.back();
 }
 
-} // namespace reimgui
+} // namespace imx
 ```
 
 - [ ] **Step 4: Write Runtime implementation**
 
 ```cpp
 // runtime/runtime.cpp
-#include <reimgui/runtime.h>
+#include <imx/runtime.h>
 
-namespace reimgui {
+namespace imx {
 
 Runtime::Runtime()
     : root_(std::make_unique<ComponentInstance>(0, 0))
@@ -889,7 +889,7 @@ ComponentInstance& Runtime::root() {
     return *root_;
 }
 
-} // namespace reimgui
+} // namespace imx
 ```
 
 - [ ] **Step 5: Write lifecycle tests**
@@ -897,10 +897,10 @@ ComponentInstance& Runtime::root() {
 ```cpp
 // tests/runtime/test_lifecycle.cpp
 #include <catch2/catch_test_macros.hpp>
-#include <reimgui/runtime.h>
+#include <imx/runtime.h>
 
 TEST_CASE("Runtime begin/end frame provides context", "[lifecycle]") {
-    reimgui::Runtime runtime;
+    imx::Runtime runtime;
     auto& ctx = runtime.begin_frame();
 
     ctx.begin_instance("App", 0, 1, 0);
@@ -912,7 +912,7 @@ TEST_CASE("Runtime begin/end frame provides context", "[lifecycle]") {
 }
 
 TEST_CASE("State persists across frames", "[lifecycle]") {
-    reimgui::Runtime runtime;
+    imx::Runtime runtime;
 
     // Frame 1: initialize state
     {
@@ -936,7 +936,7 @@ TEST_CASE("State persists across frames", "[lifecycle]") {
 }
 
 TEST_CASE("Unmount removes unvisited instances", "[lifecycle]") {
-    reimgui::Runtime runtime;
+    imx::Runtime runtime;
 
     // Frame 1: render two children
     {
@@ -978,7 +978,7 @@ TEST_CASE("Unmount removes unvisited instances", "[lifecycle]") {
 }
 
 TEST_CASE("Key-based identity preserves state across reorder", "[lifecycle]") {
-    reimgui::Runtime runtime;
+    imx::Runtime runtime;
     using Key = std::string;
 
     // Frame 1: items A, B
@@ -1011,7 +1011,7 @@ TEST_CASE("Key-based identity preserves state across reorder", "[lifecycle]") {
 }
 
 TEST_CASE("Dirty flag tracks state changes", "[lifecycle]") {
-    reimgui::Runtime runtime;
+    imx::Runtime runtime;
 
     auto& ctx = runtime.begin_frame();
     ctx.begin_instance("App", 0, 1, 0);
@@ -1029,7 +1029,7 @@ TEST_CASE("Dirty flag tracks state changes", "[lifecycle]") {
 }
 
 TEST_CASE("TextBuffer accessible via RenderContext", "[lifecycle]") {
-    reimgui::Runtime runtime;
+    imx::Runtime runtime;
 
     auto& ctx = runtime.begin_frame();
     ctx.begin_instance("App", 0, 0, 1);
@@ -1046,7 +1046,7 @@ TEST_CASE("TextBuffer accessible via RenderContext", "[lifecycle]") {
 - [ ] **Step 6: Update CMakeLists.txt**
 
 ```cmake
-add_library(reimgui_runtime STATIC
+add_library(imx_runtime STATIC
     runtime/runtime.cpp
     runtime/text_buffer.cpp
     runtime/component_instance.cpp
@@ -1074,7 +1074,7 @@ Expected: 20 tests pass.
 - [ ] **Step 8: Commit**
 
 ```bash
-git add runtime/render_context.cpp runtime/runtime.cpp tests/runtime/test_lifecycle.cpp include/reimgui/runtime.h CMakeLists.txt
+git add runtime/render_context.cpp runtime/runtime.cpp tests/runtime/test_lifecycle.cpp include/imx/runtime.h CMakeLists.txt
 git commit -m "feat: add RenderContext and Runtime with frame lifecycle and unmount detection"
 ```
 
@@ -1085,7 +1085,7 @@ git commit -m "feat: add RenderContext and Runtime with frame lifecycle and unmo
 ### Task 5: Style Struct and Renderer Foundation
 
 **Files:**
-- Create: `include/reimgui/renderer.h`
+- Create: `include/imx/renderer.h`
 - Create: `renderer/style.cpp`
 - Create: `renderer/layout.cpp`
 - Modify: `CMakeLists.txt`
@@ -1093,14 +1093,14 @@ git commit -m "feat: add RenderContext and Runtime with frame lifecycle and unmo
 - [ ] **Step 1: Write renderer.h**
 
 ```cpp
-// include/reimgui/renderer.h
+// include/imx/renderer.h
 #pragma once
 
 #include <imgui.h>
-#include <reimgui/runtime.h>
+#include <imx/runtime.h>
 #include <optional>
 
-namespace reimgui {
+namespace imx {
 
 // Style properties for host components.
 // All fields are optional — unset means "use ImGui default."
@@ -1155,16 +1155,16 @@ void end_popup();
 void open_popup(const char* id);
 
 } // namespace renderer
-} // namespace reimgui
+} // namespace imx
 ```
 
 - [ ] **Step 2: Write style.cpp with push/pop helpers**
 
 ```cpp
 // renderer/style.cpp
-#include <reimgui/renderer.h>
+#include <imx/renderer.h>
 
-namespace reimgui::renderer {
+namespace imx::renderer {
 
 // Track how many style vars/colors were pushed so we can pop them.
 struct StyleGuard {
@@ -1200,17 +1200,17 @@ struct StyleGuard {
     }
 };
 
-} // namespace reimgui::renderer
+} // namespace imx::renderer
 ```
 
 - [ ] **Step 3: Write layout.cpp with layout stack**
 
 ```cpp
 // renderer/layout.cpp
-#include <reimgui/renderer.h>
+#include <imx/renderer.h>
 #include <vector>
 
-namespace reimgui::renderer {
+namespace imx::renderer {
 
 struct LayoutState {
     enum class Direction { Vertical, Horizontal };
@@ -1280,33 +1280,33 @@ void end_view() {
     end_column();
 }
 
-} // namespace reimgui::renderer
+} // namespace imx::renderer
 ```
 
 - [ ] **Step 4: Update CMakeLists.txt with renderer target**
 
 ```cmake
-# --- reimgui_renderer ---
-add_library(reimgui_renderer STATIC
+# --- imx_renderer ---
+add_library(imx_renderer STATIC
     renderer/style.cpp
     renderer/layout.cpp
 )
-target_include_directories(reimgui_renderer PUBLIC include/)
-target_link_libraries(reimgui_renderer PUBLIC reimgui_runtime imgui_lib)
+target_include_directories(imx_renderer PUBLIC include/)
+target_link_libraries(imx_renderer PUBLIC imx_runtime imgui_lib)
 ```
 
 - [ ] **Step 5: Build to verify compilation**
 
 Run:
 ```bash
-cmake --build build --target reimgui_renderer
+cmake --build build --target imx_renderer
 ```
 Expected: compiles with no errors.
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add include/reimgui/renderer.h renderer/style.cpp renderer/layout.cpp CMakeLists.txt
+git add include/imx/renderer.h renderer/style.cpp renderer/layout.cpp CMakeLists.txt
 git commit -m "feat: add renderer foundation with Style struct and layout stack"
 ```
 
@@ -1322,10 +1322,10 @@ git commit -m "feat: add renderer foundation with Style struct and layout stack"
 
 ```cpp
 // renderer/components.cpp
-#include <reimgui/renderer.h>
+#include <imx/renderer.h>
 #include <cstdarg>
 
-namespace reimgui::renderer {
+namespace imx::renderer {
 
 // --- Window ---
 
@@ -1403,13 +1403,13 @@ void open_popup(const char* id) {
     ImGui::OpenPopup(id);
 }
 
-} // namespace reimgui::renderer
+} // namespace imx::renderer
 ```
 
 - [ ] **Step 2: Update CMakeLists.txt**
 
 ```cmake
-add_library(reimgui_renderer STATIC
+add_library(imx_renderer STATIC
     renderer/style.cpp
     renderer/layout.cpp
     renderer/components.cpp
@@ -1420,7 +1420,7 @@ add_library(reimgui_renderer STATIC
 
 Run:
 ```bash
-cmake --build build --target reimgui_renderer
+cmake --build build --target imx_renderer
 ```
 Expected: compiles with no errors.
 
@@ -1450,17 +1450,17 @@ This is what the compiler would generate — written by hand to prove the runtim
 ```cpp
 // examples/hello/hand_written_app.h
 #pragma once
-#include <reimgui/runtime.h>
+#include <imx/runtime.h>
 
-void hand_written_app_render(reimgui::RenderContext& ctx);
+void hand_written_app_render(imx::RenderContext& ctx);
 
-void hand_written_render_root(reimgui::Runtime& runtime);
+void hand_written_render_root(imx::Runtime& runtime);
 ```
 
 ```cpp
 // examples/hello/hand_written_app.cpp
 #include "hand_written_app.h"
-#include <reimgui/renderer.h>
+#include <imx/renderer.h>
 
 // This is what the compiler would generate from:
 //
@@ -1485,45 +1485,45 @@ void hand_written_render_root(reimgui::Runtime& runtime);
 //     );
 //   }
 
-void hand_written_app_render(reimgui::RenderContext& ctx) {
+void hand_written_app_render(imx::RenderContext& ctx) {
     auto name = ctx.use_state<std::string>("Berkay", 0);
     auto enabled = ctx.use_state<bool>(true, 1);
     auto count = ctx.use_state<int>(0, 2);
 
-    reimgui::renderer::begin_window("Hello");
-    reimgui::renderer::begin_column({.gap = 8});
+    imx::renderer::begin_window("Hello");
+    imx::renderer::begin_column({.gap = 8});
 
-    reimgui::renderer::text("Hello %s", name.get().c_str());
+    imx::renderer::text("Hello %s", name.get().c_str());
 
     auto& name_buf = ctx.get_buffer(0);
     name_buf.sync_from(name.get());
-    if (reimgui::renderer::text_input("##name", name_buf)) {
+    if (imx::renderer::text_input("##name", name_buf)) {
         name.set(name_buf.value());
     }
 
     {
         bool enabled_val = enabled.get();
-        if (reimgui::renderer::checkbox("Enabled", &enabled_val)) {
+        if (imx::renderer::checkbox("Enabled", &enabled_val)) {
             enabled.set(enabled_val);
         }
     }
 
-    reimgui::renderer::begin_row({.gap = 8});
-    if (reimgui::renderer::button("Increment")) {
+    imx::renderer::begin_row({.gap = 8});
+    if (imx::renderer::button("Increment")) {
         count.set(count.get() + 1);
     }
-    reimgui::renderer::text("Count: %d", count.get());
-    reimgui::renderer::end_row();
+    imx::renderer::text("Count: %d", count.get());
+    imx::renderer::end_row();
 
     if (enabled.get()) {
-        reimgui::renderer::text("Status: active");
+        imx::renderer::text("Status: active");
     }
 
-    reimgui::renderer::end_column();
-    reimgui::renderer::end_window();
+    imx::renderer::end_column();
+    imx::renderer::end_window();
 }
 
-void hand_written_render_root(reimgui::Runtime& runtime) {
+void hand_written_render_root(imx::Runtime& runtime) {
     auto& ctx = runtime.begin_frame();
     ctx.begin_instance("App", 0, 3, 1); // 3 state slots, 1 text buffer
     hand_written_app_render(ctx);
@@ -1539,8 +1539,8 @@ Copy from the existing `main.cpp` and replace the hardcoded UI:
 ```cpp
 // examples/hello/main.cpp
 #include "hand_written_app.h"
-#include <reimgui/runtime.h>
-#include <reimgui/renderer.h>
+#include <imx/runtime.h>
+#include <imx/renderer.h>
 
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
@@ -1550,7 +1550,7 @@ Copy from the existing `main.cpp` and replace the hardcoded UI:
 struct App {
     GLFWwindow* window = nullptr;
     ImGuiIO*    io     = nullptr;
-    reimgui::Runtime runtime;
+    imx::Runtime runtime;
 };
 
 static void draw_dockspace() {
@@ -1587,7 +1587,7 @@ static void render_frame(App& app) {
 
     draw_dockspace();
 
-    // --- ReImGui runtime-driven rendering replaces hardcoded UI ---
+    // --- IMX runtime-driven rendering replaces hardcoded UI ---
     hand_written_render_root(app.runtime);
 
     ImGui::Render();
@@ -1621,7 +1621,7 @@ int main() {
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 #endif
 
-    GLFWwindow* window = glfwCreateWindow(600, 400, "reimgui - hand-written test", nullptr, nullptr);
+    GLFWwindow* window = glfwCreateWindow(600, 400, "imx - hand-written test", nullptr, nullptr);
     if (!window) { glfwTerminate(); return 1; }
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1);
@@ -1670,7 +1670,7 @@ add_executable(hello_hand
     examples/hello/main.cpp
     examples/hello/hand_written_app.cpp
 )
-target_link_libraries(hello_hand PRIVATE reimgui_renderer)
+target_link_libraries(hello_hand PRIVATE imx_renderer)
 ```
 
 - [ ] **Step 4: Build and run the hand-written example**
@@ -1679,7 +1679,7 @@ Run:
 ```bash
 cmake --build build --target hello_hand && ./build/hello_hand
 ```
-Expected: a window titled "reimgui - hand-written test" opens with:
+Expected: a window titled "imx - hand-written test" opens with:
 - "Hello Berkay" text
 - A text input field (editable, updates the greeting)
 - An "Enabled" checkbox
@@ -1714,7 +1714,7 @@ git commit -m "feat: hand-written integration test validating runtime + renderer
 
 ```json
 {
-  "name": "reimgui-compiler",
+  "name": "imx-compiler",
   "version": "0.1.0",
   "type": "module",
   "scripts": {
@@ -1876,7 +1876,7 @@ const { values, positionals } = parseArgs({
 });
 
 if (positionals.length === 0) {
-    console.error('Usage: reimgui-compiler <input.igx ...> -o <output-dir>');
+    console.error('Usage: imx-compiler <input.igx ...> -o <output-dir>');
     process.exit(1);
 }
 
@@ -1890,7 +1890,7 @@ for (const file of inputFiles) {
     }
 }
 
-console.log(`reimgui-compiler: ${inputFiles.length} file(s) -> ${outputDir}/`);
+console.log(`imx-compiler: ${inputFiles.length} file(s) -> ${outputDir}/`);
 // Pipeline stages will be wired here in later tasks.
 ```
 
@@ -3211,8 +3211,8 @@ const INITIAL_VALUE_MAP: Record<string, (v: string) => string> = {
  */
 export function emitComponent(comp: IRComponent): string {
     const lines: string[] = [];
-    lines.push('#include <reimgui/runtime.h>');
-    lines.push('#include <reimgui/renderer.h>');
+    lines.push('#include <imx/runtime.h>');
+    lines.push('#include <imx/renderer.h>');
     lines.push('');
 
     // If the component accepts props, emit a props struct
@@ -3231,9 +3231,9 @@ export function emitComponent(comp: IRComponent): string {
 
     // Function signature
     if (comp.params.length > 0) {
-        lines.push(`void ${comp.name}_render(reimgui::RenderContext& ctx, const ${comp.name}_Props& props) {`);
+        lines.push(`void ${comp.name}_render(imx::RenderContext& ctx, const ${comp.name}_Props& props) {`);
     } else {
-        lines.push(`void ${comp.name}_render(reimgui::RenderContext& ctx) {`);
+        lines.push(`void ${comp.name}_render(imx::RenderContext& ctx) {`);
     }
 
     // State declarations
@@ -3256,11 +3256,11 @@ export function emitComponent(comp: IRComponent): string {
  */
 export function emitRoot(rootComponentName: string, stateCount: number, bufferCount: number): string {
     const lines: string[] = [];
-    lines.push('#include <reimgui/runtime.h>');
+    lines.push('#include <imx/runtime.h>');
     lines.push('');
-    lines.push(`void ${rootComponentName}_render(reimgui::RenderContext& ctx);`);
+    lines.push(`void ${rootComponentName}_render(imx::RenderContext& ctx);`);
     lines.push('');
-    lines.push('namespace reimgui {');
+    lines.push('namespace imx {');
     lines.push('');
     lines.push('void render_root(Runtime& runtime) {');
     lines.push('    auto& ctx = runtime.begin_frame();');
@@ -3270,7 +3270,7 @@ export function emitRoot(rootComponentName: string, stateCount: number, bufferCo
     lines.push('    runtime.end_frame();');
     lines.push('}');
     lines.push('');
-    lines.push('} // namespace reimgui');
+    lines.push('} // namespace imx');
     return lines.join('\n') + '\n';
 }
 
@@ -3282,32 +3282,32 @@ function emitNodes(nodes: IRNode[], lines: string[], indent: number, comp: IRCom
                 const tag = node.tag;
                 if (tag === 'Window') {
                     const title = node.props['title'] || '"Untitled"';
-                    lines.push(`${pad}reimgui::renderer::begin_window(${title});`);
+                    lines.push(`${pad}imx::renderer::begin_window(${title});`);
                 } else {
-                    const style = node.style ? `reimgui::Style${node.style}` : '{}';
-                    lines.push(`${pad}reimgui::renderer::begin_${tag.toLowerCase()}(${style});`);
+                    const style = node.style ? `imx::Style${node.style}` : '{}';
+                    lines.push(`${pad}imx::renderer::begin_${tag.toLowerCase()}(${style});`);
                 }
                 break;
             }
             case 'end_container': {
                 const tag = node.tag;
                 if (tag === 'Window') {
-                    lines.push(`${pad}reimgui::renderer::end_window();`);
+                    lines.push(`${pad}imx::renderer::end_window();`);
                 } else {
-                    lines.push(`${pad}reimgui::renderer::end_${tag.toLowerCase()}();`);
+                    lines.push(`${pad}imx::renderer::end_${tag.toLowerCase()}();`);
                 }
                 break;
             }
             case 'text': {
                 if (node.args.length === 0) {
-                    lines.push(`${pad}reimgui::renderer::text("${node.format}");`);
+                    lines.push(`${pad}imx::renderer::text("${node.format}");`);
                 } else {
-                    lines.push(`${pad}reimgui::renderer::text("${node.format}", ${node.args.join(', ')});`);
+                    lines.push(`${pad}imx::renderer::text("${node.format}", ${node.args.join(', ')});`);
                 }
                 break;
             }
             case 'button': {
-                lines.push(`${pad}if (reimgui::renderer::button(${node.title})) {`);
+                lines.push(`${pad}if (imx::renderer::button(${node.title})) {`);
                 for (const stmt of node.action) {
                     lines.push(`${pad}    ${stmt}`);
                 }
@@ -3318,7 +3318,7 @@ function emitNodes(nodes: IRNode[], lines: string[], indent: number, comp: IRCom
                 lines.push(`${pad}{`);
                 lines.push(`${pad}    auto& buf = ctx.get_buffer(${node.bufferIndex});`);
                 lines.push(`${pad}    buf.sync_from(${node.stateVar}.get());`);
-                lines.push(`${pad}    if (reimgui::renderer::text_input(${node.label}, buf)) {`);
+                lines.push(`${pad}    if (imx::renderer::text_input(${node.label}, buf)) {`);
                 lines.push(`${pad}        ${node.stateVar}.set(buf.value());`);
                 lines.push(`${pad}    }`);
                 lines.push(`${pad}}`);
@@ -3327,27 +3327,27 @@ function emitNodes(nodes: IRNode[], lines: string[], indent: number, comp: IRCom
             case 'checkbox': {
                 lines.push(`${pad}{`);
                 lines.push(`${pad}    bool val = ${node.stateVar}.get();`);
-                lines.push(`${pad}    if (reimgui::renderer::checkbox(${node.label}, &val)) {`);
+                lines.push(`${pad}    if (imx::renderer::checkbox(${node.label}, &val)) {`);
                 lines.push(`${pad}        ${node.stateVar}.set(val);`);
                 lines.push(`${pad}    }`);
                 lines.push(`${pad}}`);
                 break;
             }
             case 'separator': {
-                lines.push(`${pad}reimgui::renderer::separator();`);
+                lines.push(`${pad}imx::renderer::separator();`);
                 break;
             }
             case 'begin_popup': {
-                lines.push(`${pad}if (reimgui::renderer::begin_popup(${node.id})) {`);
+                lines.push(`${pad}if (imx::renderer::begin_popup(${node.id})) {`);
                 break;
             }
             case 'end_popup': {
-                lines.push(`${pad}reimgui::renderer::end_popup();`);
+                lines.push(`${pad}imx::renderer::end_popup();`);
                 lines.push(`${pad}}`);
                 break;
             }
             case 'open_popup': {
-                lines.push(`${pad}reimgui::renderer::open_popup(${node.id});`);
+                lines.push(`${pad}imx::renderer::open_popup(${node.id});`);
                 break;
             }
             case 'conditional': {
@@ -3420,13 +3420,13 @@ function App() {
         const ir = lowerComponent(parsed, validation);
         const output = emitComponent(ir);
 
-        expect(output).toContain('#include <reimgui/runtime.h>');
-        expect(output).toContain('void App_render(reimgui::RenderContext& ctx)');
+        expect(output).toContain('#include <imx/runtime.h>');
+        expect(output).toContain('void App_render(imx::RenderContext& ctx)');
         expect(output).toContain('ctx.use_state<int>(0, 0)');
-        expect(output).toContain('reimgui::renderer::begin_window("Hello")');
-        expect(output).toContain('reimgui::renderer::button("Inc")');
+        expect(output).toContain('imx::renderer::begin_window("Hello")');
+        expect(output).toContain('imx::renderer::button("Inc")');
         expect(output).toContain('count.set(count.get() + 1)');
-        expect(output).toContain('reimgui::renderer::end_window()');
+        expect(output).toContain('imx::renderer::end_window()');
     });
 
     it('emits conditional rendering', () => {
@@ -3460,14 +3460,14 @@ function Greeting(props: { name: string, onClose: () => void }) {
         expect(output).toContain('struct Greeting_Props');
         expect(output).toContain('std::string name');
         expect(output).toContain('std::function<void()> onClose');
-        expect(output).toContain('void Greeting_render(reimgui::RenderContext& ctx, const Greeting_Props& props)');
+        expect(output).toContain('void Greeting_render(imx::RenderContext& ctx, const Greeting_Props& props)');
     });
 });
 
 describe('emitRoot', () => {
     it('emits root entry point', () => {
         const output = emitRoot('App', 3, 1);
-        expect(output).toContain('void App_render(reimgui::RenderContext& ctx)');
+        expect(output).toContain('void App_render(imx::RenderContext& ctx)');
         expect(output).toContain('void render_root(Runtime& runtime)');
         expect(output).toContain('ctx.begin_instance("App", 0, 3, 1)');
         expect(output).toContain('App_render(ctx)');
@@ -3518,7 +3518,7 @@ const { values, positionals } = parseArgs({
 });
 
 if (positionals.length === 0) {
-    console.error('Usage: reimgui-compiler <input.igx ...> -o <output-dir>');
+    console.error('Usage: imx-compiler <input.igx ...> -o <output-dir>');
     process.exit(1);
 }
 
@@ -3595,7 +3595,7 @@ if (compiled.length > 0) {
     console.log(`  -> ${rootPath} (root entry point)`);
 }
 
-console.log(`reimgui-compiler: ${compiled.length} component(s) compiled successfully.`);
+console.log(`imx-compiler: ${compiled.length} component(s) compiled successfully.`);
 ```
 
 - [ ] **Step 2: Rebuild compiler**
@@ -3619,9 +3619,9 @@ function Test() {
   );
 }
 EOF
-node compiler/dist/index.js /tmp/Test.igx -o /tmp/reimgui-out/
-cat /tmp/reimgui-out/Test.gen.cpp
-cat /tmp/reimgui-out/app_root.gen.cpp
+node compiler/dist/index.js /tmp/Test.igx -o /tmp/imx-out/
+cat /tmp/imx-out/Test.gen.cpp
+cat /tmp/imx-out/app_root.gen.cpp
 ```
 
 Expected: two generated files with valid C++ code matching the design spec patterns.
@@ -3640,11 +3640,11 @@ git commit -m "feat: compiler CLI — end-to-end .igx to .gen.cpp pipeline"
 ### Task 14: render_root Declaration in Runtime Header
 
 **Files:**
-- Modify: `include/reimgui/runtime.h`
+- Modify: `include/imx/runtime.h`
 
 - [ ] **Step 1: Add render_root declaration**
 
-Append before the closing `} // namespace reimgui`:
+Append before the closing `} // namespace imx`:
 
 ```cpp
 // Entry point generated by the compiler. Declared here so app shells can call it.
@@ -3655,14 +3655,14 @@ void render_root(Runtime& runtime);
 
 Run:
 ```bash
-cmake --build build --target reimgui_runtime
+cmake --build build --target imx_runtime
 ```
 Expected: compiles.
 
 - [ ] **Step 3: Commit**
 
 ```bash
-git add include/reimgui/runtime.h
+git add include/imx/runtime.h
 git commit -m "feat: add render_root declaration to runtime header"
 ```
 
@@ -3707,8 +3707,8 @@ Replace the hand-written includes with the generated root:
 
 ```cpp
 // examples/hello/main.cpp
-#include <reimgui/runtime.h>
-#include <reimgui/renderer.h>
+#include <imx/runtime.h>
+#include <imx/renderer.h>
 
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
@@ -3718,7 +3718,7 @@ Replace the hand-written includes with the generated root:
 struct App {
     GLFWwindow* window = nullptr;
     ImGuiIO*    io     = nullptr;
-    reimgui::Runtime runtime;
+    imx::Runtime runtime;
 };
 
 static void draw_dockspace() {
@@ -3756,7 +3756,7 @@ static void render_frame(App& app) {
     draw_dockspace();
 
     // --- Generated code drives the UI ---
-    reimgui::render_root(app.runtime);
+    imx::render_root(app.runtime);
 
     ImGui::Render();
     glViewport(0, 0, fb_w, fb_h);
@@ -3789,7 +3789,7 @@ int main() {
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 #endif
 
-    GLFWwindow* window = glfwCreateWindow(600, 400, "reimgui", nullptr, nullptr);
+    GLFWwindow* window = glfwCreateWindow(600, 400, "imx", nullptr, nullptr);
     if (!window) { glfwTerminate(); return 1; }
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1);
@@ -3836,16 +3836,16 @@ Add after the existing targets:
 
 ```cmake
 # --- Code generation: .igx -> .gen.cpp ---
-set(REIMGUI_GENERATED_DIR ${CMAKE_BINARY_DIR}/generated)
-file(MAKE_DIRECTORY ${REIMGUI_GENERATED_DIR})
+set(IMX_GENERATED_DIR ${CMAKE_BINARY_DIR}/generated)
+file(MAKE_DIRECTORY ${IMX_GENERATED_DIR})
 
 add_custom_command(
     OUTPUT
-        ${REIMGUI_GENERATED_DIR}/App.gen.cpp
-        ${REIMGUI_GENERATED_DIR}/app_root.gen.cpp
+        ${IMX_GENERATED_DIR}/App.gen.cpp
+        ${IMX_GENERATED_DIR}/app_root.gen.cpp
     COMMAND node ${CMAKE_SOURCE_DIR}/compiler/dist/index.js
         ${CMAKE_SOURCE_DIR}/examples/hello/App.igx
-        -o ${REIMGUI_GENERATED_DIR}
+        -o ${IMX_GENERATED_DIR}
     DEPENDS
         ${CMAKE_SOURCE_DIR}/examples/hello/App.igx
     COMMENT "Compiling App.igx -> C++"
@@ -3854,11 +3854,11 @@ add_custom_command(
 # --- hello_app: end-to-end .igx -> native binary ---
 add_executable(hello_app
     examples/hello/main.cpp
-    ${REIMGUI_GENERATED_DIR}/App.gen.cpp
-    ${REIMGUI_GENERATED_DIR}/app_root.gen.cpp
+    ${IMX_GENERATED_DIR}/App.gen.cpp
+    ${IMX_GENERATED_DIR}/app_root.gen.cpp
 )
-target_link_libraries(hello_app PRIVATE reimgui_renderer)
-target_include_directories(hello_app PRIVATE ${REIMGUI_GENERATED_DIR})
+target_link_libraries(hello_app PRIVATE imx_renderer)
+target_include_directories(hello_app PRIVATE ${IMX_GENERATED_DIR})
 ```
 
 - [ ] **Step 4: Build the compiler (prerequisite)**
@@ -3875,7 +3875,7 @@ Run:
 cmake -B build -G Ninja && cmake --build build --target hello_app && ./build/hello_app
 ```
 
-Expected: a window titled "reimgui" opens with the same UI as the hand-written test:
+Expected: a window titled "imx" opens with the same UI as the hand-written test:
 - "Hello Berkay" text
 - Editable text input
 - "Enabled" checkbox
@@ -3918,7 +3918,7 @@ Run:
 ```bash
 cmake --build build
 ```
-Expected: `reimgui_runtime`, `reimgui_renderer`, `runtime_tests`, `hello_hand`, `hello_app` all build successfully.
+Expected: `imx_runtime`, `imx_renderer`, `runtime_tests`, `hello_hand`, `hello_app` all build successfully.
 
 - [ ] **Step 4: Run the end-to-end app and verify interactivity**
 
@@ -3937,5 +3937,5 @@ Verify:
 
 ```bash
 git add -A
-git commit -m "feat: ReImGui MVP complete — .igx source compiles to native ImGui app"
+git commit -m "feat: IMX MVP complete — .igx source compiles to native ImGui app"
 ```

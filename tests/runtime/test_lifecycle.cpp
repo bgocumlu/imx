@@ -1,8 +1,8 @@
 #include <catch2/catch_test_macros.hpp>
-#include <reimgui/runtime.h>
+#include <imx/runtime.h>
 
 TEST_CASE("Runtime begin/end frame provides context", "[lifecycle]") {
-    reimgui::Runtime runtime;
+    imx::Runtime runtime;
     auto& ctx = runtime.begin_frame();
     ctx.begin_instance("App", 0, 1, 0);
     auto count = ctx.use_state<int>(42, 0);
@@ -12,7 +12,7 @@ TEST_CASE("Runtime begin/end frame provides context", "[lifecycle]") {
 }
 
 TEST_CASE("State persists across frames", "[lifecycle]") {
-    reimgui::Runtime runtime;
+    imx::Runtime runtime;
     {
         auto& ctx = runtime.begin_frame();
         ctx.begin_instance("App", 0, 1, 0);
@@ -32,7 +32,7 @@ TEST_CASE("State persists across frames", "[lifecycle]") {
 }
 
 TEST_CASE("Unmount removes unvisited instances", "[lifecycle]") {
-    reimgui::Runtime runtime;
+    imx::Runtime runtime;
     {
         auto& ctx = runtime.begin_frame();
         ctx.begin_instance("App", 0, 0, 0);
@@ -68,7 +68,7 @@ TEST_CASE("Unmount removes unvisited instances", "[lifecycle]") {
 }
 
 TEST_CASE("Key-based identity preserves state across reorder", "[lifecycle]") {
-    reimgui::Runtime runtime;
+    imx::Runtime runtime;
     using Key = std::string;
     {
         auto& ctx = runtime.begin_frame();
@@ -97,7 +97,7 @@ TEST_CASE("Key-based identity preserves state across reorder", "[lifecycle]") {
 }
 
 TEST_CASE("Dirty flag tracks state changes", "[lifecycle]") {
-    reimgui::Runtime runtime;
+    imx::Runtime runtime;
     auto& ctx = runtime.begin_frame();
     ctx.begin_instance("App", 0, 1, 0);
     REQUIRE(runtime.dirty());
@@ -111,7 +111,7 @@ TEST_CASE("Dirty flag tracks state changes", "[lifecycle]") {
 }
 
 TEST_CASE("TextBuffer accessible via RenderContext", "[lifecycle]") {
-    reimgui::Runtime runtime;
+    imx::Runtime runtime;
     auto& ctx = runtime.begin_frame();
     ctx.begin_instance("App", 0, 0, 1);
     auto& buf = ctx.get_buffer(0);

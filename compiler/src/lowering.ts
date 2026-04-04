@@ -163,7 +163,7 @@ export function exprToCpp(node: ts.Expression, ctx: LoweringContext): string {
             return `${name}.get()`;
         }
         if (name === 'resetLayout') {
-            return 'reimgui_reset_layout';
+            return 'imx_reset_layout';
         }
         return name;
     }

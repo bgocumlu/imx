@@ -1,8 +1,8 @@
-# ReImGui MVP Implementation Design
+# IMX MVP Implementation Design
 
 ## 1. Overview
 
-This document specifies the implementation design for the ReImGui MVP (Phases 2-6 of the roadmap). The goal is to enable LLMs and developers to author native Dear ImGui applications using React-Native-like TSX syntax that compiles to native C++ with no JavaScript runtime in the shipped binary.
+This document specifies the implementation design for the IMX MVP (Phases 2-6 of the roadmap). The goal is to enable LLMs and developers to author native Dear ImGui applications using React-Native-like TSX syntax that compiles to native C++ with no JavaScript runtime in the shipped binary.
 
 The pipeline: `.igx` (TSX-like source) -> TypeScript compiler -> generated C++ -> native ImGui app.
 
@@ -11,9 +11,9 @@ The pipeline: `.igx` (TSX-like source) -> TypeScript compiler -> generated C++ -
 Four layers:
 
 1. **Compiler** (TypeScript, dev-time only) — parses `.igx` files, validates, emits `.gen.cpp`
-2. **Runtime** (`reimgui_runtime`, C++) — component instances, state slots, callbacks, lifecycle, style structs
-3. **Renderer** (`reimgui_renderer_imgui`, C++) — host component functions that map to ImGui calls, style-to-ImGui resolution, layout via child regions
-4. **App shell** (C++) — existing GLFW/OpenGL frame loop, calls `reimgui::render_root()`
+2. **Runtime** (`imx_runtime`, C++) — component instances, state slots, callbacks, lifecycle, style structs
+3. **Renderer** (`imx_renderer_imgui`, C++) — host component functions that map to ImGui calls, style-to-ImGui resolution, layout via child regions
+4. **App shell** (C++) — existing GLFW/OpenGL frame loop, calls `imx::render_root()`
 
 ### Data flow each frame
 
@@ -72,7 +72,7 @@ App.igx:8:20 - error: Button requires 'onPress' prop
 - `key` on mapped elements -> `ctx.begin_instance("TodoItem", key)` for stable identity
 - The compiler processes all `.igx` files in the project together to validate cross-file references
 
-## 4. Runtime Design (`reimgui_runtime`)
+## 4. Runtime Design (`imx_runtime`)
 
 ### Core types
 
@@ -109,7 +109,7 @@ Hybrid model:
 Stored `std::function` objects in the runtime callback registry. For ImGui widgets that return interaction results (Button, Checkbox), the generated code inlines the check:
 
 ```cpp
-if (reimgui::renderer::button("Save")) {
+if (imx::renderer::button("Save")) {
     ctx.invoke_callback(callback_id);
 }
 ```
@@ -135,22 +135,22 @@ This preserves the React controlled-input contract (state is truth, buffer is re
 
 Simple: any `set()` call marks a global dirty flag. Next frame re-renders from root. No partial updates in MVP.
 
-## 5. Renderer Design (`reimgui_renderer_imgui`)
+## 5. Renderer Design (`imx_renderer_imgui`)
 
 ### Host component functions
 
 ```
-reimgui::renderer::begin_window(title, style?) / end_window()
-reimgui::renderer::begin_row(style?) / end_row()
-reimgui::renderer::begin_column(style?) / end_column()
-reimgui::renderer::begin_view(style?) / end_view()
-reimgui::renderer::text(content, style?)
-reimgui::renderer::button(title, style?) -> bool (clicked)
-reimgui::renderer::text_input(label, buffer, style?) -> bool (changed)
-reimgui::renderer::checkbox(label, value, style?) -> bool (changed)
-reimgui::renderer::separator()
-reimgui::renderer::begin_popup(id, style?) / end_popup()
-reimgui::renderer::open_popup(id)
+imx::renderer::begin_window(title, style?) / end_window()
+imx::renderer::begin_row(style?) / end_row()
+imx::renderer::begin_column(style?) / end_column()
+imx::renderer::begin_view(style?) / end_view()
+imx::renderer::text(content, style?)
+imx::renderer::button(title, style?) -> bool (clicked)
+imx::renderer::text_input(label, buffer, style?) -> bool (changed)
+imx::renderer::checkbox(label, value, style?) -> bool (changed)
+imx::renderer::separator()
+imx::renderer::begin_popup(id, style?) / end_popup()
+imx::renderer::open_popup(id)
 ```
 
 ### MVP component set
@@ -215,54 +215,54 @@ function App() {
 
 Output (`App.gen.cpp`):
 ```cpp
-#include <reimgui/runtime.h>
-#include <reimgui/renderer.h>
+#include <imx/runtime.h>
+#include <imx/renderer.h>
 
-void App_render(reimgui::RenderContext& ctx) {
+void App_render(imx::RenderContext& ctx) {
     auto& name = ctx.use_state<std::string>("Berkay", 0);
     auto& enabled = ctx.use_state<bool>(true, 1);
     auto& count = ctx.use_state<int>(0, 2);
 
-    reimgui::renderer::begin_window("Hello");
-    reimgui::renderer::begin_column({.gap = 8, .padding = 12});
+    imx::renderer::begin_window("Hello");
+    imx::renderer::begin_column({.gap = 8, .padding = 12});
 
-    reimgui::renderer::text("Hello %s", name.get().c_str());
+    imx::renderer::text("Hello %s", name.get().c_str());
 
     auto& name_buf = ctx.get_buffer(0);
     name_buf.sync_from(name.get());
-    if (reimgui::renderer::text_input("##name", name_buf)) {
+    if (imx::renderer::text_input("##name", name_buf)) {
         name.set(name_buf.value());
     }
 
     {
         bool enabled_val = enabled.get();
-        if (reimgui::renderer::checkbox("Enabled", &enabled_val)) {
+        if (imx::renderer::checkbox("Enabled", &enabled_val)) {
             enabled.set(enabled_val);
         }
     }
 
-    reimgui::renderer::begin_row({.gap = 8});
-    if (reimgui::renderer::button("Increment")) {
+    imx::renderer::begin_row({.gap = 8});
+    if (imx::renderer::button("Increment")) {
         count.set(count.get() + 1);
     }
-    reimgui::renderer::text("Count: %d", count.get());
-    reimgui::renderer::end_row();
+    imx::renderer::text("Count: %d", count.get());
+    imx::renderer::end_row();
 
     if (enabled.get()) {
-        reimgui::renderer::text("Status: active");
+        imx::renderer::text("Status: active");
     }
 
-    reimgui::renderer::end_column();
-    reimgui::renderer::end_window();
+    imx::renderer::end_column();
+    imx::renderer::end_window();
 }
 ```
 
 ### Root entry point (`app_root.gen.cpp`):
 ```cpp
-#include <reimgui/runtime.h>
-void App_render(reimgui::RenderContext& ctx);
+#include <imx/runtime.h>
+void App_render(imx::RenderContext& ctx);
 
-void reimgui::render_root(reimgui::Runtime& runtime) {
+void imx::render_root(imx::Runtime& runtime) {
     auto& ctx = runtime.begin_frame();
     ctx.begin_instance("App", 0);
     App_render(ctx);
@@ -287,8 +287,8 @@ function TodoItem(props: { text: string, done: boolean, onToggle: () => void }) 
 
 Output (`TodoItem.gen.cpp`):
 ```cpp
-#include <reimgui/runtime.h>
-#include <reimgui/renderer.h>
+#include <imx/runtime.h>
+#include <imx/renderer.h>
 
 struct TodoItem_Props {
     std::string text;
@@ -296,14 +296,14 @@ struct TodoItem_Props {
     std::function<void()> onToggle;
 };
 
-void TodoItem_render(reimgui::RenderContext& ctx, const TodoItem_Props& props) {
-    reimgui::renderer::begin_row({.gap = 8});
+void TodoItem_render(imx::RenderContext& ctx, const TodoItem_Props& props) {
+    imx::renderer::begin_row({.gap = 8});
     bool done_val = props.done;
-    if (reimgui::renderer::checkbox("##done", &done_val)) {
+    if (imx::renderer::checkbox("##done", &done_val)) {
         props.onToggle();
     }
-    reimgui::renderer::text("%s", props.text.c_str());
-    reimgui::renderer::end_row();
+    imx::renderer::text("%s", props.text.c_str());
+    imx::renderer::end_row();
 }
 ```
 
@@ -337,9 +337,9 @@ The compiler transforms `.map()` into a `for` loop with `begin_instance`/`end_in
 
 The existing `main.cpp` replaces the hardcoded UI section with:
 ```cpp
-reimgui::Runtime runtime;
+imx::Runtime runtime;
 // ... in render_frame():
-reimgui::render_root(runtime);
+imx::render_root(runtime);
 ```
 
 The existing backend setup, docking, viewport support, and frame loop remain unchanged.
@@ -349,8 +349,8 @@ The existing backend setup, docking, viewport support, and frame loop remain unc
 ### Repository layout
 
 ```
-reimgui/
-  include/reimgui/
+imx/
+  include/imx/
     runtime.h
     renderer.h
   runtime/
@@ -380,9 +380,9 @@ reimgui/
 
 ### CMake targets
 
-- `reimgui_runtime` — static library, runtime with state management, identity, callbacks, render orchestration
-- `reimgui_renderer` — static library, Dear ImGui renderer and host component layer, links `reimgui_runtime` and `imgui_lib`
-- `hello_app` — example app, links `reimgui_renderer`, includes generated `.gen.cpp` files
+- `imx_runtime` — static library, runtime with state management, identity, callbacks, render orchestration
+- `imx_renderer` — static library, Dear ImGui renderer and host component layer, links `imx_runtime` and `imgui_lib`
+- `hello_app` — example app, links `imx_renderer`, includes generated `.gen.cpp` files
 
 ### CMake custom command
 

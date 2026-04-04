@@ -1,6 +1,6 @@
 // examples/hello/main.cpp
-#include <reimgui/runtime.h>
-#include <reimgui/renderer.h>
+#include <imx/runtime.h>
+#include <imx/renderer.h>
 
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
@@ -10,7 +10,7 @@
 struct App {
     GLFWwindow*      window  = nullptr;
     ImGuiIO*         io      = nullptr;
-    reimgui::Runtime runtime;
+    imx::Runtime runtime;
 };
 
 static void render_frame(App& app) {
@@ -34,7 +34,7 @@ static void render_frame(App& app) {
     ImGui::NewFrame();
 
     // DockSpace component handles the dock host window now
-    reimgui::render_root(app.runtime);
+    imx::render_root(app.runtime);
 
     ImGui::Render();
 
@@ -75,7 +75,7 @@ int main() {
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 #endif
 
-    GLFWwindow* window = glfwCreateWindow(600, 400, "reimgui", nullptr, nullptr);
+    GLFWwindow* window = glfwCreateWindow(600, 400, "imx", nullptr, nullptr);
     if (window == nullptr) {
         glfwTerminate();
         return 1;

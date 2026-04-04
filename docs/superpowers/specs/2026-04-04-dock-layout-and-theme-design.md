@@ -2,7 +2,7 @@
 
 ## 1. Overview
 
-Two new features for ReImGui: auto dock layout (windows dock into a predefined arrangement on first launch) and theming (preset styles with customizable overrides).
+Two new features for IMX: auto dock layout (windows dock into a predefined arrangement on first launch) and theming (preset styles with customizable overrides).
 
 ## 2. DockLayout
 
@@ -106,7 +106,7 @@ void App_setup_dock_layout(ImGuiID dockspace_id) {
 
 Called from the render function:
 ```cpp
-reimgui::renderer::begin_dockspace();
+imx::renderer::begin_dockspace();
 if (!g_layout_applied) {
     App_setup_dock_layout(ImGui::GetID("MainDockSpace"));
     g_layout_applied = true;
@@ -119,7 +119,7 @@ Generated as a global function:
 ```cpp
 static bool g_reset_layout = false;
 
-void reimgui_reset_layout() {
+void imx_reset_layout() {
     g_reset_layout = true;
 }
 ```
@@ -133,7 +133,7 @@ if (!g_layout_applied || g_reset_layout) {
 }
 ```
 
-The lowering maps `resetLayout` identifier to `reimgui_reset_layout()`.
+The lowering maps `resetLayout` identifier to `imx_reset_layout()`.
 
 ## 3. Theme
 
@@ -173,17 +173,17 @@ IREndContainer   { kind: 'end_container', tag: 'Theme' }
 ### Generated C++
 
 ```cpp
-reimgui::renderer::begin_theme("dark", accentColor, windowBg, textColor, 6.0f, 1.0f, 8.0f);
+imx::renderer::begin_theme("dark", accentColor, windowBg, textColor, 6.0f, 1.0f, 8.0f);
 // ... children ...
-reimgui::renderer::end_theme();
+imx::renderer::end_theme();
 ```
 
 The renderer function handles preset selection and override application.
 
 ### Future Extension
 
-- `preset="custom"` — calls a user-registered C++ theme function via `reimgui::set_custom_theme(fn)`
-- Custom widget registration — `reimgui::register_widget("Knob", fn)` with `<Custom widget="Knob" .../>` in TSX
+- `preset="custom"` — calls a user-registered C++ theme function via `imx::set_custom_theme(fn)`
+- Custom widget registration — `imx::register_widget("Knob", fn)` with `<Custom widget="Knob" .../>` in TSX
 
 These are deferred but the architecture supports them.
 

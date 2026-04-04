@@ -1,10 +1,10 @@
 #pragma once
 
 #include <imgui.h>
-#include <reimgui/runtime.h>
+#include <imx/runtime.h>
 #include <optional>
 
-namespace reimgui {
+namespace imx {
 
 struct Style {
     std::optional<float> padding;
@@ -103,4 +103,4 @@ void begin_theme(const char* preset, const ThemeConfig& config = {});
 void end_theme();
 
 } // namespace renderer
-} // namespace reimgui
+} // namespace imx

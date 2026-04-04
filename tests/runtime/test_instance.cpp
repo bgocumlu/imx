@@ -1,8 +1,8 @@
 #include <catch2/catch_test_macros.hpp>
-#include <reimgui/runtime.h>
+#include <imx/runtime.h>
 
 TEST_CASE("ComponentInstance state slots initialize correctly", "[instance]") {
-    reimgui::ComponentInstance inst(3, 0);
+    imx::ComponentInstance inst(3, 0);
     REQUIRE_FALSE(inst.is_initialized(0));
     REQUIRE_FALSE(inst.is_initialized(1));
     REQUIRE_FALSE(inst.is_initialized(2));
@@ -13,7 +13,7 @@ TEST_CASE("ComponentInstance state slots initialize correctly", "[instance]") {
 }
 
 TEST_CASE("ComponentInstance buffer access", "[instance]") {
-    reimgui::ComponentInstance inst(0, 2);
+    imx::ComponentInstance inst(0, 2);
     inst.buffer_at(0).sync_from("hello");
     inst.buffer_at(1).sync_from("world");
     REQUIRE(inst.buffer_at(0).value() == "hello");
@@ -21,7 +21,7 @@ TEST_CASE("ComponentInstance buffer access", "[instance]") {
 }
 
 TEST_CASE("ComponentInstance child lifecycle", "[instance]") {
-    reimgui::ComponentInstance parent(0, 0);
+    imx::ComponentInstance parent(0, 0);
     bool created = false;
     auto& child_a = parent.ensure_child("Button", 0, 0, 0, created);
     REQUIRE(created);
@@ -34,7 +34,7 @@ TEST_CASE("ComponentInstance child lifecycle", "[instance]") {
 }
 
 TEST_CASE("ComponentInstance sweep removes unvisited children", "[instance]") {
-    reimgui::ComponentInstance parent(0, 0);
+    imx::ComponentInstance parent(0, 0);
     bool created = false;
     parent.ensure_child("A", 0, 0, 0, created);
     parent.ensure_child("B", 0, 0, 0, created);
@@ -52,7 +52,7 @@ TEST_CASE("ComponentInstance sweep removes unvisited children", "[instance]") {
 }
 
 TEST_CASE("ComponentInstance string keys for stable identity", "[instance]") {
-    reimgui::ComponentInstance parent(0, 0);
+    imx::ComponentInstance parent(0, 0);
     bool created = false;
     auto& child = parent.ensure_child("TodoItem", std::string("item-1"), 1, 0, created);
     REQUIRE(created);

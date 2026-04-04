@@ -1,7 +1,7 @@
-#include <reimgui/renderer.h>
+#include <imx/renderer.h>
 #include <vector>
 
-namespace reimgui::renderer {
+namespace imx::renderer {
 
 struct LayoutState {
     enum class Direction { Vertical, Horizontal, TableRow };
@@ -85,4 +85,4 @@ void end_table_row() {
     if (!g_layout_stack.empty()) g_layout_stack.pop_back();
 }
 
-} // namespace reimgui::renderer
+} // namespace imx::renderer

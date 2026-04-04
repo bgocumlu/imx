@@ -1,16 +1,16 @@
-# ReImGuiCompile.cmake — helper for compiling .tsx files to C++ via the ReImGui compiler.
+# ImxCompile.cmake — helper for compiling .tsx files to C++ via the IMX compiler.
 #
 # Usage:
 #
-#   include(ReImGuiCompile)
+#   include(ImxCompile)
 #
-#   reimgui_compile_tsx(MY_GENERATED
+#   imx_compile_tsx(MY_GENERATED
 #       SOURCES App.tsx Components/Sidebar.tsx
 #       OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/generated
 #   )
 #
 #   add_executable(my_app main.cpp ${MY_GENERATED})
-#   target_link_libraries(my_app PRIVATE reimgui::renderer)
+#   target_link_libraries(my_app PRIVATE imx::renderer)
 #   target_include_directories(my_app PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/generated)
 #
 # The first source file is treated as the root component (produces <Name>.gen.cpp
@@ -19,27 +19,27 @@
 # Parameters:
 #   SOURCES    — list of .tsx source files (absolute or relative to CMAKE_CURRENT_SOURCE_DIR)
 #   OUTPUT_DIR — directory for generated C++ files (created automatically)
-#   COMPILER   — (optional) path to the compiler index.js; defaults to REIMGUI_COMPILER
+#   COMPILER   — (optional) path to the compiler index.js; defaults to IMX_COMPILER
 
-function(reimgui_compile_tsx output_var)
+function(imx_compile_tsx output_var)
     cmake_parse_arguments(ARG "" "OUTPUT_DIR;COMPILER" "SOURCES" ${ARGN})
 
     if(NOT ARG_SOURCES)
-        message(FATAL_ERROR "reimgui_compile_tsx: SOURCES is required")
+        message(FATAL_ERROR "imx_compile_tsx: SOURCES is required")
     endif()
 
     if(NOT ARG_COMPILER)
-        if(REIMGUI_COMPILER)
-            set(ARG_COMPILER "${REIMGUI_COMPILER}")
+        if(IMX_COMPILER)
+            set(ARG_COMPILER "${IMX_COMPILER}")
         else()
             message(FATAL_ERROR
-                "reimgui_compile_tsx: no COMPILER specified and REIMGUI_COMPILER is not set. "
-                "Set REIMGUI_COMPILER to the path of compiler/dist/index.js.")
+                "imx_compile_tsx: no COMPILER specified and IMX_COMPILER is not set. "
+                "Set IMX_COMPILER to the path of compiler/dist/index.js.")
         endif()
     endif()
 
     if(NOT ARG_OUTPUT_DIR)
-        set(ARG_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/reimgui_generated")
+        set(ARG_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/imx_generated")
     endif()
 
     file(MAKE_DIRECTORY "${ARG_OUTPUT_DIR}")
@@ -72,7 +72,7 @@ function(reimgui_compile_tsx output_var)
         OUTPUT  ${_generated}
         COMMAND node "${ARG_COMPILER}" ${_abs_sources} -o "${ARG_OUTPUT_DIR}"
         DEPENDS ${_abs_sources}
-        COMMENT "ReImGui: compiling .tsx -> C++"
+        COMMENT "IMX: compiling .tsx -> C++"
     )
 
     set(${output_var} ${_generated} PARENT_SCOPE)

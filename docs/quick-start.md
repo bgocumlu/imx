@@ -1,4 +1,4 @@
-# ReImGui Quick Start
+# IMX Quick Start
 
 ## 1. Create a minimal app
 
@@ -8,13 +8,13 @@ Create `App.tsx`:
 export default function App() {
   return (
     <Window title="Hello">
-      <Text>Hello, ReImGui!</Text>
+      <Text>Hello, IMX!</Text>
     </Window>
   );
 }
 ```
 
-Copy `reimgui.d.ts` and `tsconfig.json` from `examples/hello/` into the same directory.
+Copy `imx.d.ts` and `tsconfig.json` from `examples/hello/` into the same directory.
 
 ## 2. Build and run
 
@@ -60,7 +60,7 @@ export default function App() {
   return (
     <Window title="Hello">
       <Column gap={8}>
-        <Text>Hello, ReImGui!</Text>
+        <Text>Hello, IMX!</Text>
         <Counter label="Apples" />
         <Counter label="Oranges" />
       </Column>

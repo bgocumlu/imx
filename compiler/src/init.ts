@@ -1,8 +1,8 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 
-const MAIN_CPP = `#include <reimgui/runtime.h>
-#include <reimgui/renderer.h>
+const MAIN_CPP = `#include <imx/runtime.h>
+#include <imx/renderer.h>
 
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
@@ -12,7 +12,7 @@ const MAIN_CPP = `#include <reimgui/runtime.h>
 struct App {
     GLFWwindow*      window  = nullptr;
     ImGuiIO*         io      = nullptr;
-    reimgui::Runtime runtime;
+    imx::Runtime runtime;
 };
 
 static void render_frame(App& app) {
@@ -27,7 +27,7 @@ static void render_frame(App& app) {
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
 
-    reimgui::render_root(app.runtime);
+    imx::render_root(app.runtime);
 
     ImGui::Render();
     glViewport(0, 0, fb_w, fb_h);
@@ -125,7 +125,7 @@ const APP_TSX = `export default function App() {
 }
 `;
 
-const REIMGUI_DTS = `// reimgui.d.ts — Type definitions for ReImGui components
+const IMX_DTS = `// imx.d.ts — Type definitions for IMX components
 
 interface Style {
   padding?: number;
@@ -207,7 +207,7 @@ declare function ListBox(props: ListBoxProps): any;
 declare function ProgressBar(props: ProgressBarProps): any;
 declare function Tooltip(props: TooltipProps): any;
 
-declare module "reimgui/jsx-runtime" {
+declare module "imx/jsx-runtime" {
   export namespace JSX {
     type Element = any;
     interface IntrinsicElements { [tag: string]: any; }
@@ -226,12 +226,12 @@ const TSCONFIG = `{
     "module": "ES2022",
     "moduleResolution": "bundler",
     "jsx": "react-jsx",
-    "jsxImportSource": "reimgui",
+    "jsxImportSource": "imx",
     "strict": false,
     "noEmit": true,
     "skipLibCheck": true
   },
-  "include": ["src/**/*.tsx", "src/reimgui.d.ts"]
+  "include": ["src/**/*.tsx", "src/imx.d.ts"]
 }
 `;
 
@@ -245,15 +245,15 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 include(FetchContent)
 
 FetchContent_Declare(
-    reimgui
+    imx
     GIT_REPOSITORY ${repoUrl}
     GIT_TAG main
 )
-FetchContent_MakeAvailable(reimgui)
+FetchContent_MakeAvailable(imx)
 
-include(ReImGuiCompile)
+include(ImxCompile)
 
-reimgui_compile_tsx(GENERATED
+imx_compile_tsx(GENERATED
     SOURCES src/App.tsx
     OUTPUT_DIR \${CMAKE_BINARY_DIR}/generated
 )
@@ -262,7 +262,7 @@ add_executable(${projectName}
     src/main.cpp
     \${GENERATED}
 )
-target_link_libraries(${projectName} PRIVATE reimgui::renderer)
+target_link_libraries(${projectName} PRIVATE imx::renderer)
 target_include_directories(${projectName} PRIVATE \${CMAKE_BINARY_DIR}/generated)
 `;
 }
@@ -281,16 +281,16 @@ export function initProject(projectDir: string, projectName?: string): void {
     // Write files
     fs.writeFileSync(path.join(srcDir, 'main.cpp'), MAIN_CPP.replace('APP_NAME', name));
     fs.writeFileSync(path.join(srcDir, 'App.tsx'), APP_TSX);
-    fs.writeFileSync(path.join(srcDir, 'reimgui.d.ts'), REIMGUI_DTS);
+    fs.writeFileSync(path.join(srcDir, 'imx.d.ts'), IMX_DTS);
     fs.writeFileSync(path.join(projectDir, 'tsconfig.json'), TSCONFIG);
-    fs.writeFileSync(path.join(projectDir, 'CMakeLists.txt'), cmakeTemplate(name, 'https://github.com/bgocumlu/reimgui.git'));
+    fs.writeFileSync(path.join(projectDir, 'CMakeLists.txt'), cmakeTemplate(name, 'https://github.com/bgocumlu/imx.git'));
 
     console.log(`imxc: initialized project "${name}"`);
     console.log('');
     console.log('  Created:');
     console.log(`    src/main.cpp          — app shell (GLFW + OpenGL + ImGui)`);
     console.log(`    src/App.tsx           — your root component`);
-    console.log(`    src/reimgui.d.ts      — type definitions for IDE support`);
+    console.log(`    src/imx.d.ts      — type definitions for IDE support`);
     console.log(`    tsconfig.json         — TypeScript config`);
     console.log(`    CMakeLists.txt        — build config with FetchContent`);
     console.log('');

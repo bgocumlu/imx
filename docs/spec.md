@@ -1,8 +1,8 @@
-# ReImGui Specification
+# IMX Specification
 
 ## 1. Purpose
 
-ReImGui is a native UI framework and toolchain for writing Dear ImGui applications in a React-Native-like style.
+IMX is a native UI framework and toolchain for writing Dear ImGui applications in a React-Native-like style.
 
 The source language should be easy for humans and LLMs to generate because it looks like component-based TSX. The shipped application should remain a lightweight native binary with no embedded JavaScript runtime.
 
@@ -33,7 +33,7 @@ It should also make the underlying ImGui semantics obvious enough that generated
 
 ## 3. Non-Goals
 
-ReImGui explicitly does not aim to be:
+IMX explicitly does not aim to be:
 
 - a React clone
 - a browser DOM clone
@@ -43,7 +43,7 @@ ReImGui explicitly does not aim to be:
 - a generic retained widget toolkit
 - a JavaScript-first app runtime
 
-ReImGui may borrow ideas, names, and ergonomics from React Native, but the runtime semantics are native and ImGui-oriented.
+IMX may borrow ideas, names, and ergonomics from React Native, but the runtime semantics are native and ImGui-oriented.
 
 ## 4. Core Principles
 
@@ -115,7 +115,7 @@ This means:
 
 ## 5. Mental Model
 
-ReImGui should be understood as a declarative front end for an immediate-mode backend.
+IMX should be understood as a declarative front end for an immediate-mode backend.
 
 The author writes:
 
@@ -180,7 +180,7 @@ Each frame:
 
 State is still required. Immediate mode does not remove state; it changes where state lives.
 
-ReImGui state should be split into:
+IMX state should be split into:
 
 - application state
 - component-local state where supported
@@ -654,7 +654,7 @@ The repository should evolve into a library-style project with a compiler tool a
 
 Recommended top-level layout:
 
-- `include/reimgui/`
+- `include/imx/`
 - `runtime/`
 - `renderer/`
 - `compiler/`
@@ -663,7 +663,7 @@ Recommended top-level layout:
 
 Suggested responsibilities:
 
-- `include/reimgui/`
+- `include/imx/`
   public headers for the runtime API, host component API, and generated-code integration points
 - `runtime/`
   component instance tracking, state slots, callback storage, render context, scheduling, and runtime helpers
@@ -682,18 +682,18 @@ The project should be structured around a small number of explicit build targets
 
 Recommended targets:
 
-- `reimgui_runtime`
-- `reimgui_renderer_imgui`
-- `reimgui_codegen`
+- `imx_runtime`
+- `imx_renderer_imgui`
+- `imx_codegen`
 - one or more example app targets
 
 Responsibilities:
 
-- `reimgui_runtime`
+- `imx_runtime`
   native runtime library with state management, identity, callbacks, and render orchestration
-- `reimgui_renderer_imgui`
-  Dear ImGui renderer and host component layer built on top of `reimgui_runtime`
-- `reimgui_codegen`
+- `imx_renderer_imgui`
+  Dear ImGui renderer and host component layer built on top of `imx_runtime`
+- `imx_codegen`
   tool or executable that reads `.igx` files and writes `*.gen.cpp`
 - example app targets
   native apps that link the runtime and renderer and compile generated output
@@ -702,7 +702,7 @@ Responsibilities:
 
 The boundaries between the major parts should stay strict.
 
-`reimgui_runtime` should own:
+`imx_runtime` should own:
 
 - component instance identity
 - state slots such as `useState`
@@ -710,13 +710,13 @@ The boundaries between the major parts should stay strict.
 - render context
 - runtime scheduling and invalidation
 
-`reimgui_renderer_imgui` should own:
+`imx_renderer_imgui` should own:
 
 - host component rendering
 - mapping public components to Dear ImGui calls
 - style interpretation where it directly affects Dear ImGui rendering
 
-`reimgui_codegen` should own:
+`imx_codegen` should own:
 
 - `.igx` parsing
 - semantic validation
@@ -776,7 +776,7 @@ Mapping:
 
 ## 17. Platform Layer
 
-Dear ImGui still requires a platform and renderer backend. ReImGui does not remove this requirement.
+Dear ImGui still requires a platform and renderer backend. IMX does not remove this requirement.
 
 The current repository uses:
 
@@ -805,7 +805,7 @@ However, the framework core must preserve clean seams for future backend expansi
 
 Required design constraints:
 
-- do not expose GLFW types in public ReImGui runtime headers
+- do not expose GLFW types in public IMX runtime headers
 - keep backend-specific windowing and graphics setup in the app shell or example target
 - do not make the compiler depend on GLFW
 - do not make component semantics depend on GLFW-specific behavior
@@ -814,14 +814,14 @@ Required design constraints:
 In practice, this means:
 
 - the current repository may use GLFW in `main.cpp` or example apps
-- `reimgui_runtime` should remain backend-agnostic
-- `reimgui_renderer_imgui` should remain focused on Dear ImGui rendering rather than platform ownership
+- `imx_runtime` should remain backend-agnostic
+- `imx_renderer_imgui` should remain focused on Dear ImGui rendering rather than platform ownership
 
 This keeps the initial design pragmatic without locking the framework permanently to GLFW.
 
 ## 18. Relationship to the Current Repository
 
-The current repository already has the correct low-level render loop shape in [main.cpp](C:\Users\Berkay\Downloads\reimgui\main.cpp).
+The current repository already has the correct low-level render loop shape in [main.cpp](C:\Users\Berkay\Downloads\imx\main.cpp).
 
 The future framework should integrate by replacing hardcoded UI calls with a generated or runtime-driven root render entrypoint.
 
@@ -836,7 +836,7 @@ ImGui::End();
 becomes something like:
 
 ```cpp
-reimgui::render_root(app_runtime);
+imx::render_root(app_runtime);
 ```
 
 The existing backend setup, docking setup, viewport support, and frame loop remain valid infrastructure.
@@ -910,7 +910,7 @@ The desired LLM experience is:
 
 ## 24. Canonical Position
 
-ReImGui should be described as:
+IMX should be described as:
 
 `A React-Native-like authoring model for Dear ImGui that compiles to a native runtime.`
 

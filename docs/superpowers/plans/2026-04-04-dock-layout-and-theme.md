@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Add auto dock layout (DockBuilder-based window arrangement) and theming (preset styles + overrides) to ReImGui.
+**Goal:** Add auto dock layout (DockBuilder-based window arrangement) and theming (preset styles + overrides) to IMX.
 
 **Architecture:** Theme is a standard container component (begin/end pattern) with C++ renderer managing ImGui style push/pop. DockLayout is a declarative layout descriptor compiled to a static DockBuilder setup function called once on first frame, with a `resetLayout()` global function. DockLayout needs no C++ renderer — it generates direct ImGui DockBuilder API calls.
 
@@ -151,11 +151,11 @@ function App() {
 }
         `);
 
-        expect(output).toContain('reimgui::renderer::begin_theme(');
+        expect(output).toContain('imx::renderer::begin_theme(');
         expect(output).toContain('"dark"');
         expect(output).toContain('accent_color = ImVec4(');
         expect(output).toContain('rounding =');
-        expect(output).toContain('reimgui::renderer::end_theme()');
+        expect(output).toContain('imx::renderer::end_theme()');
     });
 ```
 
@@ -210,7 +210,7 @@ In `compiler/src/emitter.ts`, add a new case in the `emitBeginContainer` switch 
         case 'Theme': {
             const preset = asCharPtr(node.props['preset'] ?? '"dark"');
             const varName = `theme_${styleCounter++}`;
-            lines.push(`${indent}reimgui::ThemeConfig ${varName};`);
+            lines.push(`${indent}imx::ThemeConfig ${varName};`);
             if (node.props['accentColor']) {
                 lines.push(`${indent}${varName}.accent_color = ${emitImVec4(node.props['accentColor'])};`);
             }
@@ -229,7 +229,7 @@ In `compiler/src/emitter.ts`, add a new case in the `emitBeginContainer` switch 
             if (node.props['spacing']) {
                 lines.push(`${indent}${varName}.spacing = ${emitFloat(node.props['spacing'])};`);
             }
-            lines.push(`${indent}reimgui::renderer::begin_theme(${preset}, ${varName});`);
+            lines.push(`${indent}imx::renderer::begin_theme(${preset}, ${varName});`);
             break;
         }
         case 'DockLayout':
@@ -245,7 +245,7 @@ In `compiler/src/emitter.ts`, add in the `emitEndContainer` switch, after Collap
 
 ```typescript
         case 'Theme':
-            lines.push(`${indent}reimgui::renderer::end_theme();`);
+            lines.push(`${indent}imx::renderer::end_theme();`);
             break;
         case 'DockLayout':
         case 'DockSplit':
@@ -275,14 +275,14 @@ git commit -m "feat: Theme emitter — generates begin_theme/end_theme with Them
 ### Task 3: Theme C++ Renderer
 
 **Files:**
-- Modify: `include/reimgui/renderer.h:9-21` (add ThemeConfig struct after Style)
-- Modify: `include/reimgui/renderer.h:93` (add begin_theme/end_theme declarations)
+- Modify: `include/imx/renderer.h:9-21` (add ThemeConfig struct after Style)
+- Modify: `include/imx/renderer.h:93` (add begin_theme/end_theme declarations)
 - Modify: `renderer/components.cpp:1-3` (add includes)
 - Modify: `renderer/components.cpp` (add g_theme_stack, begin_theme, end_theme)
 
 - [ ] **Step 1: Add ThemeConfig struct to renderer.h**
 
-In `include/reimgui/renderer.h`, add after the Style struct closing brace (after line 21):
+In `include/imx/renderer.h`, add after the Style struct closing brace (after line 21):
 
 ```cpp
 struct ThemeConfig {
@@ -297,7 +297,7 @@ struct ThemeConfig {
 
 - [ ] **Step 2: Add begin_theme/end_theme declarations**
 
-In `include/reimgui/renderer.h`, add before the closing `} // namespace renderer` (before line 93):
+In `include/imx/renderer.h`, add before the closing `} // namespace renderer` (before line 93):
 
 ```cpp
 void begin_theme(const char* preset, const ThemeConfig& config = {});
@@ -403,7 +403,7 @@ void end_theme() {
 - [ ] **Step 5: Commit**
 
 ```bash
-git add include/reimgui/renderer.h renderer/components.cpp
+git add include/imx/renderer.h renderer/components.cpp
 git commit -m "feat: Theme C++ renderer — begin_theme/end_theme with preset + overrides"
 ```
 
@@ -545,7 +545,7 @@ function App() {
 
         expect(output).toContain('static bool g_layout_applied = false');
         expect(output).toContain('static bool g_reset_layout = false');
-        expect(output).toContain('void reimgui_reset_layout()');
+        expect(output).toContain('void imx_reset_layout()');
         expect(output).toContain('g_reset_layout = true');
         expect(output).toContain('App_setup_dock_layout(ImGuiID dockspace_id)');
         expect(output).toContain('DockBuilderRemoveNode');
@@ -563,7 +563,7 @@ function App() {
 In `compiler/tests/emitter.test.ts`, add:
 
 ```typescript
-    it('emits resetLayout as reimgui_reset_layout', () => {
+    it('emits resetLayout as imx_reset_layout', () => {
         const output = compile(`
 function App() {
   return (
@@ -579,7 +579,7 @@ function App() {
 }
         `);
 
-        expect(output).toContain('reimgui_reset_layout()');
+        expect(output).toContain('imx_reset_layout()');
     });
 ```
 
@@ -613,7 +613,7 @@ With:
             return `${name}.get()`;
         }
         if (name === 'resetLayout') {
-            return 'reimgui_reset_layout';
+            return 'imx_reset_layout';
         }
         return name;
     }
@@ -680,7 +680,7 @@ In `compiler/src/emitter.ts`, in the `emitComponent` function, add after the inc
         lines.push('static bool g_layout_applied = false;');
         lines.push('static bool g_reset_layout = false;');
         lines.push('');
-        lines.push('void reimgui_reset_layout() {');
+        lines.push('void imx_reset_layout() {');
         lines.push(`${INDENT}g_reset_layout = true;`);
         lines.push('}');
         lines.push('');
@@ -735,12 +735,12 @@ git commit -m "feat: DockLayout emitter + resetLayout — generates DockBuilder 
 ### Task 6: TypeScript Definitions
 
 **Files:**
-- Modify: `examples/hello/reimgui.d.ts`
-- Modify: `examples/settings/reimgui.d.ts`
+- Modify: `examples/hello/imx.d.ts`
+- Modify: `examples/settings/imx.d.ts`
 
-- [ ] **Step 1: Add new interfaces and declarations to hello/reimgui.d.ts**
+- [ ] **Step 1: Add new interfaces and declarations to hello/imx.d.ts**
 
-In `examples/hello/reimgui.d.ts`, add after `DockSpaceProps` (line 30):
+In `examples/hello/imx.d.ts`, add after `DockSpaceProps` (line 30):
 
 ```typescript
 interface DockLayoutProps { children?: any; }
@@ -773,14 +773,14 @@ Add the global resetLayout function (after the component declarations, before th
 declare function resetLayout(): void;
 ```
 
-- [ ] **Step 2: Copy the same changes to settings/reimgui.d.ts**
+- [ ] **Step 2: Copy the same changes to settings/imx.d.ts**
 
-Apply the exact same additions to `examples/settings/reimgui.d.ts`.
+Apply the exact same additions to `examples/settings/imx.d.ts`.
 
 - [ ] **Step 3: Commit**
 
 ```bash
-git add examples/hello/reimgui.d.ts examples/settings/reimgui.d.ts
+git add examples/hello/imx.d.ts examples/settings/imx.d.ts
 git commit -m "feat: add DockLayout, DockSplit, DockPanel, Theme TypeScript definitions"
 ```
 
@@ -814,7 +814,7 @@ Verify the generated `App.gen.cpp` contains:
 - `begin_theme` / `end_theme` calls
 - `g_layout_applied` / `g_reset_layout` statics
 - `App_setup_dock_layout` function with DockBuilder calls
-- `reimgui_reset_layout` function
+- `imx_reset_layout` function
 
 - [ ] **Step 4: Commit**
 

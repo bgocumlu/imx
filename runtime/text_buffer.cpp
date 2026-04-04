@@ -1,8 +1,8 @@
-#include <reimgui/runtime.h>
+#include <imx/runtime.h>
 #include <algorithm>
 #include <cstring>
 
-namespace reimgui {
+namespace imx {
 
 void TextBuffer::sync_from(const std::string& value) {
     modified_ = false;
@@ -18,4 +18,4 @@ int TextBuffer::capacity() const { return static_cast<int>(buf_.size()); }
 bool TextBuffer::modified() const { return modified_; }
 void TextBuffer::mark_modified() { modified_ = true; }
 
-} // namespace reimgui
+} // namespace imx

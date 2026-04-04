@@ -1,8 +1,8 @@
-#include <reimgui/runtime.h>
+#include <imx/runtime.h>
 #include <cassert>
 #include <functional>
 
-namespace reimgui {
+namespace imx {
 
 ComponentInstance::ComponentInstance(int state_count, int buffer_count)
     : state_slots_(state_count), state_initialized_(state_count, false), buffers_(buffer_count) {}
@@ -80,4 +80,4 @@ int ComponentInstance::sweep_children() {
 
 int ComponentInstance::child_count() const { return static_cast<int>(children_.size()); }
 
-} // namespace reimgui
+} // namespace imx
