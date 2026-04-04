@@ -159,6 +159,9 @@ bool list_box(const char* label, int* current_item, const char* const items[], i
 void progress_bar(float fraction, const char* overlay = nullptr, const Style& style = {});
 void tooltip(const char* text);
 
+void bullet_text(const char* fmt, ...) IM_FMTARGS(1);
+void label_text(const char* label, const char* text);
+
 void begin_theme(const char* preset, const ThemeConfig& config = {});
 void end_theme();
 

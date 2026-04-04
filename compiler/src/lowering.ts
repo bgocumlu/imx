@@ -10,6 +10,7 @@ import type {
     IRSliderFloat, IRSliderInt, IRDragFloat, IRDragInt, IRCombo,
     IRInputInt, IRInputFloat, IRColorEdit, IRListBox, IRProgressBar, IRTooltip,
     IRDockLayout, IRDockSplit, IRDockPanel, IRNativeWidget,
+    IRBulletText, IRLabelText,
 } from './ir.js';
 
 interface LoweringContext {
@@ -363,6 +364,11 @@ function lowerJsxElement(node: ts.JsxElement, body: IRNode[], ctx: LoweringConte
         return;
     }
 
+    if (name === 'BulletText') {
+        lowerBulletTextElement(node, body, ctx, getLoc(node, ctx));
+        return;
+    }
+
     if (name === 'DockLayout') {
         body.push(lowerDockLayout(node, ctx));
         return;
@@ -476,6 +482,13 @@ function lowerJsxSelfClosing(node: ts.JsxSelfClosingElement, body: IRNode[], ctx
         case 'Text':
             // Self-closing <Text /> - empty text
             body.push({ kind: 'text', format: '', args: [], loc });
+            break;
+        case 'BulletText':
+            // Self-closing <BulletText /> - empty bullet
+            body.push({ kind: 'bullet_text', format: '', args: [], loc });
+            break;
+        case 'LabelText':
+            lowerLabelText(attrs, body, ctx, loc);
             break;
         default:
             // Container self-closing (e.g., <Window title="X"/>)
@@ -841,6 +854,30 @@ function lowerJsxChild(child: ts.JsxChild, body: IRNode[], ctx: LoweringContext)
     } else if (ts.isJsxText(child)) {
         // Standalone text not inside <Text> — usually whitespace, skip
     }
+}
+
+function lowerBulletTextElement(node: ts.JsxElement, body: IRNode[], ctx: LoweringContext, loc: SourceLoc): void {
+    // Same logic as lowerTextElement but produces bullet_text kind
+    const children = node.children;
+    const parts: string[] = [];
+    const args: string[] = [];
+    for (const child of children) {
+        if (ts.isJsxText(child)) {
+            const trimmed = child.text.trim();
+            if (trimmed) parts.push(trimmed.replace(/%/g, '%%'));
+        } else if (ts.isJsxExpression(child) && child.expression) {
+            args.push(exprToCpp(child.expression, ctx));
+            parts.push('%s');
+        }
+    }
+    const format = parts.join(' ');
+    body.push({ kind: 'bullet_text', format, args, loc });
+}
+
+function lowerLabelText(attrs: Record<string, string>, body: IRNode[], ctx: LoweringContext, loc: SourceLoc): void {
+    const label = attrs['label'] ?? '""';
+    const value = attrs['value'] ?? '""';
+    body.push({ kind: 'label_text', label, value, loc });
 }
 
 function getAttributes(attributes: ts.JsxAttributes, ctx: LoweringContext): Record<string, string> {

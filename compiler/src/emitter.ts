@@ -6,6 +6,7 @@ import type {
     IRSliderFloat, IRSliderInt, IRDragFloat, IRDragInt, IRCombo,
     IRInputInt, IRInputFloat, IRColorEdit, IRListBox, IRProgressBar, IRTooltip,
     IRDockLayout, IRDockSplit, IRDockPanel, IRNativeWidget,
+    IRBulletText, IRLabelText,
 } from './ir.js';
 
 const INDENT = '    ';
@@ -334,6 +335,12 @@ function emitNode(node: IRNode, lines: string[], depth: number): void {
             break;
         case 'tooltip':
             emitTooltip(node, lines, indent);
+            break;
+        case 'bullet_text':
+            emitBulletText(node, lines, indent);
+            break;
+        case 'label_text':
+            emitLabelText(node, lines, indent);
             break;
         case 'native_widget':
             emitNativeWidget(node, lines, indent);
@@ -981,4 +988,22 @@ function emitProgressBar(node: IRProgressBar, lines: string[], indent: string): 
 function emitTooltip(node: IRTooltip, lines: string[], indent: string): void {
     emitLocComment(node.loc, 'Tooltip', lines, indent);
     lines.push(`${indent}imx::renderer::tooltip(${node.text});`);
+}
+
+function emitBulletText(node: IRBulletText, lines: string[], indent: string): void {
+    emitLocComment(node.loc, 'BulletText', lines, indent);
+    if (node.args.length === 0) {
+        lines.push(`${indent}imx::renderer::bullet_text("${node.format}");`);
+    } else {
+        const fmtArgs = node.args.map(a => {
+            if (a.startsWith('"')) return a;
+            return `std::to_string(${a}).c_str()`;
+        }).join(', ');
+        lines.push(`${indent}imx::renderer::bullet_text("${node.format}", ${fmtArgs});`);
+    }
+}
+
+function emitLabelText(node: IRLabelText, lines: string[], indent: string): void {
+    emitLocComment(node.loc, 'LabelText', lines, indent);
+    lines.push(`${indent}imx::renderer::label_text(${asCharPtr(node.label)}, ${asCharPtr(node.value)});`);
 }

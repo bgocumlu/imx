@@ -36,7 +36,8 @@ export type IRNode =
     | IRMenuItem
     | IRSliderFloat | IRSliderInt | IRDragFloat | IRDragInt | IRCombo
     | IRInputInt | IRInputFloat | IRColorEdit | IRListBox | IRProgressBar | IRTooltip
-    | IRDockLayout | IRNativeWidget;
+    | IRDockLayout | IRNativeWidget
+    | IRBulletText | IRLabelText;
 
 export interface IRBeginContainer {
     kind: 'begin_container';
@@ -85,6 +86,9 @@ export interface IRNativeWidget {
     key?: string;
     loc?: SourceLoc;
 }
+
+export interface IRBulletText { kind: 'bullet_text'; format: string; args: string[]; loc?: SourceLoc; }
+export interface IRLabelText { kind: 'label_text'; label: string; value: string; loc?: SourceLoc; }
 
 export interface IRDockLayout {
     kind: 'dock_layout';

@@ -226,6 +226,17 @@ export const HOST_COMPONENTS: Record<string, HostComponentDef> = {
         },
         hasChildren: false, isContainer: false,
     },
+    BulletText: {
+        props: { style: { type: 'style', required: false } },
+        hasChildren: true, isContainer: false,
+    },
+    LabelText: {
+        props: {
+            label: { type: 'string', required: true },
+            value: { type: 'string', required: true },
+        },
+        hasChildren: false, isContainer: false,
+    },
     DockLayout: {
         props: {},
         hasChildren: true, isContainer: true,

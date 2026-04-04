@@ -252,6 +252,24 @@ function App() {
 
         expect(output).toContain('imx_reset_layout()');
     });
+
+    it('emits BulletText', () => {
+        const output = compile(`
+function App() {
+  return <Window title="Test"><BulletText>Hello world</BulletText></Window>;
+}
+        `);
+        expect(output).toContain('imx::renderer::bullet_text("Hello world")');
+    });
+
+    it('emits LabelText', () => {
+        const output = compile(`
+function App() {
+  return <Window title="Test"><LabelText label="Name" value="John" /></Window>;
+}
+        `);
+        expect(output).toContain('imx::renderer::label_text("Name", "John")');
+    });
 });
 
 describe('source location comments', () => {

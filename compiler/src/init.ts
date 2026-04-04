@@ -187,6 +187,8 @@ interface ColorEditProps { label: string; value: number[]; onChange: (v: number[
 interface ListBoxProps { label: string; value: number; onChange: (v: number) => void; items: string[]; style?: Style; }
 interface ProgressBarProps { value: number; overlay?: string; style?: Style; }
 interface TooltipProps { text: string; }
+interface BulletTextProps { style?: Style; children?: any; }
+interface LabelTextProps { label: string; value: string; }
 
 declare function Window(props: WindowProps): any;
 declare function View(props: ViewProps): any;
@@ -223,6 +225,8 @@ declare function ColorEdit(props: ColorEditProps): any;
 declare function ListBox(props: ListBoxProps): any;
 declare function ProgressBar(props: ProgressBarProps): any;
 declare function Tooltip(props: TooltipProps): any;
+declare function BulletText(props: BulletTextProps): any;
+declare function LabelText(props: LabelTextProps): any;
 
 declare function resetLayout(): void;
 

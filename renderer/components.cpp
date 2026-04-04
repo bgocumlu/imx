@@ -263,6 +263,19 @@ void tooltip(const char* text) {
     }
 }
 
+void bullet_text(const char* fmt, ...) {
+    before_child();
+    va_list args;
+    va_start(args, fmt);
+    ImGui::BulletTextV(fmt, args);
+    va_end(args);
+}
+
+void label_text(const char* label, const char* text) {
+    before_child();
+    ImGui::LabelText(label, "%s", text);
+}
+
 void begin_theme(const char* preset, const ThemeConfig& config) {
     before_child();
 
