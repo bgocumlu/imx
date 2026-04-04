@@ -563,6 +563,24 @@ function emitBeginContainer(node: IRBeginContainer, lines: string[], indent: str
             lines.push(`${indent}imx::renderer::begin_theme(${preset}, ${varName});`);
             break;
         }
+        case 'Modal': {
+            const title = asCharPtr(node.props['title'] ?? '""');
+            const openExpr = node.props['open'];
+            const onCloseExpr = node.props['onClose'];
+            if (openExpr) {
+                windowOpenStack.push(true);
+                lines.push(`${indent}{`);
+                lines.push(`${indent}    bool modal_open = true;`);
+                lines.push(`${indent}    imx::renderer::begin_modal(${title}, ${openExpr}, &modal_open);`);
+                if (onCloseExpr) {
+                    lines.push(`${indent}    if (!modal_open) { ${onCloseExpr}; }`);
+                }
+            } else {
+                windowOpenStack.push(false);
+                lines.push(`${indent}imx::renderer::begin_modal(${title}, true, nullptr);`);
+            }
+            break;
+        }
         case 'DockLayout':
         case 'DockSplit':
         case 'DockPanel':
@@ -626,6 +644,14 @@ function emitEndContainer(node: IREndContainer, lines: string[], indent: string)
         case 'Theme':
             lines.push(`${indent}imx::renderer::end_theme();`);
             break;
+        case 'Modal': {
+            lines.push(`${indent}imx::renderer::end_modal();`);
+            const hadOpen = windowOpenStack.pop() ?? false;
+            if (hadOpen) {
+                lines.push(`${indent}}`);
+            }
+            break;
+        }
         case 'DockLayout':
         case 'DockSplit':
         case 'DockPanel':

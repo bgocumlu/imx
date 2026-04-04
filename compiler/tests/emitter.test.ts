@@ -341,6 +341,25 @@ function App() {
         expect(output).toContain('float _plot_0[] = {1.0f, 3.0f, 5.0f}');
         expect(output).toContain('imx::renderer::plot_histogram("Dist", _plot_0, 3, "avg"');
     });
+
+    it('emits Modal with open and onClose', () => {
+        const output = compile(`
+function App() {
+  const [show, setShow] = useState(false);
+  return (
+    <Window title="Test">
+      <Modal title="Confirm" open={show} onClose={() => setShow(false)}>
+        <Text>Are you sure?</Text>
+      </Modal>
+    </Window>
+  );
+}
+        `);
+        expect(output).toContain('imx::renderer::begin_modal("Confirm", show.get(), &modal_open)');
+        expect(output).toContain('if (!modal_open)');
+        expect(output).toContain('show.set(false)');
+        expect(output).toContain('imx::renderer::end_modal()');
+    });
 });
 
 describe('source location comments', () => {

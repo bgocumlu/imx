@@ -290,6 +290,15 @@ export const HOST_COMPONENTS: Record<string, HostComponentDef> = {
         },
         hasChildren: false, isContainer: false,
     },
+    Modal: {
+        props: {
+            title: { type: 'string', required: true },
+            open: { type: 'boolean', required: false },
+            onClose: { type: 'callback', required: false },
+            style: { type: 'style', required: false },
+        },
+        hasChildren: true, isContainer: true,
+    },
     DockLayout: {
         props: {},
         hasChildren: true, isContainer: true,

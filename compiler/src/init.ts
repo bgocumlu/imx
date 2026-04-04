@@ -195,6 +195,7 @@ interface InputTextMultilineProps { label: string; value: string; style?: Style;
 interface ColorPickerProps { label: string; value: number[]; style?: Style; }
 interface PlotLinesProps { label: string; values: number[]; overlay?: string; style?: Style; }
 interface PlotHistogramProps { label: string; values: number[]; overlay?: string; style?: Style; }
+interface ModalProps { title: string; open?: boolean; onClose?: () => void; style?: Style; children?: any; }
 
 declare function Window(props: WindowProps): any;
 declare function View(props: ViewProps): any;
@@ -239,6 +240,7 @@ declare function InputTextMultiline(props: InputTextMultilineProps): any;
 declare function ColorPicker(props: ColorPickerProps): any;
 declare function PlotLines(props: PlotLinesProps): any;
 declare function PlotHistogram(props: PlotHistogramProps): any;
+declare function Modal(props: ModalProps): any;
 
 declare function resetLayout(): void;
 
