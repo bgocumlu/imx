@@ -46,6 +46,27 @@ React-Native-like authoring model for Dear ImGui. Write .tsx, compile to native 
 - `examples/settings/` — LLM-generated settings panel (validates API surface)
 - `docs/` — spec, mvp, roadmap, api-reference, quick-start, llm-prompt-reference
 
+## Do's and Don'ts
+
+### Do
+- Read this file and `docs/spec.md` before making changes
+- Run `npm run build` in `compiler/` after any TypeScript changes
+- Run both test suites (C++ and TS) before committing
+- Delete `build/Debug/imgui.ini` if the app behaves strangely on startup
+- Use variable-based style assignment for MSVC compatibility (no designated initializers)
+- Add `asCharPtr()` when passing string expressions to renderer functions expecting `const char*`
+- Add new components to ALL layers: components.ts -> ir.ts -> lowering.ts -> emitter.ts -> renderer.h -> components.cpp
+- Reset per-frame ID counters in `begin_dockspace()` when adding new auto-ID widgets
+
+### Don't
+- Don't use Ninja generator — it's not in PATH, use Visual Studio 17 2022
+- Don't use designated initializers in generated C++ (`{.field = val}`) — MSVC doesn't fully support them
+- Don't add `.c_str()` to string literals or ternaries of string literals — they're already `const char*`
+- Don't couple `reimgui_runtime` to `imgui_lib` more than necessary (render_context.cpp includes imgui.h only for PushID/PopID)
+- Don't make runtime_tests depend on imgui_lib — guard ImGui calls with `GetCurrentContext() != nullptr`
+- Don't forget that TypeScript 5.9 normalizes float literals in AST (use `.getText()` not `.text` for float detection)
+- Don't touch unrelated files when fixing a bug — fix exactly what's broken
+
 ## Current status (Phases 1-8 complete)
 - 27 host components working
 - Multi-component support with imports, props, callbacks
