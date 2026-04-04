@@ -20,6 +20,15 @@ struct Style {
     std::optional<float> font_size;
 };
 
+struct ThemeConfig {
+    std::optional<ImVec4> accent_color;
+    std::optional<ImVec4> window_bg;
+    std::optional<ImVec4> text_color;
+    std::optional<float> rounding;
+    std::optional<float> border_size;
+    std::optional<float> spacing;
+};
+
 namespace renderer {
 
 void before_child();
@@ -89,6 +98,9 @@ bool color_edit(const char* label, float color[4], const Style& style = {});
 bool list_box(const char* label, int* current_item, const char* const items[], int items_count, const Style& style = {});
 void progress_bar(float fraction, const char* overlay = nullptr, const Style& style = {});
 void tooltip(const char* text);
+
+void begin_theme(const char* preset, const ThemeConfig& config = {});
+void end_theme();
 
 } // namespace renderer
 } // namespace reimgui

@@ -1,12 +1,20 @@
 #include <reimgui/renderer.h>
 #include <cstdarg>
 #include <cfloat>
+#include <cstring>
+#include <vector>
 
 namespace reimgui::renderer {
 
 // Per-frame ID counters — reset in begin_dockspace() each frame
 static int g_table_id = 0;
 static int g_tabbar_id = 0;
+
+struct ThemeState {
+    int color_count;
+    int var_count;
+};
+static std::vector<ThemeState> g_theme_stack;
 
 void begin_window(const char* title, const Style& style) {
     before_child();
@@ -225,6 +233,80 @@ void tooltip(const char* text) {
     // Don't call before_child() -- tooltip attaches to previous item
     if (ImGui::IsItemHovered()) {
         ImGui::SetTooltip("%s", text);
+    }
+}
+
+void begin_theme(const char* preset, const ThemeConfig& config) {
+    before_child();
+
+    // Apply preset
+    if (std::strcmp(preset, "dark") == 0) ImGui::StyleColorsDark();
+    else if (std::strcmp(preset, "light") == 0) ImGui::StyleColorsLight();
+    else if (std::strcmp(preset, "classic") == 0) ImGui::StyleColorsClassic();
+
+    int color_count = 0;
+    int var_count = 0;
+
+    // Accent color overrides
+    if (config.accent_color) {
+        ImVec4 c = *config.accent_color;
+        ImVec4 hovered(c.x + (1.0F - c.x) * 0.2F, c.y + (1.0F - c.y) * 0.2F,
+                       c.z + (1.0F - c.z) * 0.2F, c.w);
+        ImVec4 active(c.x * 0.8F, c.y * 0.8F, c.z * 0.8F, c.w);
+        ImVec4 frame_bg(c.x * 0.3F, c.y * 0.3F, c.z * 0.3F, 0.5F);
+
+        ImGui::PushStyleColor(ImGuiCol_Button, c); color_count++;
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, hovered); color_count++;
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive, active); color_count++;
+        ImGui::PushStyleColor(ImGuiCol_Header, c); color_count++;
+        ImGui::PushStyleColor(ImGuiCol_HeaderHovered, hovered); color_count++;
+        ImGui::PushStyleColor(ImGuiCol_HeaderActive, active); color_count++;
+        ImGui::PushStyleColor(ImGuiCol_Tab, c); color_count++;
+        ImGui::PushStyleColor(ImGuiCol_TabSelected, c); color_count++;
+        ImGui::PushStyleColor(ImGuiCol_TabHovered, hovered); color_count++;
+        ImGui::PushStyleColor(ImGuiCol_SliderGrab, c); color_count++;
+        ImGui::PushStyleColor(ImGuiCol_SliderGrabActive, active); color_count++;
+        ImGui::PushStyleColor(ImGuiCol_CheckMark, c); color_count++;
+        ImGui::PushStyleColor(ImGuiCol_FrameBg, frame_bg); color_count++;
+    }
+    if (config.window_bg) {
+        ImGui::PushStyleColor(ImGuiCol_WindowBg, *config.window_bg); color_count++;
+    }
+    if (config.text_color) {
+        ImGui::PushStyleColor(ImGuiCol_Text, *config.text_color); color_count++;
+    }
+
+    // Style var overrides
+    if (config.rounding) {
+        float r = *config.rounding;
+        ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, r); var_count++;
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, r); var_count++;
+        ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, r); var_count++;
+        ImGui::PushStyleVar(ImGuiStyleVar_PopupRounding, r); var_count++;
+        ImGui::PushStyleVar(ImGuiStyleVar_TabRounding, r); var_count++;
+    }
+    if (config.border_size) {
+        float b = *config.border_size;
+        ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, b); var_count++;
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, b); var_count++;
+    }
+    if (config.spacing) {
+        float s = *config.spacing;
+        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(s, s)); var_count++;
+    }
+
+    ThemeState state;
+    state.color_count = color_count;
+    state.var_count = var_count;
+    g_theme_stack.push_back(state);
+}
+
+void end_theme() {
+    if (!g_theme_stack.empty()) {
+        ThemeState state = g_theme_stack.back();
+        g_theme_stack.pop_back();
+        if (state.color_count > 0) ImGui::PopStyleColor(state.color_count);
+        if (state.var_count > 0) ImGui::PopStyleVar(state.var_count);
     }
 }
 
