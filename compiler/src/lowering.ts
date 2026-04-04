@@ -208,6 +208,14 @@ export function exprToCpp(node: ts.Expression, ctx: LoweringContext): string {
         return `${fn}(${args})`;
     }
 
+    // Conditional (ternary) expression: a ? b : c
+    if (ts.isConditionalExpression(node)) {
+        const condition = exprToCpp(node.condition, ctx);
+        const whenTrue = exprToCpp(node.whenTrue, ctx);
+        const whenFalse = exprToCpp(node.whenFalse, ctx);
+        return `${condition} ? ${whenTrue} : ${whenFalse}`;
+    }
+
     // Arrow function -> C++ lambda
     if (ts.isArrowFunction(node)) {
         if (ts.isBlock(node.body)) {
@@ -563,7 +571,12 @@ function lowerTextElement(node: ts.JsxElement, body: IRNode[], ctx: LoweringCont
                     break;
                 case 'string':
                     format += '%s';
-                    args.push(`${cppExpr}.c_str()`);
+                    // String literals and ternaries of literals are already const char*
+                    if (cppExpr.startsWith('"') || isCharPtrExpression(expr)) {
+                        args.push(cppExpr);
+                    } else {
+                        args.push(`${cppExpr}.c_str()`);
+                    }
                     break;
                 default:
                     format += '%s';
@@ -574,6 +587,18 @@ function lowerTextElement(node: ts.JsxElement, body: IRNode[], ctx: LoweringCont
     }
 
     body.push({ kind: 'text', format, args });
+}
+
+/**
+ * Check if an expression will produce a const char* in C++ (not std::string).
+ * String literals and ternaries where both branches are string literals qualify.
+ */
+function isCharPtrExpression(expr: ts.Expression): boolean {
+    if (ts.isStringLiteral(expr)) return true;
+    if (ts.isConditionalExpression(expr)) {
+        return isCharPtrExpression(expr.whenTrue) && isCharPtrExpression(expr.whenFalse);
+    }
+    return false;
 }
 
 function inferExprType(expr: ts.Expression, ctx: LoweringContext): IRType {
@@ -607,6 +632,11 @@ function inferExprType(expr: ts.Expression, ctx: LoweringContext): IRType {
         }
         // Arithmetic: infer from left side
         return inferExprType(expr.left, ctx);
+    }
+
+    // Conditional (ternary): infer from the result branches
+    if (ts.isConditionalExpression(expr)) {
+        return inferExprType(expr.whenTrue, ctx);
     }
 
     // Call expression that is a state getter

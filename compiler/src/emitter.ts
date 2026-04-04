@@ -25,6 +25,20 @@ function cppPropType(t: IRType | 'callback'): string {
 }
 
 /**
+ * Ensure a string expression is a const char*.
+ * String literals (quoted) are already const char*.
+ * Expressions like props.title (std::string) need .c_str().
+ */
+function asCharPtr(expr: string): string {
+    // Already a string literal — "hello" is const char*
+    if (expr.startsWith('"')) return expr;
+    // Already has .c_str()
+    if (expr.endsWith('.c_str()')) return expr;
+    // Expression — assume std::string, add .c_str()
+    return `${expr}.c_str()`;
+}
+
+/**
  * Emit a .gen.h header for a component that has props.
  * Contains the props struct and function forward declaration.
  */
@@ -278,7 +292,7 @@ function buildStyleBlock(node: IRBeginContainer, indent: string, lines: string[]
 function emitBeginContainer(node: IRBeginContainer, lines: string[], indent: string): void {
     switch (node.tag) {
         case 'Window': {
-            const title = node.props['title'] ?? '""';
+            const title = asCharPtr(node.props['title'] ?? '""');
             lines.push(`${indent}reimgui::renderer::begin_window(${title});`);
             break;
         }
@@ -323,7 +337,7 @@ function emitBeginContainer(node: IRBeginContainer, lines: string[], indent: str
             break;
         }
         case 'Menu': {
-            const label = node.props['label'] ?? '""';
+            const label = asCharPtr(node.props['label'] ?? '""');
             lines.push(`${indent}if (reimgui::renderer::begin_menu(${label})) {`);
             break;
         }
@@ -345,17 +359,17 @@ function emitBeginContainer(node: IRBeginContainer, lines: string[], indent: str
             break;
         }
         case 'TabItem': {
-            const label = node.props['label'] ?? '""';
+            const label = asCharPtr(node.props['label'] ?? '""');
             lines.push(`${indent}if (reimgui::renderer::begin_tab_item(${label})) {`);
             break;
         }
         case 'TreeNode': {
-            const label = node.props['label'] ?? '""';
+            const label = asCharPtr(node.props['label'] ?? '""');
             lines.push(`${indent}if (reimgui::renderer::begin_tree_node(${label})) {`);
             break;
         }
         case 'CollapsingHeader': {
-            const label = node.props['label'] ?? '""';
+            const label = asCharPtr(node.props['label'] ?? '""');
             lines.push(`${indent}if (reimgui::renderer::begin_collapsing_header(${label})) {`);
             break;
         }
@@ -423,10 +437,11 @@ function emitText(node: IRText, lines: string[], indent: string): void {
 }
 
 function emitButton(node: IRButton, lines: string[], indent: string, depth: number): void {
+    const title = asCharPtr(node.title);
     if (node.action.length === 0) {
-        lines.push(`${indent}reimgui::renderer::button(${node.title});`);
+        lines.push(`${indent}reimgui::renderer::button(${title});`);
     } else {
-        lines.push(`${indent}if (reimgui::renderer::button(${node.title})) {`);
+        lines.push(`${indent}if (reimgui::renderer::button(${title})) {`);
         for (const stmt of node.action) {
             lines.push(`${indent}${INDENT}${stmt}`);
         }
@@ -435,17 +450,19 @@ function emitButton(node: IRButton, lines: string[], indent: string, depth: numb
 }
 
 function emitMenuItem(node: IRMenuItem, lines: string[], indent: string, depth: number): void {
+    const label = asCharPtr(node.label);
+    const shortcut = node.shortcut ? asCharPtr(node.shortcut) : undefined;
     if (node.action.length === 0) {
-        if (node.shortcut) {
-            lines.push(`${indent}reimgui::renderer::menu_item(${node.label}, ${node.shortcut});`);
+        if (shortcut) {
+            lines.push(`${indent}reimgui::renderer::menu_item(${label}, ${shortcut});`);
         } else {
-            lines.push(`${indent}reimgui::renderer::menu_item(${node.label});`);
+            lines.push(`${indent}reimgui::renderer::menu_item(${label});`);
         }
     } else {
-        if (node.shortcut) {
-            lines.push(`${indent}if (reimgui::renderer::menu_item(${node.label}, ${node.shortcut})) {`);
+        if (shortcut) {
+            lines.push(`${indent}if (reimgui::renderer::menu_item(${label}, ${shortcut})) {`);
         } else {
-            lines.push(`${indent}if (reimgui::renderer::menu_item(${node.label})) {`);
+            lines.push(`${indent}if (reimgui::renderer::menu_item(${label})) {`);
         }
         for (const stmt of node.action) {
             lines.push(`${indent}    ${stmt}`);
@@ -455,7 +472,8 @@ function emitMenuItem(node: IRMenuItem, lines: string[], indent: string, depth: 
 }
 
 function emitTextInput(node: IRTextInput, lines: string[], indent: string): void {
-    const label = node.label && node.label !== '""' ? node.label : `"##textinput_${node.bufferIndex}"`;
+    const label = asCharPtr(node.label && node.label !== '""' ? node.label : `"##textinput_${node.bufferIndex}"`);
+
     if (node.stateVar) {
         lines.push(`${indent}{`);
         lines.push(`${indent}${INDENT}auto& buf = ctx.get_buffer(${node.bufferIndex});`);
@@ -471,7 +489,7 @@ function emitTextInput(node: IRTextInput, lines: string[], indent: string): void
 }
 
 function emitCheckbox(node: IRCheckbox, lines: string[], indent: string): void {
-    const label = node.label && node.label !== '""' ? node.label : `"##checkbox_${checkboxCounter}"`;
+    const label = asCharPtr(node.label && node.label !== '""' ? node.label : `"##checkbox_${checkboxCounter}"`);
     checkboxCounter++;
 
     if (node.stateVar) {
