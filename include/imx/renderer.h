@@ -171,6 +171,9 @@ void plot_histogram(const char* label, const float* values, int count, const cha
 void begin_modal(const char* title, bool open, bool* p_open, const Style& style = {});
 void end_modal();
 
+void image(const char* path, float width = 0, float height = 0);
+void image_embedded(const char* key, const unsigned char* data, unsigned int size, float width = 0, float height = 0);
+
 void begin_theme(const char* preset, const ThemeConfig& config = {});
 void end_theme();
 
