@@ -63,4 +63,49 @@ void open_popup(const char* id) {
     ImGui::OpenPopup(id);
 }
 
+void begin_dockspace(const Style& style) {
+    // Create a fullscreen invisible host window and call DockSpace
+    ImGuiViewport* viewport = ImGui::GetMainViewport();
+    ImGui::SetNextWindowPos(viewport->WorkPos);
+    ImGui::SetNextWindowSize(viewport->WorkSize);
+    ImGui::SetNextWindowViewport(viewport->ID);
+
+    ImGuiWindowFlags host_flags = ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoTitleBar |
+                                  ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize |
+                                  ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBringToFrontOnFocus |
+                                  ImGuiWindowFlags_NoNavFocus | ImGuiWindowFlags_NoBackground |
+                                  ImGuiWindowFlags_MenuBar;
+
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0F);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0F);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0F, 0.0F));
+    ImGui::Begin("##DockSpaceHost", nullptr, host_flags);
+    ImGui::PopStyleVar(3);
+    ImGui::DockSpace(ImGui::GetID("MainDockSpace"), ImVec2(0.0F, 0.0F), ImGuiDockNodeFlags_None);
+}
+
+void end_dockspace() {
+    ImGui::End();
+}
+
+bool begin_menu_bar() {
+    return ImGui::BeginMenuBar();
+}
+
+void end_menu_bar() {
+    ImGui::EndMenuBar();
+}
+
+bool begin_menu(const char* label) {
+    return ImGui::BeginMenu(label);
+}
+
+void end_menu() {
+    ImGui::EndMenu();
+}
+
+bool menu_item(const char* label, const char* shortcut) {
+    return ImGui::MenuItem(label, shortcut);
+}
+
 } // namespace reimgui::renderer

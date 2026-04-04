@@ -2,7 +2,7 @@ import type {
     IRComponent, IRNode, IRStateSlot, IRPropParam, IRType,
     IRBeginContainer, IREndContainer, IRText, IRButton, IRTextInput,
     IRCheckbox, IRSeparator, IRConditional, IRListMap, IRCustomComponent,
-    IRBeginPopup, IREndPopup, IROpenPopup,
+    IRBeginPopup, IREndPopup, IROpenPopup, IRMenuItem,
 } from './ir.js';
 
 const INDENT = '    ';
@@ -177,6 +177,9 @@ function emitNode(node: IRNode, lines: string[], depth: number): void {
         case 'list_map':
             emitListMap(node, lines, indent, depth);
             break;
+        case 'menu_item':
+            emitMenuItem(node, lines, indent, depth);
+            break;
         case 'custom_component':
             emitCustomComponent(node, lines, indent);
             break;
@@ -257,6 +260,24 @@ function emitBeginContainer(node: IRBeginContainer, lines: string[], indent: str
             }
             break;
         }
+        case 'DockSpace': {
+            const style = buildStyleBlock(node, indent, lines);
+            if (style) {
+                lines.push(`${indent}reimgui::renderer::begin_dockspace(${style});`);
+            } else {
+                lines.push(`${indent}reimgui::renderer::begin_dockspace();`);
+            }
+            break;
+        }
+        case 'MenuBar': {
+            lines.push(`${indent}if (reimgui::renderer::begin_menu_bar()) {`);
+            break;
+        }
+        case 'Menu': {
+            const label = node.props['label'] ?? '""';
+            lines.push(`${indent}if (reimgui::renderer::begin_menu(${label})) {`);
+            break;
+        }
     }
 }
 
@@ -273,6 +294,17 @@ function emitEndContainer(node: IREndContainer, lines: string[], indent: string)
             break;
         case 'View':
             lines.push(`${indent}reimgui::renderer::end_view();`);
+            break;
+        case 'DockSpace':
+            lines.push(`${indent}reimgui::renderer::end_dockspace();`);
+            break;
+        case 'MenuBar':
+            lines.push(`${indent}reimgui::renderer::end_menu_bar();`);
+            lines.push(`${indent}}`);
+            break;
+        case 'Menu':
+            lines.push(`${indent}reimgui::renderer::end_menu();`);
+            lines.push(`${indent}}`);
             break;
     }
 }
@@ -293,6 +325,26 @@ function emitButton(node: IRButton, lines: string[], indent: string, depth: numb
         lines.push(`${indent}if (reimgui::renderer::button(${node.title})) {`);
         for (const stmt of node.action) {
             lines.push(`${indent}${INDENT}${stmt}`);
+        }
+        lines.push(`${indent}}`);
+    }
+}
+
+function emitMenuItem(node: IRMenuItem, lines: string[], indent: string, depth: number): void {
+    if (node.action.length === 0) {
+        if (node.shortcut) {
+            lines.push(`${indent}reimgui::renderer::menu_item(${node.label}, ${node.shortcut});`);
+        } else {
+            lines.push(`${indent}reimgui::renderer::menu_item(${node.label});`);
+        }
+    } else {
+        if (node.shortcut) {
+            lines.push(`${indent}if (reimgui::renderer::menu_item(${node.label}, ${node.shortcut})) {`);
+        } else {
+            lines.push(`${indent}if (reimgui::renderer::menu_item(${node.label})) {`);
+        }
+        for (const stmt of node.action) {
+            lines.push(`${indent}    ${stmt}`);
         }
         lines.push(`${indent}}`);
     }

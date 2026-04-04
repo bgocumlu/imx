@@ -6,7 +6,7 @@ import type {
     IRComponent, IRNode, IRStateSlot, IRPropParam, IRType, IRExpr,
     IRBeginContainer, IREndContainer, IRText, IRButton, IRTextInput,
     IRCheckbox, IRSeparator, IRConditional, IRListMap, IRCustomComponent,
-    IRBeginPopup, IREndPopup, IROpenPopup,
+    IRBeginPopup, IREndPopup, IROpenPopup, IRMenuItem,
 } from './ir.js';
 
 interface LoweringContext {
@@ -371,6 +371,9 @@ function lowerJsxSelfClosing(node: ts.JsxSelfClosingElement, body: IRNode[], ctx
         case 'Checkbox':
             lowerCheckbox(attrs, rawAttrs, body, ctx);
             break;
+        case 'MenuItem':
+            lowerMenuItem(attrs, rawAttrs, body, ctx);
+            break;
         case 'Separator':
             body.push({ kind: 'separator' });
             break;
@@ -453,6 +456,17 @@ function lowerCheckbox(attrs: Record<string, string>, rawAttrs: Map<string, ts.E
 
     const style = attrs['style'];
     body.push({ kind: 'checkbox', label, stateVar, valueExpr: valueExprStr, onChangeExpr: onChangeExprStr, style });
+}
+
+function lowerMenuItem(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext): void {
+    const label = attrs['label'] ?? '""';
+    const shortcut = attrs['shortcut'];
+    const onPressExpr = rawAttrs.get('onPress');
+    let action: string[] = [];
+    if (onPressExpr) {
+        action = extractActionStatements(onPressExpr, ctx);
+    }
+    body.push({ kind: 'menu_item', label, shortcut, action });
 }
 
 function lowerTextElement(node: ts.JsxElement, body: IRNode[], ctx: LoweringContext): void {

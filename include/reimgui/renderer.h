@@ -50,5 +50,16 @@ bool begin_popup(const char* id, const Style& style = {});
 void end_popup();
 void open_popup(const char* id);
 
+void begin_dockspace(const Style& style = {});
+void end_dockspace();
+
+bool begin_menu_bar();
+void end_menu_bar();
+
+bool begin_menu(const char* label);
+void end_menu();
+
+bool menu_item(const char* label, const char* shortcut = nullptr);
+
 } // namespace renderer
 } // namespace reimgui

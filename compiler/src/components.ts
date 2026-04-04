@@ -68,6 +68,26 @@ export const HOST_COMPONENTS: Record<string, HostComponentDef> = {
         props: { id: { type: 'string', required: true }, style: { type: 'style', required: false } },
         hasChildren: true, isContainer: true,
     },
+    DockSpace: {
+        props: { style: { type: 'style', required: false } },
+        hasChildren: true, isContainer: true,
+    },
+    MenuBar: {
+        props: {},
+        hasChildren: true, isContainer: true,
+    },
+    Menu: {
+        props: { label: { type: 'string', required: true } },
+        hasChildren: true, isContainer: true,
+    },
+    MenuItem: {
+        props: {
+            label: { type: 'string', required: true },
+            onPress: { type: 'callback', required: false },
+            shortcut: { type: 'string', required: false },
+        },
+        hasChildren: false, isContainer: false,
+    },
 };
 
 export function isHostComponent(name: string): boolean {
