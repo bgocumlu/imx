@@ -9,6 +9,10 @@ function App() {
   const [count, setCount] = useState(3);
   const [posX, setPosX] = useState(0.0);
   const [mode, setMode] = useState(0);
+  const [level, setLevel] = useState(1);
+  const [weight, setWeight] = useState(9.8);
+  const [color, setColor] = useState([1.0, 0.5, 0.0, 1.0]);
+  const [progress, setProgress] = useState(0.7);
 
   return (
     <DockSpace>
@@ -42,9 +46,14 @@ function App() {
                 <SliderInt label="Count" value={count} onChange={setCount} min={0} max={10} />
                 <Combo label="Mode" value={mode} onChange={setMode} items={["Easy", "Medium", "Hard"]} />
               </CollapsingHeader>
+              <CollapsingHeader label="Input">
+                <InputInt label="Level" value={level} onChange={setLevel} />
+                <InputFloat label="Weight" value={weight} onChange={setWeight} />
+              </CollapsingHeader>
               <CollapsingHeader label="Material">
-                <Text>Shader: Standard</Text>
-                <Text>Color: White</Text>
+                <ColorEdit label="Color" value={color} onChange={setColor} />
+                <SliderFloat label="Progress" value={progress} onChange={setProgress} min={0} max={1} />
+                <ProgressBar value={progress} />
               </CollapsingHeader>
             </Column>
           </TabItem>
