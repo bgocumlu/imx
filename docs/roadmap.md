@@ -172,7 +172,54 @@ Exit criteria:
 
 - debugging and iteration feel reasonable without a JS runtime
 
-## Phase 10: Reevaluate Advanced Features
+## Phase 10: Full ImGui Coverage
+
+Goal:
+
+- map every remaining ImGui primitive so IMX can do anything ImGui can
+
+### Batch 1: Essential Missing Primitives
+
+- `Modal` — `BeginPopupModal` / `EndPopupModal` for blocking dialogs
+- `Radio` — `RadioButton` for mutually exclusive options
+- `Selectable` — clickable list items with selection state
+- `Disabled` — `BeginDisabled` / `EndDisabled` to gray out sections
+- `Child` — `BeginChild` / `EndChild` for scrollable sub-regions
+
+### Batch 2: Display and Data
+
+- `Image` — `ImGui::Image` for texture display
+- `PlotLines` — simple line graph
+- `PlotHistogram` — bar chart
+- `ColorPicker` — full color picker (not just ColorEdit)
+- `InputTextMultiline` — multi-line text editor
+
+### Batch 3: Advanced Interaction
+
+- `DragDropSource` — drag source for drag-and-drop
+- `DragDropTarget` — drop target for drag-and-drop
+- `StyleColor` — push/pop individual color overrides
+- `StyleVar` — push/pop individual style var overrides
+- `ID` — explicit ID scope push/pop
+- `Group` — `BeginGroup` / `EndGroup`
+
+### Batch 4: Drawing and Canvas
+
+- `Canvas` / `DrawList` — custom drawing (lines, rects, circles, text)
+- `PlotCustom` — custom plot rendering via DrawList
+
+### Batch 5: Custom C++ Escape Hatches
+
+- `<Theme preset="custom">` — user-registered C++ theme function
+- `<Custom widget="Knob">` — user-registered C++ widget functions
+- `imx::set_custom_theme(fn)` and `imx::register_widget(name, fn)` API
+
+Exit criteria:
+
+- every ImGui widget has a corresponding IMX component
+- custom C++ widgets can be used alongside IMX components
+
+## Phase 11: Advanced Features
 
 Goal:
 
