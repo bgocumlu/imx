@@ -358,6 +358,7 @@ let customComponentCounter = 0;
 let checkboxCounter = 0;
 let comboCounter = 0;
 let listBoxCounter = 0;
+const windowOpenStack: boolean[] = []; // tracks if begin_window used open prop
 
 function buildStyleBlock(node: IRBeginContainer, indent: string, lines: string[]): string | null {
     // Check for style-related props (gap, padding, width, height, etc.)
@@ -400,7 +401,29 @@ function emitBeginContainer(node: IRBeginContainer, lines: string[], indent: str
     switch (node.tag) {
         case 'Window': {
             const title = asCharPtr(node.props['title'] ?? '""');
-            lines.push(`${indent}imx::renderer::begin_window(${title});`);
+            const flagParts: string[] = [];
+            if (node.props['noTitleBar'] === 'true') flagParts.push('ImGuiWindowFlags_NoTitleBar');
+            if (node.props['noResize'] === 'true') flagParts.push('ImGuiWindowFlags_NoResize');
+            if (node.props['noMove'] === 'true') flagParts.push('ImGuiWindowFlags_NoMove');
+            if (node.props['noCollapse'] === 'true') flagParts.push('ImGuiWindowFlags_NoCollapse');
+            if (node.props['noDocking'] === 'true') flagParts.push('ImGuiWindowFlags_NoDocking');
+            if (node.props['noScrollbar'] === 'true') flagParts.push('ImGuiWindowFlags_NoScrollbar');
+            const flags = flagParts.length > 0 ? flagParts.join(' | ') : '0';
+
+            const openExpr = node.props['open'];
+            const onCloseExpr = node.props['onClose'];
+            if (openExpr) {
+                windowOpenStack.push(true);
+                lines.push(`${indent}{`);
+                lines.push(`${indent}    bool win_open = ${openExpr};`);
+                lines.push(`${indent}    imx::renderer::begin_window(${title}, ${flags}, &win_open);`);
+                if (onCloseExpr) {
+                    lines.push(`${indent}    if (!win_open) { ${onCloseExpr}; }`);
+                }
+            } else {
+                windowOpenStack.push(false);
+                lines.push(`${indent}imx::renderer::begin_window(${title}, ${flags});`);
+            }
             break;
         }
         case 'Row': {
@@ -514,9 +537,14 @@ function emitBeginContainer(node: IRBeginContainer, lines: string[], indent: str
 
 function emitEndContainer(node: IREndContainer, lines: string[], indent: string): void {
     switch (node.tag) {
-        case 'Window':
+        case 'Window': {
             lines.push(`${indent}imx::renderer::end_window();`);
+            const hadOpen = windowOpenStack.pop() ?? false;
+            if (hadOpen) {
+                lines.push(`${indent}}`);
+            }
             break;
+        }
         case 'Row':
             lines.push(`${indent}imx::renderer::end_row();`);
             break;

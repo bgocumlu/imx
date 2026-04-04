@@ -33,7 +33,7 @@ namespace renderer {
 
 void before_child();
 
-void begin_window(const char* title, const Style& style = {});
+void begin_window(const char* title, int flags = 0, bool* p_open = nullptr, const Style& style = {});
 void end_window();
 
 void begin_view(const Style& style = {});

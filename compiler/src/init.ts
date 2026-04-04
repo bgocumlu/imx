@@ -143,7 +143,7 @@ interface Style {
 
 declare function useState<T>(initial: T): [T, (value: T) => void];
 
-interface WindowProps { title: string; style?: Style; children?: any; }
+interface WindowProps { title: string; open?: boolean; onClose?: () => void; noTitleBar?: boolean; noResize?: boolean; noMove?: boolean; noCollapse?: boolean; noDocking?: boolean; noScrollbar?: boolean; style?: Style; children?: any; }
 interface ViewProps { style?: Style; children?: any; }
 interface RowProps { gap?: number; style?: Style; children?: any; }
 interface ColumnProps { gap?: number; style?: Style; children?: any; }

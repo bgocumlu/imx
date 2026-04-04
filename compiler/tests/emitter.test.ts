@@ -39,7 +39,7 @@ function App() {
         expect(output).toContain('#include <imx/renderer.h>');
         expect(output).toContain('void App_render(imx::RenderContext& ctx)');
         expect(output).toContain('use_state<int>(0, 0)');
-        expect(output).toContain('begin_window("Hello")');
+        expect(output).toContain('begin_window("Hello", 0)');
         expect(output).toContain('imx::renderer::button("Click")');
         expect(output).toContain('count.set(count.get() + 1)');
         expect(output).toContain('end_window()');

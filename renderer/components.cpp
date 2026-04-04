@@ -16,9 +16,9 @@ struct ThemeState {
 };
 static std::vector<ThemeState> g_theme_stack;
 
-void begin_window(const char* title, const Style& style) {
+void begin_window(const char* title, int flags, bool* p_open, const Style& style) {
     before_child();
-    ImGui::Begin(title);
+    ImGui::Begin(title, p_open, flags);
     if (style.font_size) {
         float scale = *style.font_size / ImGui::GetFontSize();
         ImGui::SetWindowFontScale(scale);

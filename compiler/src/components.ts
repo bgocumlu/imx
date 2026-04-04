@@ -13,7 +13,18 @@ export interface HostComponentDef {
 
 export const HOST_COMPONENTS: Record<string, HostComponentDef> = {
     Window: {
-        props: { title: { type: 'string', required: true } },
+        props: {
+            title: { type: 'string', required: true },
+            open: { type: 'boolean', required: false },
+            onClose: { type: 'callback', required: false },
+            noTitleBar: { type: 'boolean', required: false },
+            noResize: { type: 'boolean', required: false },
+            noMove: { type: 'boolean', required: false },
+            noCollapse: { type: 'boolean', required: false },
+            noDocking: { type: 'boolean', required: false },
+            noScrollbar: { type: 'boolean', required: false },
+            style: { type: 'style', required: false },
+        },
         hasChildren: true, isContainer: true,
     },
     View: {
