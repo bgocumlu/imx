@@ -97,6 +97,10 @@ export default function App() {
 
 Supported types: `number`, `string`, `boolean`, `number[]` (for ColorEdit RGBA).
 
+## Custom Native Widgets
+
+You can register existing C++ ImGui widgets and use them from TSX. See the [Custom Native Widgets](api-reference.md#custom-native-widgets) section in the API reference.
+
 ## Next steps
 
 See [api-reference.md](api-reference.md) for the full component reference, style properties, and project setup details.

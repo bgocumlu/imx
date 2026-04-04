@@ -705,6 +705,96 @@ export default function App() {
 
 ---
 
+## Custom Native Widgets
+
+Native widgets let you use existing C++ ImGui widgets from TSX. Unlike custom components (which are written in TSX), native widgets are C++ functions registered at runtime.
+
+### Registering a Widget
+
+In your `main.cpp`, register widgets before the render loop:
+
+```cpp
+#include <imx/renderer.h>
+
+imx::register_widget("Knob", [](imx::WidgetArgs& args) {
+    float v = args.get<float>("value");
+    bool changed = MyKnob(
+        args.label(),
+        &v,
+        args.get<float>("min"),
+        args.get<float>("max"),
+        ImVec2(args.get<float>("width", 80.0f), args.get<float>("height", 80.0f))
+    );
+    if (changed) args.call("onChange", v);
+});
+```
+
+### WidgetArgs API
+
+| Method | Description |
+|--------|-------------|
+| `label()` | Returns the widget's ImGui label/ID (`const char*`) |
+| `get<T>(name)` | Get a prop value, returns `T{}` if missing |
+| `get<T>(name, default)` | Get a prop value with default |
+| `has(name)` | Check if a prop was provided |
+| `set<T>(name, value)` | Set a prop value (used by generated code) |
+| `set_callback(name, fn)` | Set a callback (used by generated code) |
+| `call(name)` | Invoke a void callback |
+| `call<T>(name, value)` | Invoke a callback with a value |
+
+### Declaring Types
+
+Add type declarations to your `imx.d.ts` so TypeScript checks props:
+
+```typescript
+interface KnobProps {
+    value: number;
+    onChange: (value: number) => void;
+    min: number;
+    max: number;
+    width?: number;
+    height?: number;
+}
+declare function Knob(props: KnobProps): any;
+```
+
+### Using in TSX
+
+```tsx
+function App() {
+    const [volume, setVolume] = useState(0.5);
+    return (
+        <Window title="Mixer">
+            <Knob value={volume} onChange={(v: number) => setVolume(v)} min={0} max={1} />
+        </Window>
+    );
+}
+```
+
+## Custom Theme Presets
+
+Register a custom theme function that applies ImGui styles:
+
+```cpp
+imx::register_theme("zynlab", []() {
+    ImGuiStyle& style = ImGui::GetStyle();
+    style.Colors[ImGuiCol_WindowBg] = ImVec4(0.1f, 0.1f, 0.1f, 1.0f);
+    // ... set all your colors
+});
+```
+
+Then use it in TSX:
+
+```tsx
+<Theme preset="zynlab" rounding={4}>
+    {/* children use the custom theme */}
+</Theme>
+```
+
+Override props (`accentColor`, `rounding`, etc.) still apply on top of your custom theme.
+
+---
+
 ## Styles
 
 Styles are passed as an object to the `style` prop. They control layout sizing, spacing, and colors.

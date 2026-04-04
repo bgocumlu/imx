@@ -178,3 +178,18 @@ export default function App() {
 Required files per app directory: `App.tsx`, `imx.d.ts`, `tsconfig.json`, `main.cpp`.
 Compile all .tsx files together: `node compiler/dist/index.js App.tsx TodoItem.tsx -o build/generated`
 First .tsx argument is the root component (must use `export default`).
+
+## Native Widgets
+
+Native widgets are C++ ImGui widgets registered at runtime. Use them like any component:
+
+```tsx
+<Knob value={vol} onChange={(v: number) => setVol(v)} min={0} max={1} />
+```
+
+Requirements:
+- Widget must be registered in `main.cpp` with `imx::register_widget("Knob", ...)`
+- Props must be declared in `imx.d.ts` for type checking
+- Callbacks with a value parameter need a type annotation: `(v: number) => ...`
+
+Custom themes work via `imx::register_theme("name", fn)` and `<Theme preset="name">`.
