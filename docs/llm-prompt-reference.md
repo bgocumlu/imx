@@ -241,6 +241,15 @@ const [scores, setScores] = useState([2, 5, 8, 12, 7, 3]);
 </Column>
 ```
 
+### Image
+```tsx
+// Runtime file loading
+<Image src="icon.png" width={32} height={32} />
+
+// Embedded in executable (no file needed at runtime)
+<Image src="splash.png" embed width={800} height={600} />
+```
+
 ## Full Example
 
 ```tsx

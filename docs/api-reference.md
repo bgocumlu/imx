@@ -762,6 +762,39 @@ const [show, setShow] = useState(false);
 
 ---
 
+#### Image
+
+Display an image from a file path or embedded in the executable.
+
+##### File Loading (Runtime)
+
+```tsx
+<Image src="logo.png" width={200} height={100} />
+```
+
+The image is loaded from disk on first render and cached. If `width`/`height` are omitted, the image's natural dimensions are used.
+
+##### Embedded (Compile-Time)
+
+```tsx
+<Image src="logo.png" embed width={200} height={100} />
+```
+
+The compiler reads the image file and bakes it into the binary as a byte array. A `.embed.h` header is generated alongside the `.gen.cpp`. The header is only regenerated when the image file changes (mtime check).
+
+##### Props
+
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| `src` | `string` | yes | Path to image file (relative to .tsx source) |
+| `embed` | `boolean` | no | Embed image data in binary |
+| `width` | `number` | no | Display width (default: natural width) |
+| `height` | `number` | no | Display height (default: natural height) |
+
+Supported formats: PNG, JPEG.
+
+---
+
 #### Popup
 
 A popup/modal window. Shown when opened programmatically.
