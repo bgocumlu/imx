@@ -197,6 +197,8 @@ interface PlotLinesProps { label: string; values: number[]; overlay?: string; st
 interface PlotHistogramProps { label: string; values: number[]; overlay?: string; style?: Style; }
 interface ModalProps { title: string; open?: boolean; onClose?: () => void; style?: Style; children?: any; }
 interface ImageProps { src: string; embed?: boolean; width?: number; height?: number; }
+interface GroupProps { style?: Style; children?: any; }
+interface IDProps { scope: string | number; children?: any; }
 
 declare function Window(props: WindowProps): any;
 declare function View(props: ViewProps): any;
@@ -243,6 +245,8 @@ declare function PlotLines(props: PlotLinesProps): any;
 declare function PlotHistogram(props: PlotHistogramProps): any;
 declare function Modal(props: ModalProps): any;
 declare function Image(props: ImageProps): any;
+declare function Group(props: GroupProps): any;
+declare function ID(props: IDProps): any;
 
 declare function resetLayout(): void;
 

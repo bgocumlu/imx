@@ -596,6 +596,20 @@ function emitBeginContainer(node, lines, indent) {
             }
             break;
         }
+        case 'Group': {
+            lines.push(`${indent}ImGui::BeginGroup();`);
+            break;
+        }
+        case 'ID': {
+            const scope = node.props['scope'] ?? '""';
+            if (scope.startsWith('"')) {
+                lines.push(`${indent}ImGui::PushID(${scope});`);
+            }
+            else {
+                lines.push(`${indent}ImGui::PushID(static_cast<int>(${scope}));`);
+            }
+            break;
+        }
         case 'DockLayout':
         case 'DockSplit':
         case 'DockPanel':
@@ -675,6 +689,12 @@ function emitEndContainer(node, lines, indent) {
             }
             break;
         }
+        case 'Group':
+            lines.push(`${indent}ImGui::EndGroup();`);
+            break;
+        case 'ID':
+            lines.push(`${indent}ImGui::PopID();`);
+            break;
         case 'DockLayout':
         case 'DockSplit':
         case 'DockPanel':

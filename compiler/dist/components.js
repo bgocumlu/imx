@@ -319,6 +319,18 @@ export const HOST_COMPONENTS = {
         },
         hasChildren: true, isContainer: true,
     },
+    Group: {
+        props: {
+            style: { type: 'style', required: false },
+        },
+        hasChildren: true, isContainer: true,
+    },
+    ID: {
+        props: {
+            scope: { type: 'string', required: true },
+        },
+        hasChildren: true, isContainer: true,
+    },
 };
 export function isHostComponent(name) {
     return name in HOST_COMPONENTS;

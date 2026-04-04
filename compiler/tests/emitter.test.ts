@@ -360,6 +360,40 @@ function App() {
         expect(output).toContain('show.set(false)');
         expect(output).toContain('imx::renderer::end_modal()');
     });
+
+    it('emits Group with BeginGroup/EndGroup', () => {
+        const output = compile(`
+function App() {
+  return (
+    <Window title="Test">
+      <Group>
+        <Text>Hello</Text>
+      </Group>
+    </Window>
+  );
+}
+        `);
+        expect(output).toContain('ImGui::BeginGroup()');
+        expect(output).toContain('imx::renderer::text("Hello")');
+        expect(output).toContain('ImGui::EndGroup()');
+    });
+
+    it('emits ID with PushID/PopID', () => {
+        const output = compile(`
+function App() {
+  return (
+    <Window title="Test">
+      <ID scope="player1">
+        <Text>Player 1</Text>
+      </ID>
+    </Window>
+  );
+}
+        `);
+        expect(output).toContain('ImGui::PushID("player1")');
+        expect(output).toContain('imx::renderer::text("Player 1")');
+        expect(output).toContain('ImGui::PopID()');
+    });
 });
 
 describe('source location comments', () => {
