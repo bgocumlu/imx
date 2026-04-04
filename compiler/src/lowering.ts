@@ -9,7 +9,7 @@ import type {
     IRBeginPopup, IREndPopup, IROpenPopup, IRMenuItem,
     IRSliderFloat, IRSliderInt, IRDragFloat, IRDragInt, IRCombo,
     IRInputInt, IRInputFloat, IRColorEdit, IRListBox, IRProgressBar, IRTooltip,
-    IRDockLayout, IRDockSplit, IRDockPanel,
+    IRDockLayout, IRDockSplit, IRDockPanel, IRNativeWidget,
 } from './ir.js';
 
 interface LoweringContext {
@@ -18,6 +18,7 @@ interface LoweringContext {
     propsParam: string | null;       // name of props parameter, if any
     bufferIndex: number;
     sourceFile: ts.SourceFile;
+    customComponents: Map<string, string>;
 }
 
 function getLoc(node: ts.Node, ctx: LoweringContext): SourceLoc {
@@ -72,6 +73,7 @@ export function lowerComponent(parsed: ParsedFile, validation: ValidationResult)
         propsParam,
         bufferIndex: 0,
         sourceFile: parsed.sourceFile,
+        customComponents: validation.customComponents,
     };
 
     // Find return statement and lower its JSX
@@ -394,7 +396,11 @@ function lowerJsxElement(node: ts.JsxElement, body: IRNode[], ctx: LoweringConte
 
     // Custom component with children - treat as container-like (not common but handle gracefully)
     if (!isHostComponent(name)) {
-        lowerCustomComponent(name, node.openingElement.attributes, body, ctx, getLoc(node, ctx));
+        if (ctx.customComponents && ctx.customComponents.has(name)) {
+            lowerCustomComponent(name, node.openingElement.attributes, body, ctx, getLoc(node, ctx));
+        } else {
+            lowerNativeWidget(name, node.openingElement.attributes, body, ctx, getLoc(node, ctx));
+        }
         return;
     }
 }
@@ -405,7 +411,11 @@ function lowerJsxSelfClosing(node: ts.JsxSelfClosingElement, body: IRNode[], ctx
     const name = tagName.text;
 
     if (!isHostComponent(name)) {
-        lowerCustomComponent(name, node.attributes, body, ctx, getLoc(node, ctx));
+        if (ctx.customComponents && ctx.customComponents.has(name)) {
+            lowerCustomComponent(name, node.attributes, body, ctx, getLoc(node, ctx));
+        } else {
+            lowerNativeWidget(name, node.attributes, body, ctx, getLoc(node, ctx));
+        }
         return;
     }
 
@@ -716,6 +726,60 @@ function lowerCustomComponent(name: string, attributes: ts.JsxAttributes, body: 
         props: attrs,
         stateCount: 0,
         bufferCount: 0,
+        loc,
+    });
+}
+
+function lowerNativeWidget(name: string, attributes: ts.JsxAttributes, body: IRNode[], ctx: LoweringContext, loc?: SourceLoc): void {
+    const props: Record<string, string> = {};
+    const callbackProps: Record<string, string> = {};
+    const rawAttrs = getRawAttributes(attributes);
+
+    for (const [attrName, expr] of rawAttrs) {
+        if (attrName === 'key') continue;
+        if (!expr) {
+            props[attrName] = 'true';
+            continue;
+        }
+
+        if (ts.isArrowFunction(expr) || ts.isFunctionExpression(expr)) {
+            const params = expr.parameters;
+            if (params.length > 0) {
+                // Parameterized callback: (v: number) => setVol(v)
+                const param = params[0];
+                const paramName = ts.isIdentifier(param.name) ? param.name.text : '_p';
+                let cppType = 'float';
+                if (param.type) {
+                    const typeText = param.type.getText();
+                    if (typeText === 'number') cppType = 'float';
+                    else if (typeText === 'boolean') cppType = 'bool';
+                    else if (typeText === 'string') cppType = 'std::string';
+                }
+                const bodyCode = ts.isBlock(expr.body)
+                    ? expr.body.statements.map(s => stmtToCpp(s, ctx)).join(' ')
+                    : exprToCpp(expr.body as ts.Expression, ctx) + ';';
+                callbackProps[attrName] = `[&](std::any _v) { auto ${paramName} = std::any_cast<${cppType}>(_v); ${bodyCode} }`;
+            } else {
+                // Void callback: () => doSomething()
+                const bodyCode = ts.isBlock(expr.body)
+                    ? expr.body.statements.map(s => stmtToCpp(s, ctx)).join(' ')
+                    : exprToCpp(expr.body as ts.Expression, ctx) + ';';
+                callbackProps[attrName] = `[&](std::any) { ${bodyCode} }`;
+            }
+        } else {
+            props[attrName] = exprToCpp(expr, ctx);
+        }
+    }
+
+    const keyAttr = rawAttrs.get('key');
+    const key = keyAttr ? exprToCpp(keyAttr, ctx) : undefined;
+
+    body.push({
+        kind: 'native_widget',
+        name,
+        props,
+        callbackProps,
+        key,
         loc,
     });
 }

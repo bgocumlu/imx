@@ -159,4 +159,30 @@ function App() {
             expect(checkbox.label).toBe('"Check"');
         }
     });
+
+    it('lowers unknown JSX element as native widget', () => {
+        const ir = lower(`
+function App() {
+  const [vol, setVol] = useState(0.5);
+  return (
+    <Window title="Test">
+      <Knob value={vol} min={0} max={1} onChange={(v: number) => setVol(v)} />
+    </Window>
+  );
+}
+        `);
+
+        // body: begin_container(Window), native_widget, end_container(Window)
+        expect(ir.body.length).toBe(3);
+        const widget = ir.body[1];
+        expect(widget.kind).toBe('native_widget');
+        if (widget.kind === 'native_widget') {
+            expect(widget.name).toBe('Knob');
+            expect(widget.props['value']).toContain('vol.get()');
+            expect(widget.props['min']).toBe('0');
+            expect(widget.props['max']).toBe('1');
+            expect(widget.callbackProps['onChange']).toContain('std::any_cast<float>');
+            expect(widget.callbackProps['onChange']).toContain('vol.set(v)');
+        }
+    });
 });
