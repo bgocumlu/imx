@@ -1,6 +1,6 @@
 import { TodoItem } from './TodoItem';
 
-function App() {
+export default function App() {
   const [done1, setDone1] = useState(false);
   const [done2, setDone2] = useState(false);
   const [done3, setDone3] = useState(true);
