@@ -158,7 +158,7 @@ interface DockLayoutProps { children?: any; }
 interface DockSplitProps { direction: "horizontal" | "vertical"; size: number; children?: any; }
 interface DockPanelProps { children?: any; }
 interface ThemeProps {
-  preset: "dark" | "light" | "classic";
+  preset: string;
   accentColor?: [number, number, number, number];
   windowBg?: [number, number, number, number];
   textColor?: [number, number, number, number];
@@ -225,6 +225,19 @@ declare function ProgressBar(props: ProgressBarProps): any;
 declare function Tooltip(props: TooltipProps): any;
 
 declare function resetLayout(): void;
+
+// --- Custom native widgets ---
+// Declare your C++ registered widgets here for type checking:
+//
+// interface KnobProps {
+//     value: number;
+//     onChange: (value: number) => void;
+//     min: number;
+//     max: number;
+//     width?: number;
+//     height?: number;
+// }
+// declare function Knob(props: KnobProps): any;
 
 declare module "imx/jsx-runtime" {
   export namespace JSX {
