@@ -51,6 +51,7 @@ target_link_libraries(imgui_lib PUBLIC glfw OpenGL::GL)
 # --- reimgui_runtime ---
 add_library(reimgui_runtime STATIC
     runtime/runtime.cpp
+    runtime/render_context.cpp
     runtime/text_buffer.cpp
     runtime/component_instance.cpp
 )
@@ -61,6 +62,7 @@ add_executable(runtime_tests
     tests/runtime/test_state.cpp
     tests/runtime/test_text_buffer.cpp
     tests/runtime/test_instance.cpp
+    tests/runtime/test_lifecycle.cpp
 )
 target_link_libraries(runtime_tests PRIVATE reimgui_runtime Catch2::Catch2WithMain)
 

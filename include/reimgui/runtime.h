@@ -87,4 +87,56 @@ private:
     std::unordered_map<ChildKey, bool, ChildKeyHash> visited_;
 };
 
+class Runtime; // forward declaration
+
+class RenderContext {
+public:
+    explicit RenderContext(Runtime& runtime);
+
+    template <typename T>
+    StateSlot<T> use_state(const T& initial, int slot_index);
+
+    TextBuffer& get_buffer(int index);
+
+    void begin_instance(const std::string& type, const InstanceKey& key,
+                        int state_count, int buffer_count);
+    void end_instance();
+
+    ComponentInstance* current();
+
+private:
+    friend class Runtime;
+    Runtime& runtime_;
+    std::vector<ComponentInstance*> stack_;
+};
+
+class Runtime {
+public:
+    Runtime();
+    RenderContext& begin_frame();
+    void end_frame();
+    bool dirty() const;
+    void mark_dirty();
+    void clear_dirty();
+    ComponentInstance& root();
+
+private:
+    friend class RenderContext;
+    std::unique_ptr<ComponentInstance> root_;
+    RenderContext ctx_;
+    bool dirty_ = true;
+};
+
+// --- Template implementations (must be in header) ---
+
+template <typename T>
+StateSlot<T> RenderContext::use_state(const T& initial, int slot_index) {
+    auto* inst = current();
+    if (!inst->is_initialized(slot_index)) {
+        inst->state_at(slot_index) = initial;
+        inst->mark_initialized(slot_index);
+    }
+    return StateSlot<T>(inst->state_at(slot_index), runtime_.dirty_);
+}
+
 } // namespace reimgui
