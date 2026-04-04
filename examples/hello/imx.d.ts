@@ -166,6 +166,18 @@ declare function StyleVar(props: StyleVarProps): any;
 declare function DragDropSource(props: DragDropSourceProps): any;
 declare function DragDropTarget(props: DragDropTargetProps): any;
 
+interface CanvasProps { width: number; height: number; style?: Style; children?: any; }
+interface DrawLineProps { p1: [number, number]; p2: [number, number]; color: [number, number, number, number]; thickness?: number; }
+interface DrawRectProps { min: [number, number]; max: [number, number]; color: [number, number, number, number]; filled?: boolean; thickness?: number; rounding?: number; }
+interface DrawCircleProps { center: [number, number]; radius: number; color: [number, number, number, number]; filled?: boolean; thickness?: number; }
+interface DrawTextProps { pos: [number, number]; text: string; color: [number, number, number, number]; }
+
+declare function Canvas(props: CanvasProps): any;
+declare function DrawLine(props: DrawLineProps): any;
+declare function DrawRect(props: DrawRectProps): any;
+declare function DrawCircle(props: DrawCircleProps): any;
+declare function DrawText(props: DrawTextProps): any;
+
 declare function resetLayout(): void;
 
 // JSX runtime shim for react-jsx mode

@@ -133,7 +133,7 @@ export default function App() {
             <BulletText>First bullet point</BulletText>
             <BulletText>Second bullet point</BulletText>
             <LabelText label="Version" value="0.2.0" />
-            <LabelText label="Components" value="41" />
+            <LabelText label="Components" value="52" />
             <Separator />
             <PlotLines label="FPS" values={[60, 58, 62, 55, 61, 63, 59]} style={{ width: 200, height: 50 }} />
             <PlotHistogram label="Distribution" values={[1, 3, 5, 7, 5, 3, 1]} style={{ width: 200, height: 50 }} />
@@ -160,6 +160,14 @@ export default function App() {
             </Group>
           </StyleVar>
         </StyleColor>
+      </Window>
+      <Window title="Canvas Demo">
+        <Canvas width={300} height={200} style={{ backgroundColor: [0.1, 0.1, 0.1, 1.0] }}>
+          <DrawLine p1={[0, 0]} p2={[300, 200]} color={[1, 0, 0, 1]} thickness={2} />
+          <DrawRect min={[20, 20]} max={[120, 80]} color={[0, 1, 0, 1]} filled rounding={4} />
+          <DrawCircle center={[200, 100]} radius={40} color={[0, 0.5, 1, 1]} thickness={3} />
+          <DrawText pos={[10, 185]} text="Canvas Drawing" color={[1, 1, 1, 1]} />
+        </Canvas>
       </Window>
       <Modal title="Confirm Action" open={showConfirm} onClose={() => setShowConfirm(false)}>
         <Text>Are you sure you want to proceed?</Text>

@@ -440,6 +440,29 @@ const dragDropTargetStack: Record<string, string>[] = [];
  * Handles JS-like object literals: { width: 300, height: 100 } -> imx::Style with assignments.
  * Returns the variable name, or null if no style.
  */
+/**
+ * Split a comma-separated list of key:value pairs in a style object literal,
+ * respecting brackets so that array values like [0.1, 0.1, 0.1, 1.0] are not split.
+ */
+function splitStylePairs(inner: string): string[] {
+    const pairs: string[] = [];
+    let depth = 0;
+    let start = 0;
+    for (let i = 0; i < inner.length; i++) {
+        const ch = inner[i];
+        if (ch === '[' || ch === '(') depth++;
+        else if (ch === ']' || ch === ')') depth--;
+        else if (ch === ',' && depth === 0) {
+            const piece = inner.substring(start, i).trim();
+            if (piece) pairs.push(piece);
+            start = i + 1;
+        }
+    }
+    const last = inner.substring(start).trim();
+    if (last) pairs.push(last);
+    return pairs;
+}
+
 function buildStyleVar(styleExpr: string | undefined, indent: string, lines: string[]): string | null {
     if (!styleExpr) return null;
 
@@ -452,8 +475,8 @@ function buildStyleVar(styleExpr: string | undefined, indent: string, lines: str
         const varName = `style_${styleCounter++}`;
         lines.push(`${indent}imx::Style ${varName};`);
 
-        // Parse key: value pairs
-        const pairs = inner.split(',').map(s => s.trim()).filter(s => s.length > 0);
+        // Parse key: value pairs (bracket-aware to handle array values)
+        const pairs = splitStylePairs(inner);
         for (const pair of pairs) {
             const colonIdx = pair.indexOf(':');
             if (colonIdx === -1) continue;
@@ -465,10 +488,24 @@ function buildStyleVar(styleExpr: string | undefined, indent: string, lines: str
                 : key === 'paddingVertical' ? 'padding_vertical'
                 : key === 'minWidth' ? 'min_width'
                 : key === 'minHeight' ? 'min_height'
+                : key === 'backgroundColor' ? 'background_color'
+                : key === 'textColor' ? 'text_color'
+                : key === 'fontSize' ? 'font_size'
                 : key;
 
-            const floatVal = val.includes('.') ? `${val}F` : `${val}.0F`;
-            lines.push(`${indent}${varName}.${cppKey} = ${floatVal};`);
+            // ImVec4 fields (color arrays)
+            if (cppKey === 'background_color' || cppKey === 'text_color') {
+                // val is like [r, g, b, a] — convert to ImVec4(r, g, b, a)
+                const arrInner = val.trim().replace(/^\[/, '').replace(/\]$/, '');
+                const components = arrInner.split(',').map(c => {
+                    const s = c.trim();
+                    return s.includes('.') ? `${s}f` : `${s}.0f`;
+                });
+                lines.push(`${indent}${varName}.${cppKey} = ImVec4(${components.join(', ')});`);
+            } else {
+                const floatVal = val.includes('.') ? `${val}F` : `${val}.0F`;
+                lines.push(`${indent}${varName}.${cppKey} = ${floatVal};`);
+            }
         }
         return varName;
     }
@@ -492,10 +529,11 @@ function buildStyleBlock(node: IRBeginContainer, indent: string, lines: string[]
         }
     }
 
-    // Also check node.style (explicit style prop)
+    // Also check node.style (explicit style prop) — route through buildStyleVar to handle
+    // object literals like { backgroundColor: [r,g,b,a] } safely
     const explicitStyle = node.style ?? node.props['style'];
     if (explicitStyle) {
-        return explicitStyle;
+        return buildStyleVar(explicitStyle, indent, lines);
     }
 
     if (Object.keys(styleProps).length === 0) {

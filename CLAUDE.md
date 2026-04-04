@@ -85,8 +85,8 @@ React-Native-like authoring model for Dear ImGui. Write .tsx, compile to native 
 - Don't call `before_child()` in modal/popup begin functions — overlays don't participate in layout
 - Don't work around compiler bugs by modifying example code — fix the pipeline
 
-## Current status (Phases 1-8 + Phase 10 Batches 1-2-5 complete)
-- 41 host components (original 31 + Modal, Radio, Selectable, InputTextMultiline, ColorPicker, PlotLines, PlotHistogram, BulletText, LabelText, Image)
+## Current status (Phases 1-8 + Phase 10 Batches 1-5 complete)
+- 52 host components (41 + Group, ID, StyleColor, StyleVar, DragDropSource, DragDropTarget, Canvas, DrawLine, DrawRect, DrawCircle, DrawText)
 - Image component: runtime file loading + compile-time embed (stb_image + OpenGL texture cache)
 - Custom widgets: `imx::register_widget()` + `WidgetArgs` for C++ ImGui widgets from TSX
 - Custom themes: `imx::register_theme()` for user theme presets
@@ -95,4 +95,4 @@ React-Native-like authoring model for Dear ImGui. Write .tsx, compile to native 
 - API documentation complete
 - Two example apps (hello + settings), public/ folder for static assets
 - Packaging: `imxc@0.2.0` on npm, FetchContent for C++ (compiler/dist/ committed)
-- Next: Phase 10 Batches 3-4 (DragDrop, ContextMenu, Disabled, Canvas)
+- Next: Phase 10 Batch 6+ (ContextMenu, Disabled, Tooltip improvements, etc.)
