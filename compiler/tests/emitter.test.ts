@@ -505,4 +505,92 @@ function App() {
         expect(output).toContain('#include "logo_png.embed.h"');
         expect(output).toContain('imx::renderer::image_embedded("logo_png", logo_png_data, logo_png_size, 100.0f, 50.0f)');
     });
+
+    it('emits DragDropSource with payload', () => {
+        const output = compile(`
+function App() {
+  const [id, setId] = useState(42);
+  return (
+    <Window title="Test">
+      <DragDropSource type="item" payload={id}>
+        <Text>Drag me</Text>
+      </DragDropSource>
+    </Window>
+  );
+}
+        `);
+        expect(output).toContain('ImGui::BeginGroup()');
+        expect(output).toContain('imx::renderer::text("Drag me")');
+        expect(output).toContain('ImGui::EndGroup()');
+        expect(output).toContain('BeginDragDropSource()');
+        expect(output).toContain('SetDragDropPayload("item"');
+        expect(output).toContain('EndDragDropSource()');
+    });
+
+    it('emits DragDropTarget with onDrop callback', () => {
+        const output = compile(`
+function App() {
+  const [dropped, setDropped] = useState(0);
+  return (
+    <Window title="Test">
+      <DragDropTarget type="item" onDrop={(val: number) => setDropped(val)}>
+        <Text>Drop here</Text>
+      </DragDropTarget>
+    </Window>
+  );
+}
+        `);
+        expect(output).toContain('ImGui::BeginGroup()');
+        expect(output).toContain('ImGui::EndGroup()');
+        expect(output).toContain('BeginDragDropTarget()');
+        expect(output).toContain('AcceptDragDropPayload("item")');
+        expect(output).toContain('dropped.set(');
+        expect(output).toContain('EndDragDropTarget()');
+    });
+
+    it('emits Canvas with begin/end', () => {
+        const output = compile(`
+function App() {
+  return (
+    <Window title="Test">
+      <Canvas width={300} height={200}>
+        <DrawLine p1={[0, 0]} p2={[300, 200]} color={[1, 0, 0, 1]} thickness={2} />
+      </Canvas>
+    </Window>
+  );
+}
+        `);
+        expect(output).toContain('begin_canvas(');
+        expect(output).toContain('draw_line(');
+        expect(output).toContain('end_canvas()');
+    });
+
+    it('emits DrawRect with filled flag', () => {
+        const output = compile(`
+function App() {
+  return (
+    <Canvas width={100} height={100}>
+      <DrawRect min={[10, 10]} max={[90, 90]} color={[0, 1, 0, 1]} filled rounding={4} />
+    </Canvas>
+  );
+}
+        `);
+        expect(output).toContain('draw_rect(');
+        expect(output).toContain('true');
+    });
+
+    it('emits DrawCircle and DrawText', () => {
+        const output = compile(`
+function App() {
+  return (
+    <Canvas width={200} height={200}>
+      <DrawCircle center={[100, 100]} radius={50} color={[0, 0, 1, 1]} />
+      <DrawText pos={[10, 10]} text="Hello" color={[1, 1, 1, 1]} />
+    </Canvas>
+  );
+}
+        `);
+        expect(output).toContain('draw_circle(');
+        expect(output).toContain('draw_text(');
+    });
 });

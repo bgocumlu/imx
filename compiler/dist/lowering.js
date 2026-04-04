@@ -505,6 +505,40 @@ function lowerJsxSelfClosing(node, body, ctx) {
         case 'Image':
             lowerImage(attrs, body, ctx, loc);
             break;
+        case 'DrawLine': {
+            const p1 = attrs['p1'] ?? '0, 0';
+            const p2 = attrs['p2'] ?? '0, 0';
+            const color = attrs['color'] ?? '1, 1, 1, 1';
+            const thickness = attrs['thickness'] ?? '1.0';
+            body.push({ kind: 'draw_line', p1, p2, color, thickness, loc });
+            break;
+        }
+        case 'DrawRect': {
+            const min = attrs['min'] ?? '0, 0';
+            const max = attrs['max'] ?? '0, 0';
+            const color = attrs['color'] ?? '1, 1, 1, 1';
+            const filled = attrs['filled'] ?? 'false';
+            const thickness = attrs['thickness'] ?? '1.0';
+            const rounding = attrs['rounding'] ?? '0.0';
+            body.push({ kind: 'draw_rect', min, max, color, filled, thickness, rounding, loc });
+            break;
+        }
+        case 'DrawCircle': {
+            const center = attrs['center'] ?? '0, 0';
+            const radius = attrs['radius'] ?? '0';
+            const color = attrs['color'] ?? '1, 1, 1, 1';
+            const filled = attrs['filled'] ?? 'false';
+            const thickness = attrs['thickness'] ?? '1.0';
+            body.push({ kind: 'draw_circle', center, radius, color, filled, thickness, loc });
+            break;
+        }
+        case 'DrawText': {
+            const pos = attrs['pos'] ?? '0, 0';
+            const text = attrs['text'] ?? '""';
+            const color = attrs['color'] ?? '1, 1, 1, 1';
+            body.push({ kind: 'draw_text', pos, text, color, loc });
+            break;
+        }
         default:
             // Container self-closing (e.g., <Window title="X"/>)
             if (HOST_COMPONENTS[name]?.isContainer) {

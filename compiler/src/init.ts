@@ -199,6 +199,13 @@ interface ModalProps { title: string; open?: boolean; onClose?: () => void; styl
 interface ImageProps { src: string; embed?: boolean; width?: number; height?: number; }
 interface GroupProps { style?: Style; children?: any; }
 interface IDProps { scope: string | number; children?: any; }
+interface DragDropSourceProps { type: string; payload: number | string; children?: any; }
+interface DragDropTargetProps { type: string; onDrop: (payload: any) => void; children?: any; }
+interface CanvasProps { width: number; height: number; style?: Style; children?: any; }
+interface DrawLineProps { p1: [number, number]; p2: [number, number]; color: [number, number, number, number]; thickness?: number; }
+interface DrawRectProps { min: [number, number]; max: [number, number]; color: [number, number, number, number]; filled?: boolean; thickness?: number; rounding?: number; }
+interface DrawCircleProps { center: [number, number]; radius: number; color: [number, number, number, number]; filled?: boolean; thickness?: number; }
+interface DrawTextProps { pos: [number, number]; text: string; color: [number, number, number, number]; }
 interface StyleColorProps {
   text?: [number, number, number, number];
   textDisabled?: [number, number, number, number];
@@ -271,6 +278,11 @@ declare function Image(props: ImageProps): any;
 declare function Group(props: GroupProps): any;
 declare function ID(props: IDProps): any;
 declare function StyleColor(props: StyleColorProps): any;
+declare function Canvas(props: CanvasProps): any;
+declare function DrawLine(props: DrawLineProps): any;
+declare function DrawRect(props: DrawRectProps): any;
+declare function DrawCircle(props: DrawCircleProps): any;
+declare function DrawText(props: DrawTextProps): any;
 
 interface StyleVarProps {
   alpha?: number;
@@ -287,6 +299,8 @@ interface StyleVarProps {
   children?: any;
 }
 declare function StyleVar(props: StyleVarProps): any;
+declare function DragDropSource(props: DragDropSourceProps): any;
+declare function DragDropTarget(props: DragDropTargetProps): any;
 
 declare function resetLayout(): void;
 

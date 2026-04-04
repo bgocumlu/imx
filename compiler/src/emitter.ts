@@ -161,6 +161,8 @@ export function emitComponent(comp: IRComponent, imports?: ImportInfo[], sourceF
     listBoxCounter = 0;
     nativeWidgetCounter = 0;
     plotCounter = 0;
+    dragDropSourceStack.length = 0;
+    dragDropTargetStack.length = 0;
     currentCompName = comp.name;
 
     const hasProps = comp.params.length > 0;
@@ -387,6 +389,18 @@ function emitNode(node: IRNode, lines: string[], depth: number): void {
         case 'image':
             emitImage(node, lines, indent);
             break;
+        case 'draw_line':
+            emitDrawLine(node, lines, indent);
+            break;
+        case 'draw_rect':
+            emitDrawRect(node, lines, indent);
+            break;
+        case 'draw_circle':
+            emitDrawCircle(node, lines, indent);
+            break;
+        case 'draw_text':
+            emitDrawText(node, lines, indent);
+            break;
         case 'native_widget':
             emitNativeWidget(node, lines, indent);
             break;
@@ -418,6 +432,8 @@ let nativeWidgetCounter = 0;
 let plotCounter = 0;
 const windowOpenStack: boolean[] = []; // tracks if begin_window used open prop
 const modalOnCloseStack: (string | null)[] = []; // tracks modal onClose expressions
+const dragDropSourceStack: Record<string, string>[] = [];
+const dragDropTargetStack: Record<string, string>[] = [];
 
 /**
  * Build a Style variable from a raw style expression string for self-closing components.
@@ -714,6 +730,27 @@ function emitBeginContainer(node: IRBeginContainer, lines: string[], indent: str
             }
             break;
         }
+        case 'DragDropSource': {
+            dragDropSourceStack.push(node.props);
+            lines.push(`${indent}ImGui::BeginGroup();`);
+            break;
+        }
+        case 'DragDropTarget': {
+            dragDropTargetStack.push(node.props);
+            lines.push(`${indent}ImGui::BeginGroup();`);
+            break;
+        }
+        case 'Canvas': {
+            const width = emitFloat(node.props['width'] ?? '0');
+            const height = emitFloat(node.props['height'] ?? '0');
+            const style = buildStyleBlock(node, indent, lines);
+            if (style) {
+                lines.push(`${indent}imx::renderer::begin_canvas(${width}, ${height}, ${style});`);
+            } else {
+                lines.push(`${indent}imx::renderer::begin_canvas(${width}, ${height});`);
+            }
+            break;
+        }
         case 'DockLayout':
         case 'DockSplit':
         case 'DockPanel':
@@ -805,6 +842,43 @@ function emitEndContainer(node: IREndContainer, lines: string[], indent: string)
         case 'ID':
             lines.push(`${indent}ImGui::PopID();`);
             break;
+        case 'DragDropSource': {
+            const props = dragDropSourceStack.pop() ?? {};
+            const typeStr = asCharPtr(props['type'] ?? '""');
+            const payload = props['payload'] ?? '0';
+            lines.push(`${indent}ImGui::EndGroup();`);
+            lines.push(`${indent}if (ImGui::BeginDragDropSource()) {`);
+            lines.push(`${indent}    float _dd_payload = static_cast<float>(${payload});`);
+            lines.push(`${indent}    ImGui::SetDragDropPayload(${typeStr}, &_dd_payload, sizeof(_dd_payload));`);
+            lines.push(`${indent}    ImGui::Text("Dragging...");`);
+            lines.push(`${indent}    ImGui::EndDragDropSource();`);
+            lines.push(`${indent}}`);
+            break;
+        }
+        case 'Canvas':
+            lines.push(`${indent}imx::renderer::end_canvas();`);
+            break;
+        case 'DragDropTarget': {
+            const props = dragDropTargetStack.pop() ?? {};
+            const typeStr = asCharPtr(props['type'] ?? '""');
+            const onDrop = props['onDrop'] ?? '';
+            lines.push(`${indent}ImGui::EndGroup();`);
+            lines.push(`${indent}if (ImGui::BeginDragDropTarget()) {`);
+            lines.push(`${indent}    if (const ImGuiPayload* _dd_p = ImGui::AcceptDragDropPayload(${typeStr})) {`);
+            // Parse the structured callback: "cppType|paramName|bodyCode"
+            const parts = onDrop.split('|');
+            if (parts.length >= 3) {
+                const cppType = parts[0];
+                const paramName = parts[1];
+                const bodyCode = parts.slice(2).join('|');  // rejoin in case body contained |
+                lines.push(`${indent}        ${cppType} ${paramName} = *(const ${cppType}*)_dd_p->Data;`);
+                lines.push(`${indent}        ${bodyCode}`);
+            }
+            lines.push(`${indent}    }`);
+            lines.push(`${indent}    ImGui::EndDragDropTarget();`);
+            lines.push(`${indent}}`);
+            break;
+        }
         case 'DockLayout':
         case 'DockSplit':
         case 'DockPanel':
@@ -1320,6 +1394,40 @@ function emitImage(node: IRImage, lines: string[], indent: string): void {
         // File mode: pass the path string
         lines.push(`${indent}imx::renderer::image(${node.src}, ${width}, ${height});`);
     }
+}
+
+function emitDrawLine(node: any, lines: string[], indent: string): void {
+    const p1Parts = node.p1.split(',').map((s: string) => emitFloat(s.trim()));
+    const p2Parts = node.p2.split(',').map((s: string) => emitFloat(s.trim()));
+    const color = emitImVec4(node.color);
+    const thickness = emitFloat(node.thickness);
+    lines.push(`${indent}imx::renderer::draw_line(${p1Parts.join(', ')}, ${p2Parts.join(', ')}, ${color}, ${thickness});`);
+}
+
+function emitDrawRect(node: any, lines: string[], indent: string): void {
+    const minParts = node.min.split(',').map((s: string) => emitFloat(s.trim()));
+    const maxParts = node.max.split(',').map((s: string) => emitFloat(s.trim()));
+    const color = emitImVec4(node.color);
+    const filled = node.filled;
+    const thickness = emitFloat(node.thickness);
+    const rounding = emitFloat(node.rounding);
+    lines.push(`${indent}imx::renderer::draw_rect(${minParts.join(', ')}, ${maxParts.join(', ')}, ${color}, ${filled}, ${thickness}, ${rounding});`);
+}
+
+function emitDrawCircle(node: any, lines: string[], indent: string): void {
+    const centerParts = node.center.split(',').map((s: string) => emitFloat(s.trim()));
+    const radius = emitFloat(node.radius);
+    const color = emitImVec4(node.color);
+    const filled = node.filled;
+    const thickness = emitFloat(node.thickness);
+    lines.push(`${indent}imx::renderer::draw_circle(${centerParts.join(', ')}, ${radius}, ${color}, ${filled}, ${thickness});`);
+}
+
+function emitDrawText(node: any, lines: string[], indent: string): void {
+    const posParts = node.pos.split(',').map((s: string) => emitFloat(s.trim()));
+    const color = emitImVec4(node.color);
+    const text = asCharPtr(node.text);
+    lines.push(`${indent}imx::renderer::draw_text(${posParts.join(', ')}, ${color}, ${text});`);
 }
 
 function collectEmbedKeys(nodes: IRNode[]): string[] {

@@ -566,4 +566,39 @@ ImVec2 canvas_origin() {
     return ImVec2(0, 0);
 }
 
+void draw_line(float x1, float y1, float x2, float y2, ImVec4 color, float thickness) {
+    ImVec2 o = canvas_origin();
+    ImGui::GetWindowDrawList()->AddLine(
+        ImVec2(o.x + x1, o.y + y1), ImVec2(o.x + x2, o.y + y2),
+        ImGui::ColorConvertFloat4ToU32(color), thickness);
+}
+
+void draw_rect(float x1, float y1, float x2, float y2, ImVec4 color, bool filled, float thickness, float rounding) {
+    ImVec2 o = canvas_origin();
+    ImU32 col = ImGui::ColorConvertFloat4ToU32(color);
+    if (filled) {
+        ImGui::GetWindowDrawList()->AddRectFilled(
+            ImVec2(o.x + x1, o.y + y1), ImVec2(o.x + x2, o.y + y2), col, rounding);
+    } else {
+        ImGui::GetWindowDrawList()->AddRect(
+            ImVec2(o.x + x1, o.y + y1), ImVec2(o.x + x2, o.y + y2), col, rounding, 0, thickness);
+    }
+}
+
+void draw_circle(float cx, float cy, float radius, ImVec4 color, bool filled, float thickness) {
+    ImVec2 o = canvas_origin();
+    ImU32 col = ImGui::ColorConvertFloat4ToU32(color);
+    if (filled) {
+        ImGui::GetWindowDrawList()->AddCircleFilled(ImVec2(o.x + cx, o.y + cy), radius, col);
+    } else {
+        ImGui::GetWindowDrawList()->AddCircle(ImVec2(o.x + cx, o.y + cy), radius, col, 0, thickness);
+    }
+}
+
+void draw_text(float x, float y, ImVec4 color, const char* text) {
+    ImVec2 o = canvas_origin();
+    ImGui::GetWindowDrawList()->AddText(ImVec2(o.x + x, o.y + y),
+        ImGui::ColorConvertFloat4ToU32(color), text);
+}
+
 } // namespace imx::renderer

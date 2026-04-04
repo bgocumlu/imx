@@ -25,17 +25,17 @@ export interface IRPropParam {
     name: string;
     type: IRType | 'callback';
 }
-export type IRNode = IRBeginContainer | IREndContainer | IRText | IRButton | IRTextInput | IRCheckbox | IRSeparator | IRBeginPopup | IREndPopup | IROpenPopup | IRConditional | IRListMap | IRCustomComponent | IRMenuItem | IRSliderFloat | IRSliderInt | IRDragFloat | IRDragInt | IRCombo | IRInputInt | IRInputFloat | IRColorEdit | IRListBox | IRProgressBar | IRTooltip | IRDockLayout | IRNativeWidget | IRBulletText | IRLabelText | IRSelectable | IRRadio | IRInputTextMultiline | IRColorPicker | IRPlotLines | IRPlotHistogram | IRImage;
+export type IRNode = IRBeginContainer | IREndContainer | IRText | IRButton | IRTextInput | IRCheckbox | IRSeparator | IRBeginPopup | IREndPopup | IROpenPopup | IRConditional | IRListMap | IRCustomComponent | IRMenuItem | IRSliderFloat | IRSliderInt | IRDragFloat | IRDragInt | IRCombo | IRInputInt | IRInputFloat | IRColorEdit | IRListBox | IRProgressBar | IRTooltip | IRDockLayout | IRNativeWidget | IRBulletText | IRLabelText | IRSelectable | IRRadio | IRInputTextMultiline | IRColorPicker | IRPlotLines | IRPlotHistogram | IRImage | IRDrawLine | IRDrawRect | IRDrawCircle | IRDrawText;
 export interface IRBeginContainer {
     kind: 'begin_container';
-    tag: 'Window' | 'View' | 'Row' | 'Column' | 'DockSpace' | 'MenuBar' | 'Menu' | 'Table' | 'TableRow' | 'TabBar' | 'TabItem' | 'TreeNode' | 'CollapsingHeader' | 'Theme' | 'DockLayout' | 'DockSplit' | 'DockPanel' | 'Modal' | 'Group' | 'ID' | 'StyleColor' | 'StyleVar' | 'DragDropSource' | 'DragDropTarget';
+    tag: 'Window' | 'View' | 'Row' | 'Column' | 'DockSpace' | 'MenuBar' | 'Menu' | 'Table' | 'TableRow' | 'TabBar' | 'TabItem' | 'TreeNode' | 'CollapsingHeader' | 'Theme' | 'DockLayout' | 'DockSplit' | 'DockPanel' | 'Modal' | 'Group' | 'ID' | 'StyleColor' | 'StyleVar' | 'DragDropSource' | 'DragDropTarget' | 'Canvas';
     props: Record<string, string>;
     style?: string;
     loc?: SourceLoc;
 }
 export interface IREndContainer {
     kind: 'end_container';
-    tag: 'Window' | 'View' | 'Row' | 'Column' | 'DockSpace' | 'MenuBar' | 'Menu' | 'Table' | 'TableRow' | 'TabBar' | 'TabItem' | 'TreeNode' | 'CollapsingHeader' | 'Theme' | 'DockLayout' | 'DockSplit' | 'DockPanel' | 'Modal' | 'Group' | 'ID' | 'StyleColor' | 'StyleVar' | 'DragDropSource' | 'DragDropTarget';
+    tag: 'Window' | 'View' | 'Row' | 'Column' | 'DockSpace' | 'MenuBar' | 'Menu' | 'Table' | 'TableRow' | 'TabBar' | 'TabItem' | 'TreeNode' | 'CollapsingHeader' | 'Theme' | 'DockLayout' | 'DockSplit' | 'DockPanel' | 'Modal' | 'Group' | 'ID' | 'StyleColor' | 'StyleVar' | 'DragDropSource' | 'DragDropTarget' | 'Canvas';
 }
 export interface IRText {
     kind: 'text';
@@ -294,6 +294,40 @@ export interface IRImage {
     embedKey?: string;
     width?: string;
     height?: string;
+    loc?: SourceLoc;
+}
+export interface IRDrawLine {
+    kind: 'draw_line';
+    p1: string;
+    p2: string;
+    color: string;
+    thickness: string;
+    loc?: SourceLoc;
+}
+export interface IRDrawRect {
+    kind: 'draw_rect';
+    min: string;
+    max: string;
+    color: string;
+    filled: string;
+    thickness: string;
+    rounding: string;
+    loc?: SourceLoc;
+}
+export interface IRDrawCircle {
+    kind: 'draw_circle';
+    center: string;
+    radius: string;
+    color: string;
+    filled: string;
+    thickness: string;
+    loc?: SourceLoc;
+}
+export interface IRDrawText {
+    kind: 'draw_text';
+    pos: string;
+    text: string;
+    color: string;
     loc?: SourceLoc;
 }
 export interface IRDockLayout {

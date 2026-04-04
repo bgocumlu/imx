@@ -386,6 +386,52 @@ export const HOST_COMPONENTS = {
         },
         hasChildren: true, isContainer: true,
     },
+    Canvas: {
+        props: {
+            width: { type: 'number', required: true },
+            height: { type: 'number', required: true },
+            style: { type: 'style', required: false },
+        },
+        hasChildren: true, isContainer: true,
+    },
+    DrawLine: {
+        props: {
+            p1: { type: 'style', required: true },
+            p2: { type: 'style', required: true },
+            color: { type: 'style', required: true },
+            thickness: { type: 'number', required: false },
+        },
+        hasChildren: false, isContainer: false,
+    },
+    DrawRect: {
+        props: {
+            min: { type: 'style', required: true },
+            max: { type: 'style', required: true },
+            color: { type: 'style', required: true },
+            filled: { type: 'boolean', required: false },
+            thickness: { type: 'number', required: false },
+            rounding: { type: 'number', required: false },
+        },
+        hasChildren: false, isContainer: false,
+    },
+    DrawCircle: {
+        props: {
+            center: { type: 'style', required: true },
+            radius: { type: 'number', required: true },
+            color: { type: 'style', required: true },
+            filled: { type: 'boolean', required: false },
+            thickness: { type: 'number', required: false },
+        },
+        hasChildren: false, isContainer: false,
+    },
+    DrawText: {
+        props: {
+            pos: { type: 'style', required: true },
+            text: { type: 'string', required: true },
+            color: { type: 'style', required: true },
+        },
+        hasChildren: false, isContainer: false,
+    },
 };
 export function isHostComponent(name) {
     return name in HOST_COMPONENTS;

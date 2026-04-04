@@ -339,6 +339,18 @@ function emitNode(node, lines, depth) {
         case 'image':
             emitImage(node, lines, indent);
             break;
+        case 'draw_line':
+            emitDrawLine(node, lines, indent);
+            break;
+        case 'draw_rect':
+            emitDrawRect(node, lines, indent);
+            break;
+        case 'draw_circle':
+            emitDrawCircle(node, lines, indent);
+            break;
+        case 'draw_text':
+            emitDrawText(node, lines, indent);
+            break;
         case 'native_widget':
             emitNativeWidget(node, lines, indent);
             break;
@@ -680,6 +692,18 @@ function emitBeginContainer(node, lines, indent) {
             lines.push(`${indent}ImGui::BeginGroup();`);
             break;
         }
+        case 'Canvas': {
+            const width = emitFloat(node.props['width'] ?? '0');
+            const height = emitFloat(node.props['height'] ?? '0');
+            const style = buildStyleBlock(node, indent, lines);
+            if (style) {
+                lines.push(`${indent}imx::renderer::begin_canvas(${width}, ${height}, ${style});`);
+            }
+            else {
+                lines.push(`${indent}imx::renderer::begin_canvas(${width}, ${height});`);
+            }
+            break;
+        }
         case 'DockLayout':
         case 'DockSplit':
         case 'DockPanel':
@@ -784,6 +808,9 @@ function emitEndContainer(node, lines, indent) {
             lines.push(`${indent}}`);
             break;
         }
+        case 'Canvas':
+            lines.push(`${indent}imx::renderer::end_canvas();`);
+            break;
         case 'DragDropTarget': {
             const props = dragDropTargetStack.pop() ?? {};
             const typeStr = asCharPtr(props['type'] ?? '""');
@@ -1302,6 +1329,36 @@ function emitImage(node, lines, indent) {
         // File mode: pass the path string
         lines.push(`${indent}imx::renderer::image(${node.src}, ${width}, ${height});`);
     }
+}
+function emitDrawLine(node, lines, indent) {
+    const p1Parts = node.p1.split(',').map((s) => emitFloat(s.trim()));
+    const p2Parts = node.p2.split(',').map((s) => emitFloat(s.trim()));
+    const color = emitImVec4(node.color);
+    const thickness = emitFloat(node.thickness);
+    lines.push(`${indent}imx::renderer::draw_line(${p1Parts.join(', ')}, ${p2Parts.join(', ')}, ${color}, ${thickness});`);
+}
+function emitDrawRect(node, lines, indent) {
+    const minParts = node.min.split(',').map((s) => emitFloat(s.trim()));
+    const maxParts = node.max.split(',').map((s) => emitFloat(s.trim()));
+    const color = emitImVec4(node.color);
+    const filled = node.filled;
+    const thickness = emitFloat(node.thickness);
+    const rounding = emitFloat(node.rounding);
+    lines.push(`${indent}imx::renderer::draw_rect(${minParts.join(', ')}, ${maxParts.join(', ')}, ${color}, ${filled}, ${thickness}, ${rounding});`);
+}
+function emitDrawCircle(node, lines, indent) {
+    const centerParts = node.center.split(',').map((s) => emitFloat(s.trim()));
+    const radius = emitFloat(node.radius);
+    const color = emitImVec4(node.color);
+    const filled = node.filled;
+    const thickness = emitFloat(node.thickness);
+    lines.push(`${indent}imx::renderer::draw_circle(${centerParts.join(', ')}, ${radius}, ${color}, ${filled}, ${thickness});`);
+}
+function emitDrawText(node, lines, indent) {
+    const posParts = node.pos.split(',').map((s) => emitFloat(s.trim()));
+    const color = emitImVec4(node.color);
+    const text = asCharPtr(node.text);
+    lines.push(`${indent}imx::renderer::draw_text(${posParts.join(', ')}, ${color}, ${text});`);
 }
 function collectEmbedKeys(nodes) {
     const keys = [];

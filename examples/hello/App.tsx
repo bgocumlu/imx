@@ -144,6 +144,23 @@ export default function App() {
           <Button title="Show Modal" onPress={() => setShowConfirm(true)} />
         </Column>
       </Window>
+      <Window title="Batch 3 Demo">
+        <StyleColor button={[0.2, 0.8, 0.2, 1.0]} buttonHovered={[0.3, 0.9, 0.3, 1.0]}>
+          <StyleVar frameRounding={6} framePadding={[10, 4]}>
+            <Group>
+              <ID scope="demo">
+                <Button title="Styled Button" onPress={() => {}} />
+                <DragDropSource type="demo" payload={42}>
+                  <Text>Drag me</Text>
+                </DragDropSource>
+                <DragDropTarget type="demo" onDrop={(val: number) => {}}>
+                  <Text>Drop here</Text>
+                </DragDropTarget>
+              </ID>
+            </Group>
+          </StyleVar>
+        </StyleColor>
+      </Window>
       <Modal title="Confirm Action" open={showConfirm} onClose={() => setShowConfirm(false)}>
         <Text>Are you sure you want to proceed?</Text>
         <Row gap={8}>

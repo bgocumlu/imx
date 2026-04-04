@@ -224,5 +224,10 @@ void begin_canvas(float width, float height, const Style& style = {});
 void end_canvas();
 ImVec2 canvas_origin();
 
+void draw_line(float x1, float y1, float x2, float y2, ImVec4 color, float thickness = 1.0f);
+void draw_rect(float x1, float y1, float x2, float y2, ImVec4 color, bool filled = false, float thickness = 1.0f, float rounding = 0.0f);
+void draw_circle(float cx, float cy, float radius, ImVec4 color, bool filled = false, float thickness = 1.0f);
+void draw_text(float x, float y, ImVec4 color, const char* text);
+
 } // namespace renderer
 } // namespace imx
