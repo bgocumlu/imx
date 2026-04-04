@@ -71,6 +71,7 @@ add_library(imx_renderer STATIC
     renderer/style.cpp
     renderer/layout.cpp
     renderer/components.cpp
+    renderer/widget_args.cpp
 )
 target_include_directories(imx_renderer PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>

@@ -2,7 +2,11 @@
 
 #include <imgui.h>
 #include <imx/runtime.h>
+#include <any>
+#include <functional>
 #include <optional>
+#include <string>
+#include <unordered_map>
 
 namespace imx {
 
@@ -28,6 +32,62 @@ struct ThemeConfig {
     std::optional<float> border_size;
     std::optional<float> spacing;
 };
+
+class WidgetArgs {
+public:
+    explicit WidgetArgs(const char* label);
+
+    const char* label() const;
+
+    template <typename T>
+    void set(const char* name, const T& value) {
+        values_[name] = value;
+    }
+
+    void set_callback(const char* name, std::function<void(std::any)> cb);
+
+    template <typename T>
+    T get(const char* name) const {
+        auto it = values_.find(name);
+        if (it == values_.end()) {
+            return T{};
+        }
+        return std::any_cast<T>(it->second);
+    }
+
+    template <typename T>
+    T get(const char* name, const T& default_value) const {
+        auto it = values_.find(name);
+        if (it == values_.end()) {
+            return default_value;
+        }
+        return std::any_cast<T>(it->second);
+    }
+
+    bool has(const char* name) const;
+
+    void call(const char* name) const;
+
+    template <typename T>
+    void call(const char* name, const T& value) const {
+        auto it = callbacks_.find(name);
+        if (it != callbacks_.end()) {
+            it->second(std::any(value));
+        }
+    }
+
+private:
+    std::string label_;
+    std::unordered_map<std::string, std::any> values_;
+    std::unordered_map<std::string, std::function<void(std::any)>> callbacks_;
+};
+
+using WidgetFunc = std::function<void(WidgetArgs&)>;
+void register_widget(const std::string& name, WidgetFunc func);
+void call_widget(const std::string& name, WidgetArgs& args);
+
+using ThemeFunc = std::function<void()>;
+void register_theme(const std::string& name, ThemeFunc func);
 
 namespace renderer {
 
