@@ -41,7 +41,8 @@ export type IRNode =
     | IRSelectable | IRRadio
     | IRInputTextMultiline | IRColorPicker
     | IRPlotLines | IRPlotHistogram
-    | IRImage;
+    | IRImage
+    | IRDrawLine | IRDrawRect | IRDrawCircle | IRDrawText;
 
 export interface IRBeginContainer {
     kind: 'begin_container';
@@ -111,6 +112,11 @@ export interface IRImage {
     height?: string;
     loc?: SourceLoc;
 }
+
+export interface IRDrawLine { kind: 'draw_line'; p1: string; p2: string; color: string; thickness: string; loc?: SourceLoc; }
+export interface IRDrawRect { kind: 'draw_rect'; min: string; max: string; color: string; filled: string; thickness: string; rounding: string; loc?: SourceLoc; }
+export interface IRDrawCircle { kind: 'draw_circle'; center: string; radius: string; color: string; filled: string; thickness: string; loc?: SourceLoc; }
+export interface IRDrawText { kind: 'draw_text'; pos: string; text: string; color: string; loc?: SourceLoc; }
 
 export interface IRDockLayout {
     kind: 'dock_layout';

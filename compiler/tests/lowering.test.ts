@@ -160,6 +160,21 @@ function App() {
         }
     });
 
+    it('lowers DrawLine inside Canvas', () => {
+        const ir = lower(`
+function App() {
+  return (
+    <Canvas width={200} height={100}>
+      <DrawLine p1={[0, 0]} p2={[200, 100]} color={[1, 0, 0, 1]} thickness={2} />
+    </Canvas>
+  );
+}
+        `);
+        expect(ir.body[0]).toMatchObject({ kind: 'begin_container', tag: 'Canvas' });
+        expect(ir.body[1]).toMatchObject({ kind: 'draw_line' });
+        expect(ir.body[2]).toMatchObject({ kind: 'end_container', tag: 'Canvas' });
+    });
+
     it('lowers unknown JSX element as native widget', () => {
         const ir = lower(`
 function App() {
