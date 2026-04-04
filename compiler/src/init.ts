@@ -154,6 +154,19 @@ interface CheckboxProps { value: boolean; onChange: (v: boolean) => void; label?
 interface SeparatorProps {}
 interface PopupProps { id: string; style?: Style; children?: any; }
 interface DockSpaceProps { style?: Style; children?: any; }
+interface DockLayoutProps { children?: any; }
+interface DockSplitProps { direction: "horizontal" | "vertical"; size: number; children?: any; }
+interface DockPanelProps { children?: any; }
+interface ThemeProps {
+  preset: "dark" | "light" | "classic";
+  accentColor?: [number, number, number, number];
+  windowBg?: [number, number, number, number];
+  textColor?: [number, number, number, number];
+  rounding?: number;
+  borderSize?: number;
+  spacing?: number;
+  children?: any;
+}
 interface MenuBarProps { children?: any; }
 interface MenuProps { label: string; children?: any; }
 interface MenuItemProps { label: string; onPress?: () => void; shortcut?: string; }
@@ -186,6 +199,10 @@ declare function Checkbox(props: CheckboxProps): any;
 declare function Separator(props: SeparatorProps): any;
 declare function Popup(props: PopupProps): any;
 declare function DockSpace(props: DockSpaceProps): any;
+declare function DockLayout(props: DockLayoutProps): any;
+declare function DockSplit(props: DockSplitProps): any;
+declare function DockPanel(props: DockPanelProps): any;
+declare function Theme(props: ThemeProps): any;
 declare function MenuBar(props: MenuBarProps): any;
 declare function Menu(props: MenuProps): any;
 declare function MenuItem(props: MenuItemProps): any;
@@ -206,6 +223,8 @@ declare function ColorEdit(props: ColorEditProps): any;
 declare function ListBox(props: ListBoxProps): any;
 declare function ProgressBar(props: ProgressBarProps): any;
 declare function Tooltip(props: TooltipProps): any;
+
+declare function resetLayout(): void;
 
 declare module "imx/jsx-runtime" {
   export namespace JSX {
