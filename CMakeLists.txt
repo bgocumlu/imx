@@ -78,3 +78,10 @@ target_link_libraries(runtime_tests PRIVATE reimgui_runtime Catch2::Catch2WithMa
 # --- Legacy app (kept until example replaces it) ---
 add_executable(app main.cpp)
 target_link_libraries(app PRIVATE imgui_lib)
+
+# --- Hand-written example app (Phase 3 validation) ---
+add_executable(hello_hand
+    examples/hello/main.cpp
+    examples/hello/hand_written_app.cpp
+)
+target_link_libraries(hello_hand PRIVATE reimgui_renderer)
