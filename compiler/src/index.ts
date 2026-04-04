@@ -1,14 +1,9 @@
 #!/usr/bin/env node
 import { parseArgs } from 'node:util';
-import * as fs from 'node:fs';
 import * as path from 'node:path';
-import { parseFile, extractImports } from './parser.js';
-import { validate } from './validator.js';
-import { lowerComponent } from './lowering.js';
-import { emitComponent, emitComponentHeader, emitRoot } from './emitter.js';
 import { initProject } from './init.js';
-import type { ImportInfo } from './emitter.js';
-import type { IRComponent } from './ir.js';
+import { compile } from './compile.js';
+import { startWatch } from './watch.js';
 
 // Handle `imxc init [dir]` subcommand
 if (process.argv[2] === 'init') {
@@ -18,138 +13,41 @@ if (process.argv[2] === 'init') {
     process.exit(0);
 }
 
-const { values, positionals } = parseArgs({
-    allowPositionals: true,
-    options: { output: { type: 'string', short: 'o' } },
-});
-
-if (positionals.length === 0) {
-    console.error('Usage: imxc <input.tsx ...> -o <output-dir>');
-    console.error('       imxc init [project-dir]');
-    process.exit(1);
-}
-
-const outputDir = values.output ?? '.';
-fs.mkdirSync(outputDir, { recursive: true });
-
-let hasErrors = false;
-
-interface CompiledComponent {
-    name: string;
-    stateCount: number;
-    bufferCount: number;
-    ir: IRComponent;
-    imports: Map<string, string>;  // component name -> module specifier
-    hasProps: boolean;
-}
-
-const compiled: CompiledComponent[] = [];
-
-// Phase 1: Parse, validate, and lower all components
-for (const file of positionals) {
-    if (!fs.existsSync(file)) {
-        console.error(`${file}:1:1 - error: file not found`);
-        hasErrors = true;
-        continue;
+// Handle `imxc watch <dir> -o <output-dir>` subcommand
+if (process.argv[2] === 'watch') {
+    const watchDir = process.argv[3];
+    if (!watchDir) {
+        console.error('Usage: imxc watch <dir> -o <output-dir>');
+        process.exit(1);
     }
-
-    const source = fs.readFileSync(file, 'utf-8');
-    const parsed = parseFile(file, source);
-    if (parsed.errors.length > 0) {
-        parsed.errors.forEach(e => console.error(`${e.file}:${e.line}:${e.col} - error: ${e.message}`));
-        hasErrors = true;
-        continue;
-    }
-
-    const validation = validate(parsed);
-    if (validation.errors.length > 0) {
-        validation.errors.forEach(e => console.error(`${e.file}:${e.line}:${e.col} - error: ${e.message}`));
-        hasErrors = true;
-        continue;
-    }
-
-    const ir = lowerComponent(parsed, validation);
-    const imports = extractImports(parsed.sourceFile);
-
-    compiled.push({
-        name: ir.name,
-        stateCount: ir.stateSlots.length,
-        bufferCount: ir.bufferCount,
-        ir,
-        imports,
-        hasProps: ir.params.length > 0,
+    const { values } = parseArgs({
+        args: process.argv.slice(4),
+        allowPositionals: false,
+        options: { output: { type: 'string', short: 'o' } },
     });
-}
+    const outputDir = values.output ?? '.';
+    startWatch(path.resolve(watchDir), path.resolve(outputDir));
+} else {
+    // Default: build command
+    const { values, positionals } = parseArgs({
+        allowPositionals: true,
+        options: { output: { type: 'string', short: 'o' } },
+    });
 
-if (hasErrors) process.exit(1);
-
-// Phase 2: Build lookup of compiled components for cross-file resolution
-const componentMap = new Map<string, CompiledComponent>();
-for (const comp of compiled) {
-    componentMap.set(comp.name, comp);
-}
-
-// Phase 3: Resolve imported component stateCount/bufferCount in IR, then emit
-for (const comp of compiled) {
-    // Resolve cross-file custom component info
-    resolveCustomComponents(comp.ir.body, componentMap);
-
-    // Build import info for #include directives
-    const importInfos: ImportInfo[] = [];
-    for (const [importedName] of comp.imports) {
-        const importedComp = componentMap.get(importedName);
-        if (importedComp && importedComp.hasProps) {
-            importInfos.push({
-                name: importedName,
-                headerFile: `${importedName}.gen.h`,
-            });
-        }
+    if (positionals.length === 0) {
+        console.error('Usage: imxc <input.tsx ...> -o <output-dir>');
+        console.error('       imxc init [project-dir]');
+        console.error('       imxc watch <dir> -o <output-dir>');
+        process.exit(1);
     }
 
-    // Emit .gen.cpp
-    const cppOutput = emitComponent(comp.ir, importInfos);
-    const baseName = comp.name;
-    const outPath = path.join(outputDir, `${baseName}.gen.cpp`);
-    fs.writeFileSync(outPath, cppOutput);
-    console.log(`  ${baseName} -> ${outPath}`);
+    const outputDir = values.output ?? '.';
+    const result = compile(positionals, outputDir);
 
-    // Emit .gen.h for components with props
-    if (comp.hasProps) {
-        const headerOutput = emitComponentHeader(comp.ir);
-        const headerPath = path.join(outputDir, `${baseName}.gen.h`);
-        fs.writeFileSync(headerPath, headerOutput);
-        console.log(`  ${baseName} -> ${headerPath} (header)`);
+    if (!result.success) {
+        result.errors.forEach(e => console.error(e));
+        process.exit(1);
     }
-}
 
-// Phase 4: Emit root entry point
-if (compiled.length > 0) {
-    const root = compiled[0];
-    const rootOutput = emitRoot(root.name, root.stateCount, root.bufferCount);
-    const rootPath = path.join(outputDir, 'app_root.gen.cpp');
-    fs.writeFileSync(rootPath, rootOutput);
-    console.log(`  -> ${rootPath} (root entry point)`);
-}
-
-console.log(`imxc: ${compiled.length} component(s) compiled successfully.`);
-
-/**
- * Walk IR nodes and update custom_component nodes with resolved stateCount/bufferCount
- * from the compiled component map.
- */
-function resolveCustomComponents(nodes: import('./ir.js').IRNode[], map: Map<string, CompiledComponent>): void {
-    for (const node of nodes) {
-        if (node.kind === 'custom_component') {
-            const target = map.get(node.name);
-            if (target) {
-                node.stateCount = target.stateCount;
-                node.bufferCount = target.bufferCount;
-            }
-        } else if (node.kind === 'conditional') {
-            resolveCustomComponents(node.body, map);
-            if (node.elseBody) resolveCustomComponents(node.elseBody, map);
-        } else if (node.kind === 'list_map') {
-            resolveCustomComponents(node.body, map);
-        }
-    }
+    console.log(`imxc: ${result.componentCount} component(s) compiled successfully.`);
 }

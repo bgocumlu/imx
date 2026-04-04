@@ -1,5 +1,5 @@
 import type {
-    IRComponent, IRNode, IRStateSlot, IRPropParam, IRType,
+    IRComponent, IRNode, IRStateSlot, IRPropParam, IRType, SourceLoc,
     IRBeginContainer, IREndContainer, IRText, IRButton, IRTextInput,
     IRCheckbox, IRSeparator, IRConditional, IRListMap, IRCustomComponent,
     IRBeginPopup, IREndPopup, IROpenPopup, IRMenuItem,
@@ -8,6 +8,12 @@ import type {
 } from './ir.js';
 
 const INDENT = '    ';
+
+function emitLocComment(loc: SourceLoc | undefined, tag: string, lines: string[], indent: string): void {
+    if (loc) {
+        lines.push(`${indent}// ${loc.file}:${loc.line} <${tag}>`);
+    }
+}
 
 function cppType(t: IRType): string {
     switch (t) {
@@ -42,9 +48,12 @@ function asCharPtr(expr: string): string {
  * Emit a .gen.h header for a component that has props.
  * Contains the props struct and function forward declaration.
  */
-export function emitComponentHeader(comp: IRComponent): string {
+export function emitComponentHeader(comp: IRComponent, sourceFile?: string): string {
     const lines: string[] = [];
 
+    if (sourceFile) {
+        lines.push(`// Generated from ${sourceFile} by imxc`);
+    }
     lines.push('#pragma once');
     lines.push('#include <reimgui/runtime.h>');
     lines.push('#include <reimgui/renderer.h>');
@@ -72,7 +81,7 @@ export interface ImportInfo {
     headerFile: string;   // e.g. "TodoItem.gen.h"
 }
 
-export function emitComponent(comp: IRComponent, imports?: ImportInfo[]): string {
+export function emitComponent(comp: IRComponent, imports?: ImportInfo[], sourceFile?: string): string {
     const lines: string[] = [];
 
     // Reset counters for each component
@@ -84,6 +93,11 @@ export function emitComponent(comp: IRComponent, imports?: ImportInfo[]): string
 
     const hasProps = comp.params.length > 0;
     const hasColorType = comp.stateSlots.some(s => s.type === 'color');
+
+    // File banner
+    if (sourceFile) {
+        lines.push(`// Generated from ${sourceFile} by imxc`);
+    }
 
     if (hasProps) {
         // Component with props: include its own header instead of redeclaring struct
@@ -137,9 +151,12 @@ export function emitComponent(comp: IRComponent, imports?: ImportInfo[]): string
     return lines.join('\n');
 }
 
-export function emitRoot(rootName: string, stateCount: number, bufferCount: number): string {
+export function emitRoot(rootName: string, stateCount: number, bufferCount: number, sourceFile?: string): string {
     const lines: string[] = [];
 
+    if (sourceFile) {
+        lines.push(`// Generated from ${sourceFile} by imxc`);
+    }
     lines.push('#include <reimgui/runtime.h>');
     lines.push('');
     lines.push(`void ${rootName}_render(reimgui::RenderContext& ctx);`);
@@ -190,6 +207,7 @@ function emitNode(node: IRNode, lines: string[], depth: number): void {
             lines.push(`${indent}reimgui::renderer::separator();`);
             break;
         case 'begin_popup':
+            emitLocComment(node.loc, 'Popup', lines, indent);
             lines.push(`${indent}if (reimgui::renderer::begin_popup(${node.id})) {`);
             break;
         case 'end_popup':
@@ -197,6 +215,7 @@ function emitNode(node: IRNode, lines: string[], depth: number): void {
             lines.push(`${indent}}`);
             break;
         case 'open_popup':
+            emitLocComment(node.loc, 'OpenPopup', lines, indent);
             lines.push(`${indent}reimgui::renderer::open_popup(${node.id});`);
             break;
         case 'conditional':
@@ -290,6 +309,7 @@ function buildStyleBlock(node: IRBeginContainer, indent: string, lines: string[]
 }
 
 function emitBeginContainer(node: IRBeginContainer, lines: string[], indent: string): void {
+    emitLocComment(node.loc, node.tag, lines, indent);
     switch (node.tag) {
         case 'Window': {
             const title = asCharPtr(node.props['title'] ?? '""');
@@ -428,6 +448,7 @@ function emitEndContainer(node: IREndContainer, lines: string[], indent: string)
 }
 
 function emitText(node: IRText, lines: string[], indent: string): void {
+    emitLocComment(node.loc, 'Text', lines, indent);
     if (node.args.length === 0) {
         lines.push(`${indent}reimgui::renderer::text(${JSON.stringify(node.format)});`);
     } else {
@@ -437,6 +458,7 @@ function emitText(node: IRText, lines: string[], indent: string): void {
 }
 
 function emitButton(node: IRButton, lines: string[], indent: string, depth: number): void {
+    emitLocComment(node.loc, 'Button', lines, indent);
     const title = asCharPtr(node.title);
     if (node.action.length === 0) {
         lines.push(`${indent}reimgui::renderer::button(${title});`);
@@ -450,6 +472,7 @@ function emitButton(node: IRButton, lines: string[], indent: string, depth: numb
 }
 
 function emitMenuItem(node: IRMenuItem, lines: string[], indent: string, depth: number): void {
+    emitLocComment(node.loc, 'MenuItem', lines, indent);
     const label = asCharPtr(node.label);
     const shortcut = node.shortcut ? asCharPtr(node.shortcut) : undefined;
     if (node.action.length === 0) {
@@ -472,6 +495,7 @@ function emitMenuItem(node: IRMenuItem, lines: string[], indent: string, depth: 
 }
 
 function emitTextInput(node: IRTextInput, lines: string[], indent: string): void {
+    emitLocComment(node.loc, 'TextInput', lines, indent);
     const label = asCharPtr(node.label && node.label !== '""' ? node.label : `"##textinput_${node.bufferIndex}"`);
 
     if (node.stateVar) {
@@ -489,6 +513,7 @@ function emitTextInput(node: IRTextInput, lines: string[], indent: string): void
 }
 
 function emitCheckbox(node: IRCheckbox, lines: string[], indent: string): void {
+    emitLocComment(node.loc, 'Checkbox', lines, indent);
     const label = asCharPtr(node.label && node.label !== '""' ? node.label : `"##checkbox_${checkboxCounter}"`);
     checkboxCounter++;
 
@@ -516,6 +541,9 @@ function emitCheckbox(node: IRCheckbox, lines: string[], indent: string): void {
 }
 
 function emitConditional(node: IRConditional, lines: string[], indent: string, depth: number): void {
+    if (node.loc) {
+        lines.push(`${indent}// ${node.loc.file}:${node.loc.line} conditional`);
+    }
     lines.push(`${indent}if (${node.condition}) {`);
     emitNodes(node.body, lines, depth + 1);
     if (node.elseBody && node.elseBody.length > 0) {
@@ -526,6 +554,9 @@ function emitConditional(node: IRConditional, lines: string[], indent: string, d
 }
 
 function emitListMap(node: IRListMap, lines: string[], indent: string, depth: number): void {
+    if (node.loc) {
+        lines.push(`${indent}// ${node.loc.file}:${node.loc.line} .map()`);
+    }
     lines.push(`${indent}for (size_t i = 0; i < ${node.array}.size(); i++) {`);
     lines.push(`${indent}${INDENT}auto& ${node.itemVar} = ${node.array}[i];`);
     lines.push(`${indent}${INDENT}ctx.begin_instance("${node.componentName}", i, ${node.stateCount}, ${node.bufferCount});`);
@@ -535,6 +566,7 @@ function emitListMap(node: IRListMap, lines: string[], indent: string, depth: nu
 }
 
 function emitCustomComponent(node: IRCustomComponent, lines: string[], indent: string): void {
+    emitLocComment(node.loc, node.name, lines, indent);
     const instanceIndex = customComponentCounter++;
     const propsEntries = Object.entries(node.props);
 
@@ -564,6 +596,7 @@ function ensureFloatLiteral(val: string): string {
 }
 
 function emitSliderFloat(node: IRSliderFloat, lines: string[], indent: string): void {
+    emitLocComment(node.loc, 'SliderFloat', lines, indent);
     const min = ensureFloatLiteral(node.min);
     const max = ensureFloatLiteral(node.max);
     if (node.stateVar) {
@@ -586,6 +619,7 @@ function emitSliderFloat(node: IRSliderFloat, lines: string[], indent: string): 
 }
 
 function emitSliderInt(node: IRSliderInt, lines: string[], indent: string): void {
+    emitLocComment(node.loc, 'SliderInt', lines, indent);
     if (node.stateVar) {
         lines.push(`${indent}{`);
         lines.push(`${indent}${INDENT}int val = ${node.stateVar}.get();`);
@@ -606,6 +640,7 @@ function emitSliderInt(node: IRSliderInt, lines: string[], indent: string): void
 }
 
 function emitDragFloat(node: IRDragFloat, lines: string[], indent: string): void {
+    emitLocComment(node.loc, 'DragFloat', lines, indent);
     const speed = ensureFloatLiteral(node.speed);
     if (node.stateVar) {
         lines.push(`${indent}{`);
@@ -627,6 +662,7 @@ function emitDragFloat(node: IRDragFloat, lines: string[], indent: string): void
 }
 
 function emitDragInt(node: IRDragInt, lines: string[], indent: string): void {
+    emitLocComment(node.loc, 'DragInt', lines, indent);
     const speed = ensureFloatLiteral(node.speed);
     if (node.stateVar) {
         lines.push(`${indent}{`);
@@ -648,6 +684,7 @@ function emitDragInt(node: IRDragInt, lines: string[], indent: string): void {
 }
 
 function emitCombo(node: IRCombo, lines: string[], indent: string): void {
+    emitLocComment(node.loc, 'Combo', lines, indent);
     const itemsList = node.items.split(',').map(s => s.trim()).filter(s => s.length > 0);
     const count = itemsList.length;
     const varName = `combo_items_${comboCounter++}`;
@@ -674,6 +711,7 @@ function emitCombo(node: IRCombo, lines: string[], indent: string): void {
 }
 
 function emitInputInt(node: IRInputInt, lines: string[], indent: string): void {
+    emitLocComment(node.loc, 'InputInt', lines, indent);
     if (node.stateVar) {
         lines.push(`${indent}{`);
         lines.push(`${indent}${INDENT}int val = ${node.stateVar}.get();`);
@@ -694,6 +732,7 @@ function emitInputInt(node: IRInputInt, lines: string[], indent: string): void {
 }
 
 function emitInputFloat(node: IRInputFloat, lines: string[], indent: string): void {
+    emitLocComment(node.loc, 'InputFloat', lines, indent);
     if (node.stateVar) {
         lines.push(`${indent}{`);
         lines.push(`${indent}${INDENT}float val = ${node.stateVar}.get();`);
@@ -714,6 +753,7 @@ function emitInputFloat(node: IRInputFloat, lines: string[], indent: string): vo
 }
 
 function emitColorEdit(node: IRColorEdit, lines: string[], indent: string): void {
+    emitLocComment(node.loc, 'ColorEdit', lines, indent);
     if (node.stateVar) {
         lines.push(`${indent}{`);
         lines.push(`${indent}${INDENT}auto val = ${node.stateVar}.get();`);
@@ -725,6 +765,7 @@ function emitColorEdit(node: IRColorEdit, lines: string[], indent: string): void
 }
 
 function emitListBox(node: IRListBox, lines: string[], indent: string): void {
+    emitLocComment(node.loc, 'ListBox', lines, indent);
     const itemsList = node.items.split(',').map(s => s.trim()).filter(s => s.length > 0);
     const count = itemsList.length;
     const varName = `listbox_items_${listBoxCounter++}`;
@@ -751,6 +792,7 @@ function emitListBox(node: IRListBox, lines: string[], indent: string): void {
 }
 
 function emitProgressBar(node: IRProgressBar, lines: string[], indent: string): void {
+    emitLocComment(node.loc, 'ProgressBar', lines, indent);
     if (node.overlay) {
         lines.push(`${indent}reimgui::renderer::progress_bar(${node.value}, ${node.overlay});`);
     } else {
@@ -759,5 +801,6 @@ function emitProgressBar(node: IRProgressBar, lines: string[], indent: string): 
 }
 
 function emitTooltip(node: IRTooltip, lines: string[], indent: string): void {
+    emitLocComment(node.loc, 'Tooltip', lines, indent);
     lines.push(`${indent}reimgui::renderer::tooltip(${node.text});`);
 }

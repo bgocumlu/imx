@@ -3,7 +3,7 @@ import type { ParsedFile } from './parser.js';
 import type { ValidationResult, UseStateInfo } from './validator.js';
 import { HOST_COMPONENTS, isHostComponent } from './components.js';
 import type {
-    IRComponent, IRNode, IRStateSlot, IRPropParam, IRType, IRExpr,
+    IRComponent, IRNode, IRStateSlot, IRPropParam, IRType, IRExpr, SourceLoc,
     IRBeginContainer, IREndContainer, IRText, IRButton, IRTextInput,
     IRCheckbox, IRSeparator, IRConditional, IRListMap, IRCustomComponent,
     IRBeginPopup, IREndPopup, IROpenPopup, IRMenuItem,
@@ -17,6 +17,11 @@ interface LoweringContext {
     propsParam: string | null;       // name of props parameter, if any
     bufferIndex: number;
     sourceFile: ts.SourceFile;
+}
+
+function getLoc(node: ts.Node, ctx: LoweringContext): SourceLoc {
+    const { line } = ctx.sourceFile.getLineAndCharacterOfPosition(node.getStart());
+    return { file: ctx.sourceFile.fileName, line: line + 1 };
 }
 
 export function lowerComponent(parsed: ParsedFile, validation: ValidationResult): IRComponent {
@@ -309,7 +314,7 @@ function lowerJsxExpression(node: ts.Node, body: IRNode[], ctx: LoweringContext)
         const condition = exprToCpp(node.left, ctx);
         const condBody: IRNode[] = [];
         lowerJsxExpression(node.right, condBody, ctx);
-        body.push({ kind: 'conditional', condition, body: condBody });
+        body.push({ kind: 'conditional', condition, body: condBody, loc: getLoc(node, ctx) });
         return;
     }
 
@@ -320,13 +325,13 @@ function lowerJsxExpression(node: ts.Node, body: IRNode[], ctx: LoweringContext)
         const elseBody: IRNode[] = [];
         lowerJsxExpression(node.whenTrue, thenBody, ctx);
         lowerJsxExpression(node.whenFalse, elseBody, ctx);
-        body.push({ kind: 'conditional', condition, body: thenBody, elseBody });
+        body.push({ kind: 'conditional', condition, body: thenBody, elseBody, loc: getLoc(node, ctx) });
         return;
     }
 
     // items.map(item => <Comp/>)
     if (ts.isCallExpression(node) && ts.isPropertyAccessExpression(node.expression) && node.expression.name.text === 'map') {
-        lowerListMap(node, body, ctx);
+        lowerListMap(node, body, ctx, getLoc(node, ctx));
         return;
     }
 
@@ -343,7 +348,7 @@ function lowerJsxElement(node: ts.JsxElement, body: IRNode[], ctx: LoweringConte
     const name = tagName.text;
 
     if (name === 'Text') {
-        lowerTextElement(node, body, ctx);
+        lowerTextElement(node, body, ctx, getLoc(node, ctx));
         return;
     }
 
@@ -353,7 +358,7 @@ function lowerJsxElement(node: ts.JsxElement, body: IRNode[], ctx: LoweringConte
 
         if (def.isContainer) {
             const containerTag = name as IRBeginContainer['tag'];
-            body.push({ kind: 'begin_container', tag: containerTag, props: attrs });
+            body.push({ kind: 'begin_container', tag: containerTag, props: attrs, loc: getLoc(node, ctx) });
             for (const child of node.children) {
                 lowerJsxChild(child, body, ctx);
             }
@@ -364,7 +369,7 @@ function lowerJsxElement(node: ts.JsxElement, body: IRNode[], ctx: LoweringConte
         // Popup
         if (name === 'Popup') {
             const id = attrs['id'] ?? '';
-            body.push({ kind: 'begin_popup', id });
+            body.push({ kind: 'begin_popup', id, loc: getLoc(node, ctx) });
             for (const child of node.children) {
                 lowerJsxChild(child, body, ctx);
             }
@@ -375,7 +380,7 @@ function lowerJsxElement(node: ts.JsxElement, body: IRNode[], ctx: LoweringConte
 
     // Custom component with children - treat as container-like (not common but handle gracefully)
     if (!isHostComponent(name)) {
-        lowerCustomComponent(name, node.openingElement.attributes, body, ctx);
+        lowerCustomComponent(name, node.openingElement.attributes, body, ctx, getLoc(node, ctx));
         return;
     }
 }
@@ -386,78 +391,80 @@ function lowerJsxSelfClosing(node: ts.JsxSelfClosingElement, body: IRNode[], ctx
     const name = tagName.text;
 
     if (!isHostComponent(name)) {
-        lowerCustomComponent(name, node.attributes, body, ctx);
+        lowerCustomComponent(name, node.attributes, body, ctx, getLoc(node, ctx));
         return;
     }
 
     const attrs = getAttributes(node.attributes, ctx);
     const rawAttrs = getRawAttributes(node.attributes);
 
+    const loc = getLoc(node, ctx);
+
     switch (name) {
         case 'Button':
-            lowerButton(attrs, rawAttrs, body, ctx);
+            lowerButton(attrs, rawAttrs, body, ctx, loc);
             break;
         case 'TextInput':
-            lowerTextInput(attrs, rawAttrs, body, ctx);
+            lowerTextInput(attrs, rawAttrs, body, ctx, loc);
             break;
         case 'Checkbox':
-            lowerCheckbox(attrs, rawAttrs, body, ctx);
+            lowerCheckbox(attrs, rawAttrs, body, ctx, loc);
             break;
         case 'MenuItem':
-            lowerMenuItem(attrs, rawAttrs, body, ctx);
+            lowerMenuItem(attrs, rawAttrs, body, ctx, loc);
             break;
         case 'SliderFloat':
-            lowerSliderFloat(attrs, rawAttrs, body, ctx);
+            lowerSliderFloat(attrs, rawAttrs, body, ctx, loc);
             break;
         case 'SliderInt':
-            lowerSliderInt(attrs, rawAttrs, body, ctx);
+            lowerSliderInt(attrs, rawAttrs, body, ctx, loc);
             break;
         case 'DragFloat':
-            lowerDragFloat(attrs, rawAttrs, body, ctx);
+            lowerDragFloat(attrs, rawAttrs, body, ctx, loc);
             break;
         case 'DragInt':
-            lowerDragInt(attrs, rawAttrs, body, ctx);
+            lowerDragInt(attrs, rawAttrs, body, ctx, loc);
             break;
         case 'Combo':
-            lowerCombo(attrs, rawAttrs, body, ctx);
+            lowerCombo(attrs, rawAttrs, body, ctx, loc);
             break;
         case 'InputInt':
-            lowerInputInt(attrs, rawAttrs, body, ctx);
+            lowerInputInt(attrs, rawAttrs, body, ctx, loc);
             break;
         case 'InputFloat':
-            lowerInputFloat(attrs, rawAttrs, body, ctx);
+            lowerInputFloat(attrs, rawAttrs, body, ctx, loc);
             break;
         case 'ColorEdit':
-            lowerColorEdit(attrs, rawAttrs, body, ctx);
+            lowerColorEdit(attrs, rawAttrs, body, ctx, loc);
             break;
         case 'ListBox':
-            lowerListBox(attrs, rawAttrs, body, ctx);
+            lowerListBox(attrs, rawAttrs, body, ctx, loc);
             break;
         case 'ProgressBar':
-            lowerProgressBar(attrs, rawAttrs, body, ctx);
+            lowerProgressBar(attrs, rawAttrs, body, ctx, loc);
             break;
         case 'Tooltip':
-            lowerTooltip(attrs, body, ctx);
+            lowerTooltip(attrs, body, ctx, loc);
             break;
         case 'Separator':
-            body.push({ kind: 'separator' });
+            body.push({ kind: 'separator', loc });
             break;
         case 'Text':
             // Self-closing <Text /> - empty text
-            body.push({ kind: 'text', format: '', args: [] });
+            body.push({ kind: 'text', format: '', args: [], loc });
             break;
         default:
             // Container self-closing (e.g., <Window title="X"/>)
             if (HOST_COMPONENTS[name]?.isContainer) {
                 const containerTag = name as IRBeginContainer['tag'];
-                body.push({ kind: 'begin_container', tag: containerTag, props: attrs });
+                body.push({ kind: 'begin_container', tag: containerTag, props: attrs, loc });
                 body.push({ kind: 'end_container', tag: containerTag });
             }
             break;
     }
 }
 
-function lowerButton(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext): void {
+function lowerButton(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext, loc: SourceLoc): void {
     const title = attrs['title'] ?? '""';
     const onPressExpr = rawAttrs.get('onPress');
     let action: string[] = [];
@@ -465,10 +472,10 @@ function lowerButton(attrs: Record<string, string>, rawAttrs: Map<string, ts.Exp
         action = extractActionStatements(onPressExpr, ctx);
     }
     const style = attrs['style'];
-    body.push({ kind: 'button', title, action, style });
+    body.push({ kind: 'button', title, action, style, loc });
 }
 
-function lowerTextInput(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext): void {
+function lowerTextInput(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext, loc: SourceLoc): void {
     const label = attrs['label'] ?? '""';
     const bufferIndex = ctx.bufferIndex++;
 
@@ -483,10 +490,10 @@ function lowerTextInput(attrs: Record<string, string>, rawAttrs: Map<string, ts.
     }
 
     const style = attrs['style'];
-    body.push({ kind: 'text_input', label, bufferIndex, stateVar, style });
+    body.push({ kind: 'text_input', label, bufferIndex, stateVar, style, loc });
 }
 
-function lowerCheckbox(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext): void {
+function lowerCheckbox(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext, loc: SourceLoc): void {
     const label = attrs['label'] ?? '""';
 
     // Detect bound state variable from value prop
@@ -520,10 +527,10 @@ function lowerCheckbox(attrs: Record<string, string>, rawAttrs: Map<string, ts.E
     }
 
     const style = attrs['style'];
-    body.push({ kind: 'checkbox', label, stateVar, valueExpr: valueExprStr, onChangeExpr: onChangeExprStr, style });
+    body.push({ kind: 'checkbox', label, stateVar, valueExpr: valueExprStr, onChangeExpr: onChangeExprStr, style, loc });
 }
 
-function lowerMenuItem(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext): void {
+function lowerMenuItem(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext, loc: SourceLoc): void {
     const label = attrs['label'] ?? '""';
     const shortcut = attrs['shortcut'];
     const onPressExpr = rawAttrs.get('onPress');
@@ -531,10 +538,10 @@ function lowerMenuItem(attrs: Record<string, string>, rawAttrs: Map<string, ts.E
     if (onPressExpr) {
         action = extractActionStatements(onPressExpr, ctx);
     }
-    body.push({ kind: 'menu_item', label, shortcut, action });
+    body.push({ kind: 'menu_item', label, shortcut, action, loc });
 }
 
-function lowerTextElement(node: ts.JsxElement, body: IRNode[], ctx: LoweringContext): void {
+function lowerTextElement(node: ts.JsxElement, body: IRNode[], ctx: LoweringContext, loc?: SourceLoc): void {
     let format = '';
     const args: string[] = [];
 
@@ -586,7 +593,7 @@ function lowerTextElement(node: ts.JsxElement, body: IRNode[], ctx: LoweringCont
         }
     }
 
-    body.push({ kind: 'text', format, args });
+    body.push({ kind: 'text', format, args, loc });
 }
 
 /**
@@ -652,7 +659,7 @@ function inferExprType(expr: ts.Expression, ctx: LoweringContext): IRType {
     return 'int'; // default
 }
 
-function lowerListMap(node: ts.CallExpression, body: IRNode[], ctx: LoweringContext): void {
+function lowerListMap(node: ts.CallExpression, body: IRNode[], ctx: LoweringContext, loc?: SourceLoc): void {
     const propAccess = node.expression as ts.PropertyAccessExpression;
     const array = exprToCpp(propAccess.expression, ctx);
     const callback = node.arguments[0];
@@ -683,10 +690,11 @@ function lowerListMap(node: ts.CallExpression, body: IRNode[], ctx: LoweringCont
         stateCount: 0,
         bufferCount: 0,
         body: mapBody,
+        loc,
     });
 }
 
-function lowerCustomComponent(name: string, attributes: ts.JsxAttributes, body: IRNode[], ctx: LoweringContext): void {
+function lowerCustomComponent(name: string, attributes: ts.JsxAttributes, body: IRNode[], ctx: LoweringContext, loc?: SourceLoc): void {
     const attrs = getAttributes(attributes, ctx);
     body.push({
         kind: 'custom_component',
@@ -694,6 +702,7 @@ function lowerCustomComponent(name: string, attributes: ts.JsxAttributes, body: 
         props: attrs,
         stateCount: 0,
         bufferCount: 0,
+        loc,
     });
 }
 
@@ -768,63 +777,63 @@ function lowerValueOnChange(rawAttrs: Map<string, ts.Expression | null>, ctx: Lo
     return { stateVar, valueExpr, onChangeExpr };
 }
 
-function lowerSliderFloat(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext): void {
+function lowerSliderFloat(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext, loc: SourceLoc): void {
     const label = attrs['label'] ?? '""';
     const min = attrs['min'] ?? '0.0f';
     const max = attrs['max'] ?? '1.0f';
     const style = attrs['style'];
     const { stateVar, valueExpr, onChangeExpr } = lowerValueOnChange(rawAttrs, ctx);
-    body.push({ kind: 'slider_float', label, stateVar, valueExpr, onChangeExpr, min, max, style });
+    body.push({ kind: 'slider_float', label, stateVar, valueExpr, onChangeExpr, min, max, style, loc });
 }
 
-function lowerSliderInt(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext): void {
+function lowerSliderInt(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext, loc: SourceLoc): void {
     const label = attrs['label'] ?? '""';
     const min = attrs['min'] ?? '0';
     const max = attrs['max'] ?? '100';
     const style = attrs['style'];
     const { stateVar, valueExpr, onChangeExpr } = lowerValueOnChange(rawAttrs, ctx);
-    body.push({ kind: 'slider_int', label, stateVar, valueExpr, onChangeExpr, min, max, style });
+    body.push({ kind: 'slider_int', label, stateVar, valueExpr, onChangeExpr, min, max, style, loc });
 }
 
-function lowerDragFloat(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext): void {
+function lowerDragFloat(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext, loc: SourceLoc): void {
     const label = attrs['label'] ?? '""';
     const speed = attrs['speed'] ?? '1.0f';
     const style = attrs['style'];
     const { stateVar, valueExpr, onChangeExpr } = lowerValueOnChange(rawAttrs, ctx);
-    body.push({ kind: 'drag_float', label, stateVar, valueExpr, onChangeExpr, speed, style });
+    body.push({ kind: 'drag_float', label, stateVar, valueExpr, onChangeExpr, speed, style, loc });
 }
 
-function lowerDragInt(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext): void {
+function lowerDragInt(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext, loc: SourceLoc): void {
     const label = attrs['label'] ?? '""';
     const speed = attrs['speed'] ?? '1.0f';
     const style = attrs['style'];
     const { stateVar, valueExpr, onChangeExpr } = lowerValueOnChange(rawAttrs, ctx);
-    body.push({ kind: 'drag_int', label, stateVar, valueExpr, onChangeExpr, speed, style });
+    body.push({ kind: 'drag_int', label, stateVar, valueExpr, onChangeExpr, speed, style, loc });
 }
 
-function lowerCombo(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext): void {
+function lowerCombo(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext, loc: SourceLoc): void {
     const label = attrs['label'] ?? '""';
     const items = attrs['items'] ?? '';
     const style = attrs['style'];
     const { stateVar, valueExpr, onChangeExpr } = lowerValueOnChange(rawAttrs, ctx);
-    body.push({ kind: 'combo', label, stateVar, valueExpr, onChangeExpr, items, style });
+    body.push({ kind: 'combo', label, stateVar, valueExpr, onChangeExpr, items, style, loc });
 }
 
-function lowerInputInt(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext): void {
+function lowerInputInt(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext, loc: SourceLoc): void {
     const label = attrs['label'] ?? '""';
     const style = attrs['style'];
     const { stateVar, valueExpr, onChangeExpr } = lowerValueOnChange(rawAttrs, ctx);
-    body.push({ kind: 'input_int', label, stateVar, valueExpr, onChangeExpr, style });
+    body.push({ kind: 'input_int', label, stateVar, valueExpr, onChangeExpr, style, loc });
 }
 
-function lowerInputFloat(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext): void {
+function lowerInputFloat(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext, loc: SourceLoc): void {
     const label = attrs['label'] ?? '""';
     const style = attrs['style'];
     const { stateVar, valueExpr, onChangeExpr } = lowerValueOnChange(rawAttrs, ctx);
-    body.push({ kind: 'input_float', label, stateVar, valueExpr, onChangeExpr, style });
+    body.push({ kind: 'input_float', label, stateVar, valueExpr, onChangeExpr, style, loc });
 }
 
-function lowerColorEdit(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext): void {
+function lowerColorEdit(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext, loc: SourceLoc): void {
     const label = attrs['label'] ?? '""';
     const style = attrs['style'];
     // ColorEdit only supports state-bound values
@@ -833,25 +842,25 @@ function lowerColorEdit(attrs: Record<string, string>, rawAttrs: Map<string, ts.
     if (valueRaw && ts.isIdentifier(valueRaw) && ctx.stateVars.has(valueRaw.text)) {
         stateVar = valueRaw.text;
     }
-    body.push({ kind: 'color_edit', label, stateVar, style });
+    body.push({ kind: 'color_edit', label, stateVar, style, loc });
 }
 
-function lowerListBox(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext): void {
+function lowerListBox(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext, loc: SourceLoc): void {
     const label = attrs['label'] ?? '""';
     const items = attrs['items'] ?? '';
     const style = attrs['style'];
     const { stateVar, valueExpr, onChangeExpr } = lowerValueOnChange(rawAttrs, ctx);
-    body.push({ kind: 'list_box', label, stateVar, valueExpr, onChangeExpr, items, style });
+    body.push({ kind: 'list_box', label, stateVar, valueExpr, onChangeExpr, items, style, loc });
 }
 
-function lowerProgressBar(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext): void {
+function lowerProgressBar(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext, loc: SourceLoc): void {
     const value = attrs['value'] ?? '0.0f';
     const overlay = attrs['overlay'];
     const style = attrs['style'];
-    body.push({ kind: 'progress_bar', value, overlay, style });
+    body.push({ kind: 'progress_bar', value, overlay, style, loc });
 }
 
-function lowerTooltip(attrs: Record<string, string>, body: IRNode[], ctx: LoweringContext): void {
+function lowerTooltip(attrs: Record<string, string>, body: IRNode[], ctx: LoweringContext, loc: SourceLoc): void {
     const text = attrs['text'] ?? '""';
-    body.push({ kind: 'tooltip', text });
+    body.push({ kind: 'tooltip', text, loc });
 }

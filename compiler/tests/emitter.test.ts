@@ -4,13 +4,13 @@ import { validate } from '../src/validator.js';
 import { lowerComponent } from '../src/lowering.js';
 import { emitComponent, emitComponentHeader, emitRoot } from '../src/emitter.js';
 
-function compile(source: string): string {
+function compile(source: string, sourceFile?: string): string {
     const parsed = parseFile('Test.tsx', source);
     expect(parsed.errors).toHaveLength(0);
     const validation = validate(parsed);
     expect(validation.errors).toHaveLength(0);
     const ir = lowerComponent(parsed, validation);
-    return emitComponent(ir);
+    return emitComponent(ir, undefined, sourceFile);
 }
 
 function compileHeader(source: string): string {
@@ -133,6 +133,43 @@ function App() {
         expect(output).toContain('bool val = checked.get()');
         expect(output).toContain('reimgui::renderer::checkbox("Check", &val)');
         expect(output).toContain('checked.set(val)');
+    });
+});
+
+describe('source location comments', () => {
+    it('emits file banner when sourceFile is provided', () => {
+        const output = compile(`
+function App() {
+  return <Window title="Hello"><Text>Hi</Text></Window>;
+}
+        `, 'App.tsx');
+
+        expect(output).toContain('// Generated from App.tsx by imxc');
+    });
+
+    it('emits per-element source location comments', () => {
+        const output = compile(`
+function App() {
+  return (
+    <Window title="Hello">
+      <Button title="Click" onPress={() => {}} />
+    </Window>
+  );
+}
+        `, 'App.tsx');
+
+        expect(output).toContain('// Test.tsx:4 <Window>');
+        expect(output).toContain('// Test.tsx:5 <Button>');
+    });
+
+    it('does not emit banner when sourceFile is omitted', () => {
+        const output = compile(`
+function App() {
+  return <Window title="X"><Text>Y</Text></Window>;
+}
+        `);
+
+        expect(output).not.toContain('// Generated from');
     });
 });
 
