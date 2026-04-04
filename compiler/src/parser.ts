@@ -20,7 +20,7 @@ function formatError(sourceFile: ts.SourceFile, node: ts.Node, message: string):
     return { file: sourceFile.fileName, line: line + 1, col: character + 1, message };
 }
 
-export function parseIgxFile(filePath: string, source: string): ParsedFile {
+export function parseFile(filePath: string, source: string): ParsedFile {
     const fileName = path.basename(filePath);
     const sourceFile = ts.createSourceFile(
         fileName, source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX,
@@ -32,7 +32,7 @@ export function parseIgxFile(filePath: string, source: string): ParsedFile {
     for (const stmt of sourceFile.statements) {
         if (ts.isFunctionDeclaration(stmt) && stmt.name) {
             if (component !== null) {
-                errors.push(formatError(sourceFile, stmt, 'Only one component function per .igx file is supported'));
+                errors.push(formatError(sourceFile, stmt, 'Only one component function per file is supported'));
             } else {
                 component = stmt;
             }

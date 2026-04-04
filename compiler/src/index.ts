@@ -2,7 +2,7 @@
 import { parseArgs } from 'node:util';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import { parseIgxFile, extractImports } from './parser.js';
+import { parseFile, extractImports } from './parser.js';
 import { validate } from './validator.js';
 import { lowerComponent } from './lowering.js';
 import { emitComponent, emitComponentHeader, emitRoot } from './emitter.js';
@@ -44,7 +44,7 @@ for (const file of positionals) {
     }
 
     const source = fs.readFileSync(file, 'utf-8');
-    const parsed = parseIgxFile(file, source);
+    const parsed = parseFile(file, source);
     if (parsed.errors.length > 0) {
         parsed.errors.forEach(e => console.error(`${e.file}:${e.line}:${e.col} - error: ${e.message}`));
         hasErrors = true;

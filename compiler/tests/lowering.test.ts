@@ -1,10 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { parseIgxFile } from '../src/parser.js';
+import { parseFile } from '../src/parser.js';
 import { validate } from '../src/validator.js';
 import { lowerComponent } from '../src/lowering.js';
 
 function lower(source: string) {
-    const parsed = parseIgxFile('Test.igx', source);
+    const parsed = parseFile('Test.tsx', source);
     expect(parsed.errors).toHaveLength(0);
     const validation = validate(parsed);
     expect(validation.errors).toHaveLength(0);
