@@ -4,6 +4,7 @@ import type {
     IRCheckbox, IRSeparator, IRConditional, IRListMap, IRCustomComponent,
     IRBeginPopup, IREndPopup, IROpenPopup, IRMenuItem,
     IRSliderFloat, IRSliderInt, IRDragFloat, IRDragInt, IRCombo,
+    IRInputInt, IRInputFloat, IRColorEdit, IRListBox, IRProgressBar, IRTooltip,
 } from './ir.js';
 
 const INDENT = '    ';
@@ -14,6 +15,7 @@ function cppType(t: IRType): string {
         case 'float': return 'float';
         case 'bool': return 'bool';
         case 'string': return 'std::string';
+        case 'color': return 'std::array<float, 4>';
     }
 }
 
@@ -64,17 +66,25 @@ export function emitComponent(comp: IRComponent, imports?: ImportInfo[]): string
     customComponentCounter = 0;
     checkboxCounter = 0;
     comboCounter = 0;
+    listBoxCounter = 0;
 
     const hasProps = comp.params.length > 0;
+    const hasColorType = comp.stateSlots.some(s => s.type === 'color');
 
     if (hasProps) {
         // Component with props: include its own header instead of redeclaring struct
         lines.push(`#include "${comp.name}.gen.h"`);
+        if (hasColorType) {
+            lines.push('#include <array>');
+        }
         lines.push('');
     } else {
         // No props: standard headers
         lines.push('#include <reimgui/runtime.h>');
         lines.push('#include <reimgui/renderer.h>');
+        if (hasColorType) {
+            lines.push('#include <array>');
+        }
 
         // Include imported component headers
         if (imports && imports.length > 0) {
@@ -94,6 +104,8 @@ export function emitComponent(comp: IRComponent, imports?: ImportInfo[]): string
     for (const slot of comp.stateSlots) {
         const initVal = slot.type === 'string'
             ? `std::string(${slot.initialValue})`
+            : slot.type === 'color'
+            ? `std::array<float, 4>${slot.initialValue}`
             : slot.initialValue;
         lines.push(`${INDENT}auto ${slot.name} = ctx.use_state<${cppType(slot.type)}>(${initVal}, ${slot.index});`);
     }
@@ -200,6 +212,24 @@ function emitNode(node: IRNode, lines: string[], depth: number): void {
         case 'combo':
             emitCombo(node, lines, indent);
             break;
+        case 'input_int':
+            emitInputInt(node, lines, indent);
+            break;
+        case 'input_float':
+            emitInputFloat(node, lines, indent);
+            break;
+        case 'color_edit':
+            emitColorEdit(node, lines, indent);
+            break;
+        case 'list_box':
+            emitListBox(node, lines, indent);
+            break;
+        case 'progress_bar':
+            emitProgressBar(node, lines, indent);
+            break;
+        case 'tooltip':
+            emitTooltip(node, lines, indent);
+            break;
     }
 }
 
@@ -207,6 +237,7 @@ let styleCounter = 0;
 let customComponentCounter = 0;
 let checkboxCounter = 0;
 let comboCounter = 0;
+let listBoxCounter = 0;
 
 function buildStyleBlock(node: IRBeginContainer, indent: string, lines: string[]): string | null {
     // Check for style-related props (gap, padding, width, height, etc.)
@@ -622,4 +653,93 @@ function emitCombo(node: IRCombo, lines: string[], indent: string): void {
         lines.push(`${indent}${INDENT}}`);
         lines.push(`${indent}}`);
     }
+}
+
+function emitInputInt(node: IRInputInt, lines: string[], indent: string): void {
+    if (node.stateVar) {
+        lines.push(`${indent}{`);
+        lines.push(`${indent}${INDENT}int val = ${node.stateVar}.get();`);
+        lines.push(`${indent}${INDENT}if (reimgui::renderer::input_int(${node.label}, &val)) {`);
+        lines.push(`${indent}${INDENT}${INDENT}${node.stateVar}.set(val);`);
+        lines.push(`${indent}${INDENT}}`);
+        lines.push(`${indent}}`);
+    } else if (node.valueExpr !== undefined) {
+        lines.push(`${indent}{`);
+        lines.push(`${indent}${INDENT}int val = ${node.valueExpr};`);
+        lines.push(`${indent}${INDENT}if (reimgui::renderer::input_int(${node.label}, &val)) {`);
+        if (node.onChangeExpr) {
+            lines.push(`${indent}${INDENT}${INDENT}${node.onChangeExpr};`);
+        }
+        lines.push(`${indent}${INDENT}}`);
+        lines.push(`${indent}}`);
+    }
+}
+
+function emitInputFloat(node: IRInputFloat, lines: string[], indent: string): void {
+    if (node.stateVar) {
+        lines.push(`${indent}{`);
+        lines.push(`${indent}${INDENT}float val = ${node.stateVar}.get();`);
+        lines.push(`${indent}${INDENT}if (reimgui::renderer::input_float(${node.label}, &val)) {`);
+        lines.push(`${indent}${INDENT}${INDENT}${node.stateVar}.set(val);`);
+        lines.push(`${indent}${INDENT}}`);
+        lines.push(`${indent}}`);
+    } else if (node.valueExpr !== undefined) {
+        lines.push(`${indent}{`);
+        lines.push(`${indent}${INDENT}float val = ${node.valueExpr};`);
+        lines.push(`${indent}${INDENT}if (reimgui::renderer::input_float(${node.label}, &val)) {`);
+        if (node.onChangeExpr) {
+            lines.push(`${indent}${INDENT}${INDENT}${node.onChangeExpr};`);
+        }
+        lines.push(`${indent}${INDENT}}`);
+        lines.push(`${indent}}`);
+    }
+}
+
+function emitColorEdit(node: IRColorEdit, lines: string[], indent: string): void {
+    if (node.stateVar) {
+        lines.push(`${indent}{`);
+        lines.push(`${indent}${INDENT}auto val = ${node.stateVar}.get();`);
+        lines.push(`${indent}${INDENT}if (reimgui::renderer::color_edit(${node.label}, val.data())) {`);
+        lines.push(`${indent}${INDENT}${INDENT}${node.stateVar}.set(val);`);
+        lines.push(`${indent}${INDENT}}`);
+        lines.push(`${indent}}`);
+    }
+}
+
+function emitListBox(node: IRListBox, lines: string[], indent: string): void {
+    const itemsList = node.items.split(',').map(s => s.trim()).filter(s => s.length > 0);
+    const count = itemsList.length;
+    const varName = `listbox_items_${listBoxCounter++}`;
+
+    if (node.stateVar) {
+        lines.push(`${indent}{`);
+        lines.push(`${indent}${INDENT}const char* ${varName}[] = {${itemsList.join(', ')}};`);
+        lines.push(`${indent}${INDENT}int val = ${node.stateVar}.get();`);
+        lines.push(`${indent}${INDENT}if (reimgui::renderer::list_box(${node.label}, &val, ${varName}, ${count})) {`);
+        lines.push(`${indent}${INDENT}${INDENT}${node.stateVar}.set(val);`);
+        lines.push(`${indent}${INDENT}}`);
+        lines.push(`${indent}}`);
+    } else if (node.valueExpr !== undefined) {
+        lines.push(`${indent}{`);
+        lines.push(`${indent}${INDENT}const char* ${varName}[] = {${itemsList.join(', ')}};`);
+        lines.push(`${indent}${INDENT}int val = ${node.valueExpr};`);
+        lines.push(`${indent}${INDENT}if (reimgui::renderer::list_box(${node.label}, &val, ${varName}, ${count})) {`);
+        if (node.onChangeExpr) {
+            lines.push(`${indent}${INDENT}${INDENT}${node.onChangeExpr};`);
+        }
+        lines.push(`${indent}${INDENT}}`);
+        lines.push(`${indent}}`);
+    }
+}
+
+function emitProgressBar(node: IRProgressBar, lines: string[], indent: string): void {
+    if (node.overlay) {
+        lines.push(`${indent}reimgui::renderer::progress_bar(${node.value}, ${node.overlay});`);
+    } else {
+        lines.push(`${indent}reimgui::renderer::progress_bar(${node.value});`);
+    }
+}
+
+function emitTooltip(node: IRTooltip, lines: string[], indent: string): void {
+    lines.push(`${indent}reimgui::renderer::tooltip(${node.text});`);
 }

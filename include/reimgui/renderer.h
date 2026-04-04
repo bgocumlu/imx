@@ -83,5 +83,12 @@ bool drag_float(const char* label, float* value, float speed = 1.0f, const Style
 bool drag_int(const char* label, int* value, float speed = 1.0f, const Style& style = {});
 bool combo(const char* label, int* current_item, const char* const items[], int items_count, const Style& style = {});
 
+bool input_int(const char* label, int* value, const Style& style = {});
+bool input_float(const char* label, float* value, const Style& style = {});
+bool color_edit(const char* label, float color[4], const Style& style = {});
+bool list_box(const char* label, int* current_item, const char* const items[], int items_count, const Style& style = {});
+void progress_bar(float fraction, const char* overlay = nullptr, const Style& style = {});
+void tooltip(const char* text);
+
 } // namespace renderer
 } // namespace reimgui

@@ -164,6 +164,57 @@ export const HOST_COMPONENTS: Record<string, HostComponentDef> = {
         },
         hasChildren: false, isContainer: false,
     },
+    InputInt: {
+        props: {
+            label: { type: 'string', required: true },
+            value: { type: 'number', required: true },
+            onChange: { type: 'callback', required: true },
+            style: { type: 'style', required: false },
+        },
+        hasChildren: false, isContainer: false,
+    },
+    InputFloat: {
+        props: {
+            label: { type: 'string', required: true },
+            value: { type: 'number', required: true },
+            onChange: { type: 'callback', required: true },
+            style: { type: 'style', required: false },
+        },
+        hasChildren: false, isContainer: false,
+    },
+    ColorEdit: {
+        props: {
+            label: { type: 'string', required: true },
+            value: { type: 'string', required: true },
+            onChange: { type: 'callback', required: true },
+            style: { type: 'style', required: false },
+        },
+        hasChildren: false, isContainer: false,
+    },
+    ListBox: {
+        props: {
+            label: { type: 'string', required: true },
+            value: { type: 'number', required: true },
+            onChange: { type: 'callback', required: true },
+            items: { type: 'string', required: true },
+            style: { type: 'style', required: false },
+        },
+        hasChildren: false, isContainer: false,
+    },
+    ProgressBar: {
+        props: {
+            value: { type: 'number', required: true },
+            overlay: { type: 'string', required: false },
+            style: { type: 'style', required: false },
+        },
+        hasChildren: false, isContainer: false,
+    },
+    Tooltip: {
+        props: {
+            text: { type: 'string', required: true },
+        },
+        hasChildren: false, isContainer: false,
+    },
 };
 
 export function isHostComponent(name: string): boolean {

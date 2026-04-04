@@ -8,6 +8,7 @@ import type {
     IRCheckbox, IRSeparator, IRConditional, IRListMap, IRCustomComponent,
     IRBeginPopup, IREndPopup, IROpenPopup, IRMenuItem,
     IRSliderFloat, IRSliderInt, IRDragFloat, IRDragInt, IRCombo,
+    IRInputInt, IRInputFloat, IRColorEdit, IRListBox, IRProgressBar, IRTooltip,
 } from './ir.js';
 
 interface LoweringContext {
@@ -103,6 +104,7 @@ function inferTypeFromExpr(expr: ts.Expression): IRType {
     }
     if (ts.isStringLiteral(expr) || ts.isNoSubstitutionTemplateLiteral(expr)) return 'string';
     if (expr.kind === ts.SyntaxKind.TrueKeyword || expr.kind === ts.SyntaxKind.FalseKeyword) return 'bool';
+    if (ts.isArrayLiteralExpression(expr)) return 'color';
     // Default to int
     return 'int';
 }
@@ -115,6 +117,17 @@ function exprToLiteral(expr: ts.Expression): string {
     if (ts.isStringLiteral(expr)) return JSON.stringify(expr.text);
     if (expr.kind === ts.SyntaxKind.TrueKeyword) return 'true';
     if (expr.kind === ts.SyntaxKind.FalseKeyword) return 'false';
+    if (ts.isArrayLiteralExpression(expr)) {
+        const elements = expr.elements.map(e => {
+            const text = e.getText();
+            // Ensure float suffix for color array elements
+            if (ts.isNumericLiteral(e)) {
+                return text.includes('.') ? `${text}f` : `${text}.0f`;
+            }
+            return text;
+        }).join(', ');
+        return `{${elements}}`;
+    }
     // Fallback: use text as-is
     return expr.getText();
 }
@@ -399,6 +412,24 @@ function lowerJsxSelfClosing(node: ts.JsxSelfClosingElement, body: IRNode[], ctx
             break;
         case 'Combo':
             lowerCombo(attrs, rawAttrs, body, ctx);
+            break;
+        case 'InputInt':
+            lowerInputInt(attrs, rawAttrs, body, ctx);
+            break;
+        case 'InputFloat':
+            lowerInputFloat(attrs, rawAttrs, body, ctx);
+            break;
+        case 'ColorEdit':
+            lowerColorEdit(attrs, rawAttrs, body, ctx);
+            break;
+        case 'ListBox':
+            lowerListBox(attrs, rawAttrs, body, ctx);
+            break;
+        case 'ProgressBar':
+            lowerProgressBar(attrs, rawAttrs, body, ctx);
+            break;
+        case 'Tooltip':
+            lowerTooltip(attrs, body, ctx);
             break;
         case 'Separator':
             body.push({ kind: 'separator' });
@@ -747,4 +778,50 @@ function lowerCombo(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expr
     const style = attrs['style'];
     const { stateVar, valueExpr, onChangeExpr } = lowerValueOnChange(rawAttrs, ctx);
     body.push({ kind: 'combo', label, stateVar, valueExpr, onChangeExpr, items, style });
+}
+
+function lowerInputInt(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext): void {
+    const label = attrs['label'] ?? '""';
+    const style = attrs['style'];
+    const { stateVar, valueExpr, onChangeExpr } = lowerValueOnChange(rawAttrs, ctx);
+    body.push({ kind: 'input_int', label, stateVar, valueExpr, onChangeExpr, style });
+}
+
+function lowerInputFloat(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext): void {
+    const label = attrs['label'] ?? '""';
+    const style = attrs['style'];
+    const { stateVar, valueExpr, onChangeExpr } = lowerValueOnChange(rawAttrs, ctx);
+    body.push({ kind: 'input_float', label, stateVar, valueExpr, onChangeExpr, style });
+}
+
+function lowerColorEdit(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext): void {
+    const label = attrs['label'] ?? '""';
+    const style = attrs['style'];
+    // ColorEdit only supports state-bound values
+    let stateVar = '';
+    const valueRaw = rawAttrs.get('value');
+    if (valueRaw && ts.isIdentifier(valueRaw) && ctx.stateVars.has(valueRaw.text)) {
+        stateVar = valueRaw.text;
+    }
+    body.push({ kind: 'color_edit', label, stateVar, style });
+}
+
+function lowerListBox(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext): void {
+    const label = attrs['label'] ?? '""';
+    const items = attrs['items'] ?? '';
+    const style = attrs['style'];
+    const { stateVar, valueExpr, onChangeExpr } = lowerValueOnChange(rawAttrs, ctx);
+    body.push({ kind: 'list_box', label, stateVar, valueExpr, onChangeExpr, items, style });
+}
+
+function lowerProgressBar(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext): void {
+    const value = attrs['value'] ?? '0.0f';
+    const overlay = attrs['overlay'];
+    const style = attrs['style'];
+    body.push({ kind: 'progress_bar', value, overlay, style });
+}
+
+function lowerTooltip(attrs: Record<string, string>, body: IRNode[], ctx: LoweringContext): void {
+    const text = attrs['text'] ?? '""';
+    body.push({ kind: 'tooltip', text });
 }

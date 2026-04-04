@@ -1,5 +1,6 @@
 #include <reimgui/renderer.h>
 #include <cstdarg>
+#include <cfloat>
 
 namespace reimgui::renderer {
 
@@ -193,6 +194,38 @@ bool drag_int(const char* label, int* value, float speed, const Style& style) {
 bool combo(const char* label, int* current_item, const char* const items[], int items_count, const Style& style) {
     before_child();
     return ImGui::Combo(label, current_item, items, items_count);
+}
+
+bool input_int(const char* label, int* value, const Style& style) {
+    before_child();
+    return ImGui::InputInt(label, value);
+}
+
+bool input_float(const char* label, float* value, const Style& style) {
+    before_child();
+    return ImGui::InputFloat(label, value);
+}
+
+bool color_edit(const char* label, float color[4], const Style& style) {
+    before_child();
+    return ImGui::ColorEdit4(label, color);
+}
+
+bool list_box(const char* label, int* current_item, const char* const items[], int items_count, const Style& style) {
+    before_child();
+    return ImGui::ListBox(label, current_item, items, items_count);
+}
+
+void progress_bar(float fraction, const char* overlay, const Style& style) {
+    before_child();
+    ImGui::ProgressBar(fraction, ImVec2(-FLT_MIN, 0), overlay);
+}
+
+void tooltip(const char* text) {
+    // Don't call before_child() -- tooltip attaches to previous item
+    if (ImGui::IsItemHovered()) {
+        ImGui::SetTooltip("%s", text);
+    }
 }
 
 } // namespace reimgui::renderer

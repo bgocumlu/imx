@@ -1,4 +1,4 @@
-export type IRType = 'int' | 'float' | 'bool' | 'string';
+export type IRType = 'int' | 'float' | 'bool' | 'string' | 'color';
 
 export interface IRExpr { code: string; type: IRType; }
 
@@ -29,7 +29,8 @@ export type IRNode =
     | IRBeginPopup | IREndPopup | IROpenPopup
     | IRConditional | IRListMap | IRCustomComponent
     | IRMenuItem
-    | IRSliderFloat | IRSliderInt | IRDragFloat | IRDragInt | IRCombo;
+    | IRSliderFloat | IRSliderInt | IRDragFloat | IRDragInt | IRCombo
+    | IRInputInt | IRInputFloat | IRColorEdit | IRListBox | IRProgressBar | IRTooltip;
 
 export interface IRBeginContainer {
     kind: 'begin_container';
@@ -60,3 +61,9 @@ export interface IRSliderInt { kind: 'slider_int'; label: string; stateVar: stri
 export interface IRDragFloat { kind: 'drag_float'; label: string; stateVar: string; valueExpr?: string; onChangeExpr?: string; speed: string; style?: string; }
 export interface IRDragInt { kind: 'drag_int'; label: string; stateVar: string; valueExpr?: string; onChangeExpr?: string; speed: string; style?: string; }
 export interface IRCombo { kind: 'combo'; label: string; stateVar: string; valueExpr?: string; onChangeExpr?: string; items: string; style?: string; }
+export interface IRInputInt { kind: 'input_int'; label: string; stateVar: string; valueExpr?: string; onChangeExpr?: string; style?: string; }
+export interface IRInputFloat { kind: 'input_float'; label: string; stateVar: string; valueExpr?: string; onChangeExpr?: string; style?: string; }
+export interface IRColorEdit { kind: 'color_edit'; label: string; stateVar: string; style?: string; }
+export interface IRListBox { kind: 'list_box'; label: string; stateVar: string; valueExpr?: string; onChangeExpr?: string; items: string; style?: string; }
+export interface IRProgressBar { kind: 'progress_bar'; value: string; overlay?: string; style?: string; }
+export interface IRTooltip { kind: 'tooltip'; text: string; }
