@@ -188,7 +188,8 @@ function App() {
         expect(output).toContain('DockBuilderDockWindow("Left"');
         expect(output).toContain('DockBuilderDockWindow("Right"');
         expect(output).toContain('DockBuilderFinish');
-        expect(output).toContain('if (!g_layout_applied || g_reset_layout)');
+        expect(output).toContain('DockBuilderGetNode(dock_id)');
+        expect(output).toContain('IsSplitNode()');
         expect(output).toContain('#include <imgui_internal.h>');
     });
 

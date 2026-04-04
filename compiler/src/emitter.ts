@@ -334,13 +334,22 @@ function emitNode(node: IRNode, lines: string[], depth: number): void {
         case 'tooltip':
             emitTooltip(node, lines, indent);
             break;
-        case 'dock_layout':
-            lines.push(`${indent}if (!g_layout_applied || g_reset_layout) {`);
-            lines.push(`${indent}${INDENT}${currentCompName}_setup_dock_layout(ImGui::GetID("MainDockSpace"));`);
-            lines.push(`${indent}${INDENT}g_layout_applied = true;`);
-            lines.push(`${indent}${INDENT}g_reset_layout = false;`);
+        case 'dock_layout': {
+            lines.push(`${indent}{`);
+            lines.push(`${indent}${INDENT}ImGuiID dock_id = ImGui::GetID("MainDockSpace");`);
+            lines.push(`${indent}${INDENT}if (g_reset_layout) {`);
+            lines.push(`${indent}${INDENT}${INDENT}${currentCompName}_setup_dock_layout(dock_id);`);
+            lines.push(`${indent}${INDENT}${INDENT}g_reset_layout = false;`);
+            lines.push(`${indent}${INDENT}} else if (!g_layout_applied) {`);
+            lines.push(`${indent}${INDENT}${INDENT}g_layout_applied = true;`);
+            lines.push(`${indent}${INDENT}${INDENT}ImGuiDockNode* node = ImGui::DockBuilderGetNode(dock_id);`);
+            lines.push(`${indent}${INDENT}${INDENT}if (node == nullptr || !node->IsSplitNode()) {`);
+            lines.push(`${indent}${INDENT}${INDENT}${INDENT}${currentCompName}_setup_dock_layout(dock_id);`);
+            lines.push(`${indent}${INDENT}${INDENT}}`);
+            lines.push(`${indent}${INDENT}}`);
             lines.push(`${indent}}`);
             break;
+        }
     }
 }
 
