@@ -44,6 +44,8 @@ React-Native-like authoring model for Dear ImGui. Write .tsx, compile to native 
 - Modal `BeginPopupModal` returns false AND calls EndPopup internally when X is clicked — onClose check must be OUTSIDE the if(begin_modal) block
 - Modal/popup overlays should NOT call `before_child()` — they don't participate in parent layout
 - Docking chrome (resize handles, tab bars) reads from `ImGui::GetStyle().Colors[]` directly, not the PushStyleColor stack — set accent colors on both
+- Bound prop detection (`detectBoundProps`) only runs on custom components, NOT root components with `namedPropsType` — root receives `T&` directly, no pointer wrapping needed
+- DragDrop type matching is per-component — if source and target are in different .tsx files, payload defaults to `float`
 
 ## File structure
 - `include/imx/` — public C++ headers (runtime.h, renderer.h)
