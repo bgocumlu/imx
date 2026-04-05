@@ -682,4 +682,19 @@ function App(props: { speed: number }) {
         expect(root).toContain('render_root(Runtime& runtime, AppProps& state)');
         expect(root).toContain('App_render(ctx, state)');
     });
+
+    it('emits auto& reference in .map() loop for direct binding', () => {
+        const output = compile(`
+function App(props: { items: number[] }) {
+  return (
+    <Window title="Test">
+      {props.items.map((item, i) => (
+        <Text key={i}>{item}</Text>
+      ))}
+    </Window>
+  );
+}
+        `);
+        expect(output).toContain('auto& item = props.items[i]');
+    });
 });
