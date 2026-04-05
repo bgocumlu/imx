@@ -354,12 +354,15 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 include(FetchContent)
+set(FETCHCONTENT_QUIET OFF)
 
 FetchContent_Declare(
     imx
     GIT_REPOSITORY ${repoUrl}
     GIT_TAG main
+    GIT_PROGRESS TRUE
 )
+message(STATUS "Fetching IMX (includes ImGui + GLFW)...")
 FetchContent_MakeAvailable(imx)
 
 include(ImxCompile)
