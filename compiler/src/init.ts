@@ -1,13 +1,7 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 
-const MAIN_CPP = `#include <imx/runtime.h>
-#include <imx/renderer.h>
-
-#include <imgui.h>
-#include <imgui_impl_glfw.h>
-#include <imgui_impl_opengl3.h>
-#include <GLFW/glfw3.h>
+const APPSTATE_H = `#pragma once
 #include <functional>
 
 struct AppState {
@@ -15,6 +9,17 @@ struct AppState {
     float speed = 5.0f;
     std::function<void()> onIncrement;
 };
+`;
+
+const MAIN_CPP = `#include <imx/runtime.h>
+#include <imx/renderer.h>
+
+#include <imgui.h>
+#include <imgui_impl_glfw.h>
+#include <imgui_impl_opengl3.h>
+#include <GLFW/glfw3.h>
+
+#include "AppState.h"
 
 struct App {
     GLFWwindow*      window  = nullptr;
@@ -403,7 +408,7 @@ add_executable(${projectName}
 )
 set_target_properties(${projectName} PROPERTIES WIN32_EXECUTABLE $<CONFIG:Release>)
 target_link_libraries(${projectName} PRIVATE imx::renderer)
-target_include_directories(${projectName} PRIVATE \${CMAKE_BINARY_DIR}/generated)
+target_include_directories(${projectName} PRIVATE \${CMAKE_BINARY_DIR}/generated \${CMAKE_CURRENT_SOURCE_DIR}/src)
 
 # Copy public/ assets to output directory
 add_custom_command(TARGET ${projectName} POST_BUILD
@@ -490,6 +495,7 @@ export function initProject(projectDir: string, projectName?: string): void {
 
     // Write files
     fs.writeFileSync(path.join(srcDir, 'main.cpp'), MAIN_CPP.replace('APP_NAME', name));
+    fs.writeFileSync(path.join(srcDir, 'AppState.h'), APPSTATE_H);
     fs.writeFileSync(path.join(srcDir, 'App.tsx'), APP_TSX);
     fs.writeFileSync(path.join(srcDir, 'imx.d.ts'), IMX_DTS);
     fs.writeFileSync(path.join(projectDir, 'tsconfig.json'), TSCONFIG);
@@ -499,8 +505,9 @@ export function initProject(projectDir: string, projectName?: string): void {
     console.log('');
     console.log('  Created:');
     console.log(`    src/main.cpp          — app shell (GLFW + OpenGL + ImGui)`);
+    console.log(`    src/AppState.h        — C++ state struct (bound to TSX props)`);
     console.log(`    src/App.tsx           — your root component`);
-    console.log(`    src/imx.d.ts      — type definitions for IDE support`);
+    console.log(`    src/imx.d.ts          — type definitions for IDE support`);
     console.log(`    tsconfig.json         — TypeScript config`);
     console.log(`    CMakeLists.txt        — build config with FetchContent`);
     console.log(`    public/               — static assets (copied to exe directory)`);
