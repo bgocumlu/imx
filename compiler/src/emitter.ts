@@ -1133,9 +1133,10 @@ function emitListMap(node: IRListMap, lines: string[], indent: string, depth: nu
     if (node.loc) {
         lines.push(`${indent}// ${node.loc.file}:${node.loc.line} .map()`);
     }
-    lines.push(`${indent}for (size_t i = 0; i < ${node.array}.size(); i++) {`);
-    lines.push(`${indent}${INDENT}auto& ${node.itemVar} = ${node.array}[i];`);
-    lines.push(`${indent}${INDENT}ctx.begin_instance("${node.componentName}", (int)i, ${node.stateCount}, ${node.bufferCount});`);
+    const idx = node.indexVar;
+    lines.push(`${indent}for (size_t ${idx} = 0; ${idx} < ${node.array}.size(); ${idx}++) {`);
+    lines.push(`${indent}${INDENT}auto& ${node.itemVar} = ${node.array}[${idx}];`);
+    lines.push(`${indent}${INDENT}ctx.begin_instance("${node.componentName}", (int)${idx}, ${node.stateCount}, ${node.bufferCount});`);
     emitNodes(node.body, lines, depth + 2);
     lines.push(`${indent}${INDENT}ctx.end_instance();`);
     lines.push(`${indent}}`);

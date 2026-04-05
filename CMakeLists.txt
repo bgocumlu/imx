@@ -172,4 +172,23 @@ if(IMX_BUILD_EXAMPLES)
         ${CMAKE_CURRENT_SOURCE_DIR}/examples/settings/src
     )
 
+    # --- kanban_app: nested .map() + DragDrop ---
+    imx_compile_tsx(KANBAN_GENERATED
+        SOURCES
+            examples/kanban/src/App.tsx
+            examples/kanban/src/KanbanCard.tsx
+        OUTPUT_DIR ${CMAKE_BINARY_DIR}/generated_kanban
+    )
+
+    add_executable(kanban_app
+        examples/kanban/src/main.cpp
+        ${KANBAN_GENERATED}
+    )
+    set_target_properties(kanban_app PROPERTIES WIN32_EXECUTABLE $<CONFIG:Release>)
+    target_link_libraries(kanban_app PRIVATE imx_renderer)
+    target_include_directories(kanban_app PRIVATE
+        ${CMAKE_BINARY_DIR}/generated_kanban
+        ${CMAKE_CURRENT_SOURCE_DIR}/examples/kanban/src
+    )
+
 endif()

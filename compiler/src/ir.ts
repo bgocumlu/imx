@@ -71,7 +71,7 @@ export interface IRBeginPopup { kind: 'begin_popup'; id: string; style?: string;
 export interface IREndPopup { kind: 'end_popup'; }
 export interface IROpenPopup { kind: 'open_popup'; id: string; loc?: SourceLoc; }
 export interface IRConditional { kind: 'conditional'; condition: string; body: IRNode[]; elseBody?: IRNode[]; loc?: SourceLoc; }
-export interface IRListMap { kind: 'list_map'; array: string; itemVar: string; key: string; componentName: string; stateCount: number; bufferCount: number; body: IRNode[]; loc?: SourceLoc; }
+export interface IRListMap { kind: 'list_map'; array: string; itemVar: string; indexVar: string; key: string; componentName: string; stateCount: number; bufferCount: number; body: IRNode[]; loc?: SourceLoc; }
 export interface IRCustomComponent { kind: 'custom_component'; name: string; props: Record<string, string>; key?: string; stateCount: number; bufferCount: number; loc?: SourceLoc; }
 export interface IRMenuItem { kind: 'menu_item'; label: string; shortcut?: string; action: string[]; loc?: SourceLoc; }
 export interface IRSliderFloat { kind: 'slider_float'; label: string; stateVar: string; valueExpr?: string; onChangeExpr?: string; directBind?: boolean; min: string; max: string; style?: string; loc?: SourceLoc; }

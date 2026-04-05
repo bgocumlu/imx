@@ -99,6 +99,7 @@ export interface IRListMap {
     kind: 'list_map';
     array: string;
     itemVar: string;
+    indexVar: string;
     key: string;
     componentName: string;
     stateCount: number;

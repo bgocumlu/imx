@@ -902,11 +902,15 @@ function lowerListMap(node: ts.CallExpression, body: IRNode[], ctx: LoweringCont
     const callback = node.arguments[0];
 
     let itemVar = 'item';
+    let indexVar = 'i';
     let mapBody: IRNode[] = [];
 
     if (callback && (ts.isArrowFunction(callback) || ts.isFunctionExpression(callback))) {
         if (callback.parameters.length > 0 && ts.isIdentifier(callback.parameters[0].name)) {
             itemVar = callback.parameters[0].name.text;
+        }
+        if (callback.parameters.length > 1 && ts.isIdentifier(callback.parameters[1].name)) {
+            indexVar = callback.parameters[1].name.text;
         }
         if (ts.isBlock(callback.body)) {
             const ret = callback.body.statements.find(ts.isReturnStatement);
@@ -922,7 +926,8 @@ function lowerListMap(node: ts.CallExpression, body: IRNode[], ctx: LoweringCont
         kind: 'list_map',
         array,
         itemVar,
-        key: 'i',
+        indexVar,
+        key: indexVar,
         componentName: 'ListItem',
         stateCount: 0,
         bufferCount: 0,
