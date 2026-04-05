@@ -352,6 +352,19 @@ void end_modal() {
     ImGui::EndPopup();
 }
 
+// Helpers for deriving color variants
+static ImVec4 lighten(const ImVec4& c, float amount) {
+    return ImVec4(c.x + (1.0F - c.x) * amount, c.y + (1.0F - c.y) * amount,
+                  c.z + (1.0F - c.z) * amount, c.w);
+}
+static ImVec4 darken(const ImVec4& c, float amount) {
+    return ImVec4(c.x * (1.0F - amount), c.y * (1.0F - amount),
+                  c.z * (1.0F - amount), c.w);
+}
+static ImVec4 with_alpha(const ImVec4& c, float a) {
+    return ImVec4(c.x, c.y, c.z, a);
+}
+
 void begin_theme(const char* preset, const ThemeConfig& config) {
     before_child();
 
@@ -369,24 +382,26 @@ void begin_theme(const char* preset, const ThemeConfig& config) {
 
     int color_count = 0;
     int var_count = 0;
+    ImGuiStyle& style = ImGui::GetStyle();
 
-    // Accent color overrides
+    // Resolve background_color (new name) or window_bg (legacy alias)
+    auto bg_opt = config.background_color ? config.background_color : config.window_bg;
+
+    // --- accentColor: interactive elements ---
     if (config.accent_color) {
         ImVec4 c = *config.accent_color;
-        ImVec4 hovered(c.x + (1.0F - c.x) * 0.2F, c.y + (1.0F - c.y) * 0.2F,
-                       c.z + (1.0F - c.z) * 0.2F, c.w);
-        ImVec4 active(c.x * 0.8F, c.y * 0.8F, c.z * 0.8F, c.w);
-        ImVec4 frame_bg(c.x * 0.3F, c.y * 0.3F, c.z * 0.3F, 0.5F);
+        ImVec4 hovered = lighten(c, 0.2F);
+        ImVec4 active = darken(c, 0.2F);
+        ImVec4 dimmed = darken(c, 0.4F);
+        ImVec4 frame_bg = with_alpha(darken(c, 0.7F), 0.5F);
 
-        // Set directly on style so docking chrome picks them up
-        ImGuiStyle& style = ImGui::GetStyle();
-        // Direct style assignment for docking chrome (not affected by PushStyleColor)
+        // Direct style assignment for docking chrome
         style.Colors[ImGuiCol_TitleBgActive] = active;
         style.Colors[ImGuiCol_Tab] = active;
         style.Colors[ImGuiCol_TabSelected] = c;
         style.Colors[ImGuiCol_TabSelectedOverline] = c;
         style.Colors[ImGuiCol_TabHovered] = hovered;
-        style.Colors[ImGuiCol_TabDimmed] = ImVec4(c.x * 0.4F, c.y * 0.4F, c.z * 0.4F, 0.8F);
+        style.Colors[ImGuiCol_TabDimmed] = with_alpha(dimmed, 0.8F);
         style.Colors[ImGuiCol_TabDimmedSelected] = active;
         style.Colors[ImGuiCol_TabDimmedSelectedOverline] = c;
         style.Colors[ImGuiCol_ScrollbarGrab] = c;
@@ -398,8 +413,8 @@ void begin_theme(const char* preset, const ThemeConfig& config) {
         style.Colors[ImGuiCol_SeparatorHovered] = hovered;
         style.Colors[ImGuiCol_SeparatorActive] = active;
         style.Colors[ImGuiCol_DockingPreview] = c;
-        style.Colors[ImGuiCol_FrameBgHovered] = ImVec4(c.x * 0.4F, c.y * 0.4F, c.z * 0.4F, 0.7F);
-        style.Colors[ImGuiCol_FrameBgActive] = ImVec4(c.x * 0.5F, c.y * 0.5F, c.z * 0.5F, 0.8F);
+        style.Colors[ImGuiCol_FrameBgHovered] = with_alpha(darken(c, 0.6F), 0.7F);
+        style.Colors[ImGuiCol_FrameBgActive] = with_alpha(darken(c, 0.5F), 0.8F);
 
         // Push on style stack for normal widgets
         ImGui::PushStyleColor(ImGuiCol_Button, c); color_count++;
@@ -425,13 +440,68 @@ void begin_theme(const char* preset, const ThemeConfig& config) {
         ImGui::PushStyleColor(ImGuiCol_SeparatorActive, active); color_count++;
         ImGui::PushStyleColor(ImGuiCol_TextSelectedBg, frame_bg); color_count++;
         ImGui::PushStyleColor(ImGuiCol_DragDropTarget, c); color_count++;
-        ImGui::PushStyleColor(ImGuiCol_NavHighlight, c); color_count++;
+        ImGui::PushStyleColor(ImGuiCol_DragDropTargetBg, with_alpha(c, 0.1F)); color_count++;
+        ImGui::PushStyleColor(ImGuiCol_NavCursor, c); color_count++;
+        ImGui::PushStyleColor(ImGuiCol_InputTextCursor, c); color_count++;
+        ImGui::PushStyleColor(ImGuiCol_PlotLines, c); color_count++;
+        ImGui::PushStyleColor(ImGuiCol_PlotLinesHovered, hovered); color_count++;
+        ImGui::PushStyleColor(ImGuiCol_PlotHistogram, c); color_count++;
+        ImGui::PushStyleColor(ImGuiCol_PlotHistogramHovered, hovered); color_count++;
+        ImGui::PushStyleColor(ImGuiCol_TextLink, c); color_count++;
+        ImGui::PushStyleColor(ImGuiCol_UnsavedMarker, c); color_count++;
     }
-    if (config.window_bg) {
-        ImGui::PushStyleColor(ImGuiCol_WindowBg, *config.window_bg); color_count++;
+
+    // --- backgroundColor: all background surfaces ---
+    if (bg_opt) {
+        ImVec4 bg = *bg_opt;
+        ImVec4 bg_child = with_alpha(bg, bg.w * 0.9F);
+        ImVec4 bg_popup = lighten(bg, 0.05F);
+        ImVec4 bg_menubar = lighten(bg, 0.03F);
+        ImVec4 scrollbar_bg = darken(bg, 0.1F);
+
+        ImGui::PushStyleColor(ImGuiCol_WindowBg, bg); color_count++;
+        ImGui::PushStyleColor(ImGuiCol_ChildBg, bg_child); color_count++;
+        ImGui::PushStyleColor(ImGuiCol_PopupBg, bg_popup); color_count++;
+        ImGui::PushStyleColor(ImGuiCol_MenuBarBg, bg_menubar); color_count++;
+        ImGui::PushStyleColor(ImGuiCol_ScrollbarBg, scrollbar_bg); color_count++;
+        ImGui::PushStyleColor(ImGuiCol_DockingEmptyBg, darken(bg, 0.2F)); color_count++;
+        ImGui::PushStyleColor(ImGuiCol_NavWindowingDimBg, with_alpha(bg, 0.2F)); color_count++;
+        ImGui::PushStyleColor(ImGuiCol_ModalWindowDimBg, with_alpha(bg, 0.5F)); color_count++;
     }
+
+    // --- textColor: all text variants ---
     if (config.text_color) {
-        ImGui::PushStyleColor(ImGuiCol_Text, *config.text_color); color_count++;
+        ImVec4 t = *config.text_color;
+        ImVec4 t_disabled = with_alpha(t, t.w * 0.5F);
+
+        ImGui::PushStyleColor(ImGuiCol_Text, t); color_count++;
+        ImGui::PushStyleColor(ImGuiCol_TextDisabled, t_disabled); color_count++;
+    }
+
+    // --- borderColor: borders, separators, table lines ---
+    if (config.border_color) {
+        ImVec4 b = *config.border_color;
+        ImVec4 b_shadow = with_alpha(b, 0.0F);
+
+        ImGui::PushStyleColor(ImGuiCol_Border, b); color_count++;
+        ImGui::PushStyleColor(ImGuiCol_BorderShadow, b_shadow); color_count++;
+        ImGui::PushStyleColor(ImGuiCol_Separator, b); color_count++;
+        ImGui::PushStyleColor(ImGuiCol_TableBorderStrong, b); color_count++;
+        ImGui::PushStyleColor(ImGuiCol_TableBorderLight, with_alpha(b, b.w * 0.6F)); color_count++;
+        ImGui::PushStyleColor(ImGuiCol_TreeLines, with_alpha(b, b.w * 0.5F)); color_count++;
+    }
+
+    // --- surfaceColor: title bars, table rows, nav highlights ---
+    if (config.surface_color) {
+        ImVec4 s = *config.surface_color;
+        ImVec4 s_alt = lighten(s, 0.05F);
+
+        ImGui::PushStyleColor(ImGuiCol_TitleBg, darken(s, 0.1F)); color_count++;
+        ImGui::PushStyleColor(ImGuiCol_TitleBgCollapsed, with_alpha(darken(s, 0.2F), 0.5F)); color_count++;
+        ImGui::PushStyleColor(ImGuiCol_TableHeaderBg, lighten(s, 0.1F)); color_count++;
+        ImGui::PushStyleColor(ImGuiCol_TableRowBg, s); color_count++;
+        ImGui::PushStyleColor(ImGuiCol_TableRowBgAlt, s_alt); color_count++;
+        ImGui::PushStyleColor(ImGuiCol_NavWindowingHighlight, with_alpha(lighten(s, 0.3F), 0.7F)); color_count++;
     }
 
     // Style var overrides

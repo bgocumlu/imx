@@ -34,8 +34,11 @@ interface DockPanelProps { children?: any; }
 interface ThemeProps {
   preset: string;
   accentColor?: [number, number, number, number];
-  windowBg?: [number, number, number, number];
+  backgroundColor?: [number, number, number, number];
   textColor?: [number, number, number, number];
+  borderColor?: [number, number, number, number];
+  surfaceColor?: [number, number, number, number];
+  windowBg?: [number, number, number, number];
   rounding?: number;
   borderSize?: number;
   spacing?: number;

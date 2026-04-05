@@ -665,11 +665,20 @@ function emitBeginContainer(node: IRBeginContainer, lines: string[], indent: str
             if (node.props['accentColor']) {
                 lines.push(`${indent}${varName}.accent_color = ${emitImVec4(node.props['accentColor'])};`);
             }
+            if (node.props['backgroundColor']) {
+                lines.push(`${indent}${varName}.background_color = ${emitImVec4(node.props['backgroundColor'])};`);
+            }
             if (node.props['windowBg']) {
                 lines.push(`${indent}${varName}.window_bg = ${emitImVec4(node.props['windowBg'])};`);
             }
             if (node.props['textColor']) {
                 lines.push(`${indent}${varName}.text_color = ${emitImVec4(node.props['textColor'])};`);
+            }
+            if (node.props['borderColor']) {
+                lines.push(`${indent}${varName}.border_color = ${emitImVec4(node.props['borderColor'])};`);
+            }
+            if (node.props['surfaceColor']) {
+                lines.push(`${indent}${varName}.surface_color = ${emitImVec4(node.props['surfaceColor'])};`);
             }
             if (node.props['rounding']) {
                 lines.push(`${indent}${varName}.rounding = ${emitFloat(node.props['rounding'])};`);
