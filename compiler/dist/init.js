@@ -99,9 +99,23 @@ int main() {
     glfwSetWindowSizeCallback(window, window_size_callback);
     app.state.onIncrement = [&]() { app.state.count++; };
 
+    constexpr double target_frame_time = 1.0 / 60.0;
+    double last_frame_time = glfwGetTime();
+
     while (glfwWindowShouldClose(window) == 0) {
-        glfwPollEvents();
-        render_frame(app);
+        double now = glfwGetTime();
+        double wait = target_frame_time - (now - last_frame_time);
+        if (wait > 0.001) {
+            glfwWaitEventsTimeout(wait);
+        } else {
+            glfwPollEvents();
+        }
+
+        now = glfwGetTime();
+        if (now - last_frame_time >= target_frame_time) {
+            render_frame(app);
+            last_frame_time = now;
+        }
     }
 
     ImGui_ImplOpenGL3_Shutdown();
