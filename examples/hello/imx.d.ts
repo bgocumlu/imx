@@ -177,6 +177,10 @@ declare function DrawLine(props: DrawLineProps): any;
 declare function DrawRect(props: DrawRectProps): any;
 declare function DrawCircle(props: DrawCircleProps): any;
 declare function DrawText(props: DrawTextProps): any;
+interface DisabledProps { disabled?: boolean; children?: any; }
+interface ChildProps { id: string; width?: number; height?: number; border?: boolean; style?: Style; children?: any; }
+declare function Disabled(props: DisabledProps): any;
+declare function Child(props: ChildProps): any;
 
 declare function resetLayout(): void;
 
