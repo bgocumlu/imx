@@ -452,10 +452,10 @@ C++ side: define struct in `AppState.h`, pass to `imx::render_root(runtime, stat
 Callbacks: `std::function<void()>` or `std::function<void(int)>` fields. Vector iteration: `.map()` emits `auto&` reference.
 Thread safety: developer's responsibility (same as raw ImGui).
 
-### Struct Binding Limitations
+### Struct Binding Notes
 
-- **TextInput**: buffer does not sync to/from C++ struct fields. Use `useState` for text state, or a native widget for input+action flows.
-- **Custom component props are copies**: `<Checkbox value={props.done} />` inside a custom component modifies a local copy. Use an `onChange` callback to propagate, or use the widget directly in the `.map()` loop for direct pointer binding.
-- **Nested `.map()`**: use different index variable names for each level (e.g., `ci` for outer, `i` for inner).
+- **TextInput**: supports struct binding via `value={props.name}` — buffer syncs to/from the struct field each frame.
+- **Custom component props**: bound props (used with `value={props.x}` without onChange) are automatically passed as `T*` pointers through custom components. Direct binding works at any nesting level.
+- **Nested `.map()`**: auto-generated unique loop indices — same variable name in nested maps is safe.
 - **ColorEdit/ColorPicker**: works with struct binding via `std::vector<float>` fields (emits `.data()`).
-- **DragDrop payloads**: always `float` — TSX `number` has no int/float distinction.
+- **DragDrop payloads**: type matches the `onDrop` callback's parameter type annotation. Defaults to `float` if no target is found in the same component.

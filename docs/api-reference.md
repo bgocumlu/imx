@@ -1436,11 +1436,8 @@ export default function App(props: AppState) {
 
 ### Limitations
 
-- **TextInput**: buffer does not sync to/from C++ struct fields. Use `useState` for text state, or register a native widget for input+action flows.
-- **Custom component props are copies**: `<Checkbox value={props.done} />` inside a custom component modifies a local copy, not the struct field. Use an `onChange` callback to propagate changes, or place the widget directly in the `.map()` loop for true direct pointer binding.
-- **Nested `.map()`**: use different index variable names for each level (e.g., `ci` for outer, `i` for inner).
 - **ColorEdit/ColorPicker**: use `std::vector<float>` fields in C++. Direct pointer binding emits `.data()`.
-- **DragDrop payloads**: always `float` internally — TSX `number` has no int/float distinction.
+- **DragDrop cross-component types**: payload type matching works within a single component file. If DragDropSource and DragDropTarget are in different component files, the type defaults to `float`.
 
 ### Thread Safety
 

@@ -19,10 +19,12 @@ React-Native-like authoring model for Dear ImGui. Write .tsx, compile to native 
 - Instance identity: hybrid positional + key-based
 - Layout: BeginGroup + layout stack (not BeginChild) — before_child() handles SameLine for Row, gap for Column, TableNextColumn for TableRow
 - Callbacks: stored std::function for future-proofing, but MVP inlines into if-blocks for immediate widgets
-- TextInput: runtime-owned persistent buffers, sync each frame
+- TextInput: runtime-owned persistent buffers, sync each frame. Supports struct binding (directBind syncs buffer to/from struct field)
 - ImGui ID scoping: begin_instance/end_instance calls PushID/PopID (guarded by GetCurrentContext for tests)
 - Per-frame counters (g_table_id, g_tabbar_id) reset in begin_dockspace()
-- C++ struct binding: `value={props.field}` without onChange emits `&props.field` (direct pointer). Root receives mutable ref. Struct defined in user header (`AppState.h`), included by generated code.
+- C++ struct binding: `value={props.field}` without onChange emits `&props.field` (direct pointer). Root receives mutable ref. Custom component bound props use `T*` in Props struct with `&expr` at call sites. Struct defined in user header (`AppState.h`), included by generated code.
+- Adaptive frame loop: `request_frame()`, `needs_frame()`, `frame_rendered()` in Runtime. Idle at 10fps, active at 60fps on input/state change.
+- Map loops use auto-generated `_map_idx_N` counters (user variable name is a scoped alias)
 
 ## MSVC gotchas
 - No designated initializers (`{.gap = 8}`) — use variable assignment
@@ -86,9 +88,11 @@ React-Native-like authoring model for Dear ImGui. Write .tsx, compile to native 
 - Don't call `before_child()` in modal/popup begin functions — overlays don't participate in layout
 - Don't work around compiler bugs by modifying example code — fix the pipeline
 
-## Current status (Phases 1-11 complete)
+## Current status (Phases 1-12 complete)
 - 54 host components covering all ImGui widgets
 - C++ struct binding (Phase 11): direct pointer binding for props without onChange, template render_root overload
+- Struct binding fixes (Phase 12): TextInput struct binding, custom component pointer propagation, DragDrop typed payloads, auto-generated map indices
+- Adaptive frame loop: runtime-driven idle/active rendering (request_frame API)
 - 5-prop theme system: accentColor, backgroundColor, textColor, borderColor, surfaceColor → all 55 ImGui color slots
 - Image component: runtime file loading + compile-time embed (stb_image + OpenGL texture cache)
 - Custom widgets: `imx::register_widget()` + `WidgetArgs` for C++ ImGui widgets from TSX
@@ -98,8 +102,8 @@ React-Native-like authoring model for Dear ImGui. Write .tsx, compile to native 
 - Style overrides: StyleColor (20 color props), StyleVar (11 style vars)
 - Multi-component support with imports, props, callbacks
 - TypeScript type definitions for IDE support
-- CLI: `imxc init` (full scaffold), `imxc add` (existing project), `imxc watch` (file watcher)
+- CLI: `imxc init` (full scaffold + .gitignore), `imxc add` (existing project), `imxc watch` (file watcher)
 - API documentation + LLM prompt reference complete
-- Packaging: `imxc@0.5.0` on npm, FetchContent for C++ (compiler/dist/ committed)
+- Packaging: `imxc@0.5.4` on npm, FetchContent for C++ (compiler/dist/ committed)
 - Release builds hide console on Windows (WIN32_EXECUTABLE), Debug shows it
-- Next: Phase 12 candidates (GPA example, child component sub-struct binding, useEffect)
+- Next: Phase 13 candidates (GPA example, useEffect, more examples)
