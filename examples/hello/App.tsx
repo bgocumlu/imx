@@ -21,7 +21,7 @@ export default function App() {
   const [showConfirm, setShowConfirm] = useState(false);
 
   return (
-    <Theme preset="dark" accentColor={[0.9, 0.2, 0.2, 1.0]} rounding={6}>
+    <Theme preset="dark" accentColor={[0.9, 0.2, 0.2, 1.0]} backgroundColor={[0.12, 0.12, 0.15, 1.0]} textColor={[0.95, 0.95, 0.95, 1.0]} borderColor={[0.3, 0.3, 0.35, 1.0]} surfaceColor={[0.18, 0.18, 0.22, 1.0]} rounding={6}>
     <DockSpace>
       <DockLayout>
         <DockSplit direction="horizontal" size={0.25}>

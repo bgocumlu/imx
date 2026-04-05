@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { parseArgs } from 'node:util';
 import * as path from 'node:path';
-import { initProject } from './init.js';
+import { initProject, addToProject } from './init.js';
 import { compile } from './compile.js';
 import { startWatch } from './watch.js';
 // Handle `imxc init [dir]` subcommand
@@ -9,6 +9,13 @@ if (process.argv[2] === 'init') {
     const dir = process.argv[3] ?? '.';
     const absDir = path.resolve(dir);
     initProject(absDir, path.basename(absDir));
+    process.exit(0);
+}
+// Handle `imxc add [dir]` subcommand
+if (process.argv[2] === 'add') {
+    const dir = process.argv[3] ?? '.';
+    const absDir = path.resolve(dir);
+    addToProject(absDir);
     process.exit(0);
 }
 // Handle `imxc watch <dir> -o <output-dir>` subcommand
@@ -35,6 +42,7 @@ else {
     if (positionals.length === 0) {
         console.error('Usage: imxc <input.tsx ...> -o <output-dir>');
         console.error('       imxc init [project-dir]');
+        console.error('       imxc add [project-dir]');
         console.error('       imxc watch <dir> -o <output-dir>');
         process.exit(1);
     }
