@@ -42,6 +42,21 @@ function(imx_compile_tsx output_var)
         set(ARG_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/imx_generated")
     endif()
 
+    # Ensure compiler dependencies are installed (needed for FetchContent consumers)
+    get_filename_component(_compiler_dir "${ARG_COMPILER}" DIRECTORY)
+    get_filename_component(_compiler_root "${_compiler_dir}" DIRECTORY)
+    if(NOT EXISTS "${_compiler_root}/node_modules")
+        message(STATUS "IMX: installing compiler dependencies...")
+        execute_process(
+            COMMAND npm install --production --ignore-scripts
+            WORKING_DIRECTORY "${_compiler_root}"
+            RESULT_VARIABLE _npm_result
+        )
+        if(NOT _npm_result EQUAL 0)
+            message(FATAL_ERROR "IMX: npm install failed in ${_compiler_root}")
+        endif()
+    endif()
+
     file(MAKE_DIRECTORY "${ARG_OUTPUT_DIR}")
 
     # Build absolute paths for sources and predict output files.
