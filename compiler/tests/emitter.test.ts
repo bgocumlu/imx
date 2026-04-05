@@ -593,4 +593,40 @@ function App() {
         expect(output).toContain('draw_circle(');
         expect(output).toContain('draw_text(');
     });
+
+    it('emits Disabled with BeginDisabled/EndDisabled', () => {
+        const output = compile(`
+function App() {
+  return (
+    <Window title="Test">
+      <Disabled>
+        <Button title="Nope" onPress={() => {}} />
+      </Disabled>
+    </Window>
+  );
+}
+        `);
+        expect(output).toContain('ImGui::BeginDisabled(true)');
+        expect(output).toContain('imx::renderer::button("Nope")');
+        expect(output).toContain('ImGui::EndDisabled()');
+    });
+
+    it('emits Child with BeginChild/EndChild', () => {
+        const output = compile(`
+function App() {
+  return (
+    <Window title="Test">
+      <Child id="scroll" width={200} height={300} border>
+        <Text>Scrollable</Text>
+      </Child>
+    </Window>
+  );
+}
+        `);
+        expect(output).toContain('ImGui::BeginChild("scroll"');
+        expect(output).toContain('200.0F');
+        expect(output).toContain('300.0F');
+        expect(output).toContain('true');
+        expect(output).toContain('ImGui::EndChild()');
+    });
 });

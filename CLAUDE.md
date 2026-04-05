@@ -86,7 +86,7 @@ React-Native-like authoring model for Dear ImGui. Write .tsx, compile to native 
 - Don't work around compiler bugs by modifying example code — fix the pipeline
 
 ## Current status (Phases 1-8 + Phase 10 Batches 1-5 complete)
-- 52 host components (41 + Group, ID, StyleColor, StyleVar, DragDropSource, DragDropTarget, Canvas, DrawLine, DrawRect, DrawCircle, DrawText)
+- 54 host components (41 + Group, ID, StyleColor, StyleVar, DragDropSource, DragDropTarget, Canvas, DrawLine, DrawRect, DrawCircle, DrawText, Disabled, Child)
 - Image component: runtime file loading + compile-time embed (stb_image + OpenGL texture cache)
 - Custom widgets: `imx::register_widget()` + `WidgetArgs` for C++ ImGui widgets from TSX
 - Custom themes: `imx::register_theme()` for user theme presets

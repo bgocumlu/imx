@@ -301,6 +301,10 @@ interface StyleVarProps {
 declare function StyleVar(props: StyleVarProps): any;
 declare function DragDropSource(props: DragDropSourceProps): any;
 declare function DragDropTarget(props: DragDropTargetProps): any;
+interface DisabledProps { disabled?: boolean; children?: any; }
+interface ChildProps { id: string; width?: number; height?: number; border?: boolean; style?: Style; children?: any; }
+declare function Disabled(props: DisabledProps): any;
+declare function Child(props: ChildProps): any;
 
 declare function resetLayout(): void;
 

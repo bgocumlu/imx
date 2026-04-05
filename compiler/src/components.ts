@@ -445,6 +445,22 @@ export const HOST_COMPONENTS: Record<string, HostComponentDef> = {
         },
         hasChildren: false, isContainer: false,
     },
+    Disabled: {
+        props: {
+            disabled: { type: 'boolean', required: false },
+        },
+        hasChildren: true, isContainer: true,
+    },
+    Child: {
+        props: {
+            id: { type: 'string', required: true },
+            width: { type: 'number', required: false },
+            height: { type: 'number', required: false },
+            border: { type: 'boolean', required: false },
+            style: { type: 'style', required: false },
+        },
+        hasChildren: true, isContainer: true,
+    },
 };
 
 export function isHostComponent(name: string): boolean {

@@ -778,6 +778,19 @@ function emitBeginContainer(node: IRBeginContainer, lines: string[], indent: str
             lines.push(`${indent}ImGui::BeginGroup();`);
             break;
         }
+        case 'Disabled': {
+            const disabled = node.props['disabled'] ?? 'true';
+            lines.push(`${indent}ImGui::BeginDisabled(${disabled});`);
+            break;
+        }
+        case 'Child': {
+            const id = asCharPtr(node.props['id'] ?? '"##child"');
+            const width = emitFloat(node.props['width'] ?? '0');
+            const height = emitFloat(node.props['height'] ?? '0');
+            const border = node.props['border'] === 'true' ? 'true' : 'false';
+            lines.push(`${indent}ImGui::BeginChild(${id}, ImVec2(${width}, ${height}), ${border});`);
+            break;
+        }
         case 'Canvas': {
             const width = emitFloat(node.props['width'] ?? '0');
             const height = emitFloat(node.props['height'] ?? '0');
@@ -893,6 +906,12 @@ function emitEndContainer(node: IREndContainer, lines: string[], indent: string)
             lines.push(`${indent}}`);
             break;
         }
+        case 'Disabled':
+            lines.push(`${indent}ImGui::EndDisabled();`);
+            break;
+        case 'Child':
+            lines.push(`${indent}ImGui::EndChild();`);
+            break;
         case 'Canvas':
             lines.push(`${indent}imx::renderer::end_canvas();`);
             break;

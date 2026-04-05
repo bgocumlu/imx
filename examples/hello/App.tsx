@@ -145,7 +145,7 @@ export default function App() {
         </Column>
       </Window>
       <Window title="Batch 3 Demo">
-        <StyleColor button={[0.2, 0.8, 0.2, 1.0]} buttonHovered={[0.3, 0.9, 0.3, 1.0]}>
+        <StyleColor button={[0.2, 0.8, 0.2, 1.0]} buttonHovered={[0.3, 0.9, 0.3, 1.0]} buttonActive={[0.1, 0.6, 0.1, 1.0]}>
           <StyleVar frameRounding={6} framePadding={[10, 4]}>
             <Group>
               <ID scope="demo">
