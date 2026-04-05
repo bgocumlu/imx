@@ -82,6 +82,7 @@ static void render_frame(App& app) {
     ImGui::NewFrame();
 
     simulate_data(app);
+    app.runtime.request_frame();
     imx::render_root(app.runtime, app.state);
 
     ImGui::Render();
@@ -154,23 +155,14 @@ int main() {
         app.state.logs.clear();
     };
 
-    constexpr double target_frame_time = 1.0 / 60.0;
-    double last_frame_time = glfwGetTime();
-
     while (glfwWindowShouldClose(window) == 0) {
-        double now = glfwGetTime();
-        double wait = target_frame_time - (now - last_frame_time);
-        if (wait > 0.001) {
-            glfwWaitEventsTimeout(wait);
-        } else {
+        if (app.runtime.needs_frame()) {
             glfwPollEvents();
+        } else {
+            glfwWaitEventsTimeout(0.1);
         }
-
-        now = glfwGetTime();
-        if (now - last_frame_time >= target_frame_time) {
-            render_frame(app);
-            last_frame_time = now;
-        }
+        render_frame(app);
+        app.runtime.frame_rendered(ImGui::IsAnyItemActive());
     }
 
     ImGui_ImplOpenGL3_Shutdown();

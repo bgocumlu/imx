@@ -42,3 +42,75 @@ TEST_CASE("StateSlot works with bool", "[state]") {
     REQUIRE(slot.get() == true);
     REQUIRE(dirty);
 }
+
+TEST_CASE("Runtime starts needing frames", "[frame_loop]") {
+    imx::Runtime rt;
+    REQUIRE(rt.needs_frame());
+}
+
+TEST_CASE("Runtime stops needing frames after rendered", "[frame_loop]") {
+    imx::Runtime rt;
+    // Drain the initial 3 frames
+    rt.frame_rendered(false);
+    rt.frame_rendered(false);
+    rt.frame_rendered(false);
+    REQUIRE_FALSE(rt.needs_frame());
+}
+
+TEST_CASE("request_frame makes runtime need a frame", "[frame_loop]") {
+    imx::Runtime rt;
+    rt.frame_rendered(false);
+    rt.frame_rendered(false);
+    rt.frame_rendered(false);
+    REQUIRE_FALSE(rt.needs_frame());
+
+    rt.request_frame();
+    REQUIRE(rt.needs_frame());
+
+    rt.frame_rendered(false);
+    REQUIRE_FALSE(rt.needs_frame());
+}
+
+TEST_CASE("dirty flag boosts frames_needed to 3", "[frame_loop]") {
+    imx::Runtime rt;
+    // Drain initial frames
+    rt.frame_rendered(false);
+    rt.frame_rendered(false);
+    rt.frame_rendered(false);
+    REQUIRE_FALSE(rt.needs_frame());
+
+    rt.mark_dirty();
+    // frame_rendered sees dirty, boosts to 3, then decrements to 2
+    rt.frame_rendered(false);
+    REQUIRE(rt.needs_frame());
+    rt.frame_rendered(false);
+    REQUIRE(rt.needs_frame());
+    rt.frame_rendered(false);
+    REQUIRE_FALSE(rt.needs_frame());
+}
+
+TEST_CASE("imgui_active keeps runtime needing frames", "[frame_loop]") {
+    imx::Runtime rt;
+    rt.frame_rendered(false);
+    rt.frame_rendered(false);
+    rt.frame_rendered(false);
+    REQUIRE_FALSE(rt.needs_frame());
+
+    // Simulate active widget — each frame_rendered(true) keeps it alive
+    rt.frame_rendered(true);
+    REQUIRE(rt.needs_frame());
+    rt.frame_rendered(true);
+    REQUIRE(rt.needs_frame());
+
+    // Stop being active — one more frame then idle
+    rt.frame_rendered(false);
+    REQUIRE_FALSE(rt.needs_frame());
+}
+
+TEST_CASE("dirty flag clears after frame_rendered", "[frame_loop]") {
+    imx::Runtime rt;
+    rt.mark_dirty();
+    REQUIRE(rt.dirty());
+    rt.frame_rendered(false);
+    REQUIRE_FALSE(rt.dirty());
+}

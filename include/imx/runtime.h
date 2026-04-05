@@ -118,6 +118,9 @@ public:
     bool dirty() const;
     void mark_dirty();
     void clear_dirty();
+    void request_frame();
+    bool needs_frame() const;
+    void frame_rendered(bool imgui_active);
     ComponentInstance& root();
 
 private:
@@ -125,6 +128,7 @@ private:
     std::unique_ptr<ComponentInstance> root_;
     RenderContext ctx_;
     bool dirty_ = true;
+    int frames_needed_ = 3;
 };
 
 // --- Template implementations (must be in header) ---

@@ -21,6 +21,28 @@ void Runtime::end_frame() {
 bool Runtime::dirty() const { return dirty_; }
 void Runtime::mark_dirty() { dirty_ = true; }
 void Runtime::clear_dirty() { dirty_ = false; }
+
+void Runtime::request_frame() {
+    if (frames_needed_ < 1) frames_needed_ = 1;
+}
+
+bool Runtime::needs_frame() const {
+    return frames_needed_ > 0;
+}
+
+void Runtime::frame_rendered(bool imgui_active) {
+    if (dirty_) {
+        if (frames_needed_ < 3) frames_needed_ = 3;
+        dirty_ = false;
+    }
+    if (frames_needed_ > 0) {
+        frames_needed_--;
+    }
+    if (imgui_active) {
+        if (frames_needed_ < 1) frames_needed_ = 1;
+    }
+}
+
 ComponentInstance& Runtime::root() { return *root_; }
 
 } // namespace imx
