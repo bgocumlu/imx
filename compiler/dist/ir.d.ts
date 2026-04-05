@@ -12,6 +12,7 @@ export interface IRComponent {
     stateSlots: IRStateSlot[];
     bufferCount: number;
     params: IRPropParam[];
+    namedPropsType?: string;
     body: IRNode[];
 }
 export interface IRStateSlot {

@@ -1,5 +1,6 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
+import ts from 'typescript';
 import { parseFile, extractImports } from './parser.js';
 import { validate } from './validator.js';
 import { lowerComponent } from './lowering.js';
@@ -35,7 +36,9 @@ export function compile(files, outputDir) {
             hasErrors = true;
             continue;
         }
-        const ir = lowerComponent(parsed, validation);
+        // Load external interface definitions from imx.d.ts in the same directory
+        const externalInterfaces = loadExternalInterfaces(path.dirname(path.resolve(file)));
+        const ir = lowerComponent(parsed, validation, externalInterfaces);
         const imports = extractImports(parsed.sourceFile);
         compiled.push({
             name: ir.name,
@@ -45,7 +48,7 @@ export function compile(files, outputDir) {
             bufferCount: ir.bufferCount,
             ir,
             imports,
-            hasProps: ir.params.length > 0,
+            hasProps: ir.params.length > 0 || !!ir.namedPropsType,
         });
     }
     if (hasErrors) {
@@ -80,7 +83,9 @@ export function compile(files, outputDir) {
             const sourceDir = path.dirname(path.resolve(comp.sourcePath));
             generateEmbedHeaders(embedImages, sourceDir, outputDir);
         }
-        if (comp.hasProps) {
+        // Only generate a header for inline props (not for named interface types —
+        // those are declared in the user's main.cpp)
+        if (comp.hasProps && !comp.ir.namedPropsType) {
             const headerOutput = emitComponentHeader(comp.ir, comp.sourceFile);
             const headerPath = path.join(outputDir, `${baseName}.gen.h`);
             fs.writeFileSync(headerPath, headerOutput);
@@ -90,8 +95,12 @@ export function compile(files, outputDir) {
     // Phase 4: Emit root entry point
     if (compiled.length > 0) {
         const root = compiled[0];
-        const propsType = root.hasProps ? root.name + 'Props' : undefined;
-        const rootOutput = emitRoot(root.name, root.stateCount, root.bufferCount, root.sourceFile, propsType);
+        // Use namedPropsType if available (e.g. "AppState"), else ComponentNameProps for inline props
+        const isNamedPropsType = !!root.ir.namedPropsType;
+        const propsType = root.ir.namedPropsType
+            ? root.ir.namedPropsType
+            : root.hasProps ? root.name + 'Props' : undefined;
+        const rootOutput = emitRoot(root.name, root.stateCount, root.bufferCount, root.sourceFile, propsType, isNamedPropsType);
         const rootPath = path.join(outputDir, 'app_root.gen.cpp');
         fs.writeFileSync(rootPath, rootOutput);
         console.log(`  -> ${rootPath} (root entry point)`);
@@ -167,4 +176,56 @@ function generateEmbedHeaders(images, sourceDir, outputDir) {
         fs.writeFileSync(headerPath, header);
         console.log(`  ${rawSrc} -> ${headerPath} (embed)`);
     }
+}
+/**
+ * Parse the imx.d.ts in the given directory (if present) and extract
+ * all interface declarations as a map from interface name -> field name -> type.
+ */
+function loadExternalInterfaces(dir) {
+    const result = new Map();
+    const dtsPath = path.join(dir, 'imx.d.ts');
+    if (!fs.existsSync(dtsPath))
+        return result;
+    const source = fs.readFileSync(dtsPath, 'utf-8');
+    const sf = ts.createSourceFile('imx.d.ts', source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
+    for (const stmt of sf.statements) {
+        if (ts.isInterfaceDeclaration(stmt)) {
+            const ifName = stmt.name.text;
+            const fields = new Map();
+            for (const member of stmt.members) {
+                if (ts.isPropertySignature(member) && member.name && ts.isIdentifier(member.name)) {
+                    const fieldName = member.name.text;
+                    if (!member.type) {
+                        fields.set(fieldName, 'string');
+                        continue;
+                    }
+                    if (ts.isFunctionTypeNode(member.type)) {
+                        fields.set(fieldName, 'callback');
+                        continue;
+                    }
+                    const typeText = member.type.getText(sf);
+                    if (typeText === 'number') {
+                        fields.set(fieldName, 'float');
+                    }
+                    else if (typeText === 'boolean') {
+                        fields.set(fieldName, 'bool');
+                    }
+                    else if (typeText === 'string') {
+                        fields.set(fieldName, 'string');
+                    }
+                    else {
+                        // Arrays, nested interfaces, etc. treated as opaque (non-scalar)
+                        fields.set(fieldName, 'string');
+                    }
+                }
+                else if (ts.isMethodSignature(member)) {
+                    const mName = ts.isIdentifier(member.name) ? member.name.text : '';
+                    if (mName)
+                        fields.set(mName, 'callback');
+                }
+            }
+            result.set(ifName, fields);
+        }
+    }
+    return result;
 }

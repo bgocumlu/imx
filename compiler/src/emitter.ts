@@ -165,7 +165,10 @@ export function emitComponent(comp: IRComponent, imports?: ImportInfo[], sourceF
     dragDropTargetStack.length = 0;
     currentCompName = comp.name;
 
-    const hasProps = comp.params.length > 0;
+    // hasProps: true for inline prop struct OR named interface
+    const hasProps = comp.params.length > 0 || !!comp.namedPropsType;
+    // propsTypeName: for named interface use it directly; for inline use ComponentProps convention
+    const propsTypeName = comp.namedPropsType ?? (comp.params.length > 0 ? `${comp.name}Props` : undefined);
     const hasColorType = comp.stateSlots.some(s => s.type === 'color');
 
     // File banner
@@ -174,17 +177,39 @@ export function emitComponent(comp: IRComponent, imports?: ImportInfo[], sourceF
     }
 
     if (hasProps) {
-        // Component with props: include its own header instead of redeclaring struct
-        lines.push(`#include "${comp.name}.gen.h"`);
-        if (hasColorType) {
-            lines.push('#include <array>');
+        if (comp.namedPropsType) {
+            // Named interface: include runtime + renderer, plus user header for the struct definition
+            lines.push('#include <imx/runtime.h>');
+            lines.push('#include <imx/renderer.h>');
+            lines.push(`#include "${comp.namedPropsType}.h"`);
+            if (hasColorType) {
+                lines.push('#include <array>');
+            }
+            // Include imported component headers
+            if (imports && imports.length > 0) {
+                for (const imp of imports) {
+                    lines.push(`#include "${imp.headerFile}"`);
+                }
+            }
+            // Embed image includes
+            const embedKeysNamed = collectEmbedKeys(comp.body);
+            for (const key of embedKeysNamed) {
+                lines.push(`#include "${key}.embed.h"`);
+            }
+            lines.push('');
+        } else {
+            // Component with inline props: include its own header instead of redeclaring struct
+            lines.push(`#include "${comp.name}.gen.h"`);
+            if (hasColorType) {
+                lines.push('#include <array>');
+            }
+            // Embed image includes
+            const embedKeysProps = collectEmbedKeys(comp.body);
+            for (const key of embedKeysProps) {
+                lines.push(`#include "${key}.embed.h"`);
+            }
+            lines.push('');
         }
-        // Embed image includes
-        const embedKeysProps = collectEmbedKeys(comp.body);
-        for (const key of embedKeysProps) {
-            lines.push(`#include "${key}.embed.h"`);
-        }
-        lines.push('');
     } else {
         // No props: standard headers
         lines.push('#include <imx/runtime.h>');
@@ -224,7 +249,7 @@ export function emitComponent(comp: IRComponent, imports?: ImportInfo[], sourceF
     }
 
     // Function signature
-    const propsArg = hasProps ? `, ${comp.name}Props& props` : '';
+    const propsArg = propsTypeName ? `, ${propsTypeName}& props` : '';
     lines.push(`void ${comp.name}_render(imx::RenderContext& ctx${propsArg}) {`);
 
     // State declarations
@@ -250,7 +275,7 @@ export function emitComponent(comp: IRComponent, imports?: ImportInfo[], sourceF
     return lines.join('\n');
 }
 
-export function emitRoot(rootName: string, stateCount: number, bufferCount: number, sourceFile?: string, propsType?: string): string {
+export function emitRoot(rootName: string, stateCount: number, bufferCount: number, sourceFile?: string, propsType?: string, namedPropsType?: boolean): string {
     const lines: string[] = [];
 
     if (sourceFile) {
@@ -259,12 +284,26 @@ export function emitRoot(rootName: string, stateCount: number, bufferCount: numb
     lines.push('#include <imx/runtime.h>');
 
     if (propsType) {
-        lines.push(`#include "${rootName}.gen.h"`);
-        lines.push('');
-        lines.push(`void ${rootName}_render(imx::RenderContext& ctx, ${propsType}& props);`);
+        if (namedPropsType) {
+            // Named interface type (e.g. AppState defined in user code).
+            // Include the user header so the template specialization sees the full type.
+            lines.push(`#include "${propsType}.h"`);
+            lines.push('');
+            lines.push(`void ${rootName}_render(imx::RenderContext& ctx, ${propsType}& props);`);
+        } else {
+            lines.push(`#include "${rootName}.gen.h"`);
+            lines.push('');
+            lines.push(`void ${rootName}_render(imx::RenderContext& ctx, ${propsType}& props);`);
+        }
         lines.push('');
         lines.push('namespace imx {');
-        lines.push(`void render_root(Runtime& runtime, ${propsType}& state) {`);
+        if (namedPropsType) {
+            // Template specialization — matches the template<typename T> declaration in runtime.h
+            lines.push('template <>');
+            lines.push(`void render_root<${propsType}>(Runtime& runtime, ${propsType}& state) {`);
+        } else {
+            lines.push(`void render_root(Runtime& runtime, ${propsType}& state) {`);
+        }
         lines.push(`${INDENT}auto& ctx = runtime.begin_frame();`);
         lines.push(`${INDENT}ctx.begin_instance("${rootName}", 0, ${stateCount}, ${bufferCount});`);
         lines.push(`${INDENT}${rootName}_render(ctx, state);`);
@@ -1081,7 +1120,7 @@ function emitListMap(node: IRListMap, lines: string[], indent: string, depth: nu
     }
     lines.push(`${indent}for (size_t i = 0; i < ${node.array}.size(); i++) {`);
     lines.push(`${indent}${INDENT}auto& ${node.itemVar} = ${node.array}[i];`);
-    lines.push(`${indent}${INDENT}ctx.begin_instance("${node.componentName}", i, ${node.stateCount}, ${node.bufferCount});`);
+    lines.push(`${indent}${INDENT}ctx.begin_instance("${node.componentName}", (int)i, ${node.stateCount}, ${node.bufferCount});`);
     emitNodes(node.body, lines, depth + 2);
     lines.push(`${indent}${INDENT}ctx.end_instance();`);
     lines.push(`${indent}}`);
@@ -1141,22 +1180,23 @@ function ensureFloatLiteral(val: string): string {
 
 function emitSliderFloat(node: IRSliderFloat, lines: string[], indent: string): void {
     emitLocComment(node.loc, 'SliderFloat', lines, indent);
+    const label = asCharPtr(node.label);
     const min = ensureFloatLiteral(node.min);
     const max = ensureFloatLiteral(node.max);
     if (node.stateVar) {
         lines.push(`${indent}{`);
         lines.push(`${indent}${INDENT}float val = ${node.stateVar}.get();`);
-        lines.push(`${indent}${INDENT}if (imx::renderer::slider_float(${node.label}, &val, ${min}, ${max})) {`);
+        lines.push(`${indent}${INDENT}if (imx::renderer::slider_float(${label}, &val, ${min}, ${max})) {`);
         lines.push(`${indent}${INDENT}${INDENT}${node.stateVar}.set(val);`);
         lines.push(`${indent}${INDENT}}`);
         lines.push(`${indent}}`);
     } else if (node.directBind && node.valueExpr) {
         // Direct pointer binding
-        lines.push(`${indent}imx::renderer::slider_float(${node.label}, &${node.valueExpr}, ${min}, ${max});`);
+        lines.push(`${indent}imx::renderer::slider_float(${label}, &${node.valueExpr}, ${min}, ${max});`);
     } else if (node.valueExpr !== undefined) {
         lines.push(`${indent}{`);
         lines.push(`${indent}${INDENT}float val = ${node.valueExpr};`);
-        lines.push(`${indent}${INDENT}if (imx::renderer::slider_float(${node.label}, &val, ${min}, ${max})) {`);
+        lines.push(`${indent}${INDENT}if (imx::renderer::slider_float(${label}, &val, ${min}, ${max})) {`);
         if (node.onChangeExpr) {
             lines.push(`${indent}${INDENT}${INDENT}${node.onChangeExpr};`);
         }
@@ -1167,19 +1207,20 @@ function emitSliderFloat(node: IRSliderFloat, lines: string[], indent: string): 
 
 function emitSliderInt(node: IRSliderInt, lines: string[], indent: string): void {
     emitLocComment(node.loc, 'SliderInt', lines, indent);
+    const label = asCharPtr(node.label);
     if (node.stateVar) {
         lines.push(`${indent}{`);
         lines.push(`${indent}${INDENT}int val = ${node.stateVar}.get();`);
-        lines.push(`${indent}${INDENT}if (imx::renderer::slider_int(${node.label}, &val, ${node.min}, ${node.max})) {`);
+        lines.push(`${indent}${INDENT}if (imx::renderer::slider_int(${label}, &val, ${node.min}, ${node.max})) {`);
         lines.push(`${indent}${INDENT}${INDENT}${node.stateVar}.set(val);`);
         lines.push(`${indent}${INDENT}}`);
         lines.push(`${indent}}`);
     } else if (node.directBind && node.valueExpr) {
-        lines.push(`${indent}imx::renderer::slider_int(${node.label}, &${node.valueExpr}, ${node.min}, ${node.max});`);
+        lines.push(`${indent}imx::renderer::slider_int(${label}, &${node.valueExpr}, ${node.min}, ${node.max});`);
     } else if (node.valueExpr !== undefined) {
         lines.push(`${indent}{`);
         lines.push(`${indent}${INDENT}int val = ${node.valueExpr};`);
-        lines.push(`${indent}${INDENT}if (imx::renderer::slider_int(${node.label}, &val, ${node.min}, ${node.max})) {`);
+        lines.push(`${indent}${INDENT}if (imx::renderer::slider_int(${label}, &val, ${node.min}, ${node.max})) {`);
         if (node.onChangeExpr) {
             lines.push(`${indent}${INDENT}${INDENT}${node.onChangeExpr};`);
         }
@@ -1190,20 +1231,21 @@ function emitSliderInt(node: IRSliderInt, lines: string[], indent: string): void
 
 function emitDragFloat(node: IRDragFloat, lines: string[], indent: string): void {
     emitLocComment(node.loc, 'DragFloat', lines, indent);
+    const label = asCharPtr(node.label);
     const speed = ensureFloatLiteral(node.speed);
     if (node.stateVar) {
         lines.push(`${indent}{`);
         lines.push(`${indent}${INDENT}float val = ${node.stateVar}.get();`);
-        lines.push(`${indent}${INDENT}if (imx::renderer::drag_float(${node.label}, &val, ${speed})) {`);
+        lines.push(`${indent}${INDENT}if (imx::renderer::drag_float(${label}, &val, ${speed})) {`);
         lines.push(`${indent}${INDENT}${INDENT}${node.stateVar}.set(val);`);
         lines.push(`${indent}${INDENT}}`);
         lines.push(`${indent}}`);
     } else if (node.directBind && node.valueExpr) {
-        lines.push(`${indent}imx::renderer::drag_float(${node.label}, &${node.valueExpr}, ${speed});`);
+        lines.push(`${indent}imx::renderer::drag_float(${label}, &${node.valueExpr}, ${speed});`);
     } else if (node.valueExpr !== undefined) {
         lines.push(`${indent}{`);
         lines.push(`${indent}${INDENT}float val = ${node.valueExpr};`);
-        lines.push(`${indent}${INDENT}if (imx::renderer::drag_float(${node.label}, &val, ${speed})) {`);
+        lines.push(`${indent}${INDENT}if (imx::renderer::drag_float(${label}, &val, ${speed})) {`);
         if (node.onChangeExpr) {
             lines.push(`${indent}${INDENT}${INDENT}${node.onChangeExpr};`);
         }
@@ -1214,20 +1256,21 @@ function emitDragFloat(node: IRDragFloat, lines: string[], indent: string): void
 
 function emitDragInt(node: IRDragInt, lines: string[], indent: string): void {
     emitLocComment(node.loc, 'DragInt', lines, indent);
+    const label = asCharPtr(node.label);
     const speed = ensureFloatLiteral(node.speed);
     if (node.stateVar) {
         lines.push(`${indent}{`);
         lines.push(`${indent}${INDENT}int val = ${node.stateVar}.get();`);
-        lines.push(`${indent}${INDENT}if (imx::renderer::drag_int(${node.label}, &val, ${speed})) {`);
+        lines.push(`${indent}${INDENT}if (imx::renderer::drag_int(${label}, &val, ${speed})) {`);
         lines.push(`${indent}${INDENT}${INDENT}${node.stateVar}.set(val);`);
         lines.push(`${indent}${INDENT}}`);
         lines.push(`${indent}}`);
     } else if (node.directBind && node.valueExpr) {
-        lines.push(`${indent}imx::renderer::drag_int(${node.label}, &${node.valueExpr}, ${speed});`);
+        lines.push(`${indent}imx::renderer::drag_int(${label}, &${node.valueExpr}, ${speed});`);
     } else if (node.valueExpr !== undefined) {
         lines.push(`${indent}{`);
         lines.push(`${indent}${INDENT}int val = ${node.valueExpr};`);
-        lines.push(`${indent}${INDENT}if (imx::renderer::drag_int(${node.label}, &val, ${speed})) {`);
+        lines.push(`${indent}${INDENT}if (imx::renderer::drag_int(${label}, &val, ${speed})) {`);
         if (node.onChangeExpr) {
             lines.push(`${indent}${INDENT}${INDENT}${node.onChangeExpr};`);
         }
@@ -1238,6 +1281,7 @@ function emitDragInt(node: IRDragInt, lines: string[], indent: string): void {
 
 function emitCombo(node: IRCombo, lines: string[], indent: string): void {
     emitLocComment(node.loc, 'Combo', lines, indent);
+    const label = asCharPtr(node.label);
     const itemsList = node.items.split(',').map(s => s.trim()).filter(s => s.length > 0);
     const count = itemsList.length;
     const varName = `combo_items_${comboCounter++}`;
@@ -1246,20 +1290,20 @@ function emitCombo(node: IRCombo, lines: string[], indent: string): void {
         lines.push(`${indent}{`);
         lines.push(`${indent}${INDENT}const char* ${varName}[] = {${itemsList.join(', ')}};`);
         lines.push(`${indent}${INDENT}int val = ${node.stateVar}.get();`);
-        lines.push(`${indent}${INDENT}if (imx::renderer::combo(${node.label}, &val, ${varName}, ${count})) {`);
+        lines.push(`${indent}${INDENT}if (imx::renderer::combo(${label}, &val, ${varName}, ${count})) {`);
         lines.push(`${indent}${INDENT}${INDENT}${node.stateVar}.set(val);`);
         lines.push(`${indent}${INDENT}}`);
         lines.push(`${indent}}`);
     } else if (node.directBind && node.valueExpr) {
         lines.push(`${indent}{`);
         lines.push(`${indent}${INDENT}const char* ${varName}[] = {${itemsList.join(', ')}};`);
-        lines.push(`${indent}${INDENT}imx::renderer::combo(${node.label}, &${node.valueExpr}, ${varName}, ${count});`);
+        lines.push(`${indent}${INDENT}imx::renderer::combo(${label}, &${node.valueExpr}, ${varName}, ${count});`);
         lines.push(`${indent}}`);
     } else if (node.valueExpr !== undefined) {
         lines.push(`${indent}{`);
         lines.push(`${indent}${INDENT}const char* ${varName}[] = {${itemsList.join(', ')}};`);
         lines.push(`${indent}${INDENT}int val = ${node.valueExpr};`);
-        lines.push(`${indent}${INDENT}if (imx::renderer::combo(${node.label}, &val, ${varName}, ${count})) {`);
+        lines.push(`${indent}${INDENT}if (imx::renderer::combo(${label}, &val, ${varName}, ${count})) {`);
         if (node.onChangeExpr) {
             lines.push(`${indent}${INDENT}${INDENT}${node.onChangeExpr};`);
         }
@@ -1270,19 +1314,20 @@ function emitCombo(node: IRCombo, lines: string[], indent: string): void {
 
 function emitInputInt(node: IRInputInt, lines: string[], indent: string): void {
     emitLocComment(node.loc, 'InputInt', lines, indent);
+    const label = asCharPtr(node.label);
     if (node.stateVar) {
         lines.push(`${indent}{`);
         lines.push(`${indent}${INDENT}int val = ${node.stateVar}.get();`);
-        lines.push(`${indent}${INDENT}if (imx::renderer::input_int(${node.label}, &val)) {`);
+        lines.push(`${indent}${INDENT}if (imx::renderer::input_int(${label}, &val)) {`);
         lines.push(`${indent}${INDENT}${INDENT}${node.stateVar}.set(val);`);
         lines.push(`${indent}${INDENT}}`);
         lines.push(`${indent}}`);
     } else if (node.directBind && node.valueExpr) {
-        lines.push(`${indent}imx::renderer::input_int(${node.label}, &${node.valueExpr});`);
+        lines.push(`${indent}imx::renderer::input_int(${label}, &${node.valueExpr});`);
     } else if (node.valueExpr !== undefined) {
         lines.push(`${indent}{`);
         lines.push(`${indent}${INDENT}int val = ${node.valueExpr};`);
-        lines.push(`${indent}${INDENT}if (imx::renderer::input_int(${node.label}, &val)) {`);
+        lines.push(`${indent}${INDENT}if (imx::renderer::input_int(${label}, &val)) {`);
         if (node.onChangeExpr) {
             lines.push(`${indent}${INDENT}${INDENT}${node.onChangeExpr};`);
         }
@@ -1293,19 +1338,20 @@ function emitInputInt(node: IRInputInt, lines: string[], indent: string): void {
 
 function emitInputFloat(node: IRInputFloat, lines: string[], indent: string): void {
     emitLocComment(node.loc, 'InputFloat', lines, indent);
+    const label = asCharPtr(node.label);
     if (node.stateVar) {
         lines.push(`${indent}{`);
         lines.push(`${indent}${INDENT}float val = ${node.stateVar}.get();`);
-        lines.push(`${indent}${INDENT}if (imx::renderer::input_float(${node.label}, &val)) {`);
+        lines.push(`${indent}${INDENT}if (imx::renderer::input_float(${label}, &val)) {`);
         lines.push(`${indent}${INDENT}${INDENT}${node.stateVar}.set(val);`);
         lines.push(`${indent}${INDENT}}`);
         lines.push(`${indent}}`);
     } else if (node.directBind && node.valueExpr) {
-        lines.push(`${indent}imx::renderer::input_float(${node.label}, &${node.valueExpr});`);
+        lines.push(`${indent}imx::renderer::input_float(${label}, &${node.valueExpr});`);
     } else if (node.valueExpr !== undefined) {
         lines.push(`${indent}{`);
         lines.push(`${indent}${INDENT}float val = ${node.valueExpr};`);
-        lines.push(`${indent}${INDENT}if (imx::renderer::input_float(${node.label}, &val)) {`);
+        lines.push(`${indent}${INDENT}if (imx::renderer::input_float(${label}, &val)) {`);
         if (node.onChangeExpr) {
             lines.push(`${indent}${INDENT}${INDENT}${node.onChangeExpr};`);
         }
@@ -1316,10 +1362,11 @@ function emitInputFloat(node: IRInputFloat, lines: string[], indent: string): vo
 
 function emitColorEdit(node: IRColorEdit, lines: string[], indent: string): void {
     emitLocComment(node.loc, 'ColorEdit', lines, indent);
+    const label = asCharPtr(node.label);
     if (node.stateVar) {
         lines.push(`${indent}{`);
         lines.push(`${indent}${INDENT}auto val = ${node.stateVar}.get();`);
-        lines.push(`${indent}${INDENT}if (imx::renderer::color_edit(${node.label}, val.data())) {`);
+        lines.push(`${indent}${INDENT}if (imx::renderer::color_edit(${label}, val.data())) {`);
         lines.push(`${indent}${INDENT}${INDENT}${node.stateVar}.set(val);`);
         lines.push(`${indent}${INDENT}}`);
         lines.push(`${indent}}`);
@@ -1328,6 +1375,7 @@ function emitColorEdit(node: IRColorEdit, lines: string[], indent: string): void
 
 function emitListBox(node: IRListBox, lines: string[], indent: string): void {
     emitLocComment(node.loc, 'ListBox', lines, indent);
+    const label = asCharPtr(node.label);
     const itemsList = node.items.split(',').map(s => s.trim()).filter(s => s.length > 0);
     const count = itemsList.length;
     const varName = `listbox_items_${listBoxCounter++}`;
@@ -1336,20 +1384,20 @@ function emitListBox(node: IRListBox, lines: string[], indent: string): void {
         lines.push(`${indent}{`);
         lines.push(`${indent}${INDENT}const char* ${varName}[] = {${itemsList.join(', ')}};`);
         lines.push(`${indent}${INDENT}int val = ${node.stateVar}.get();`);
-        lines.push(`${indent}${INDENT}if (imx::renderer::list_box(${node.label}, &val, ${varName}, ${count})) {`);
+        lines.push(`${indent}${INDENT}if (imx::renderer::list_box(${label}, &val, ${varName}, ${count})) {`);
         lines.push(`${indent}${INDENT}${INDENT}${node.stateVar}.set(val);`);
         lines.push(`${indent}${INDENT}}`);
         lines.push(`${indent}}`);
     } else if (node.directBind && node.valueExpr) {
         lines.push(`${indent}{`);
         lines.push(`${indent}${INDENT}const char* ${varName}[] = {${itemsList.join(', ')}};`);
-        lines.push(`${indent}${INDENT}imx::renderer::list_box(${node.label}, &${node.valueExpr}, ${varName}, ${count});`);
+        lines.push(`${indent}${INDENT}imx::renderer::list_box(${label}, &${node.valueExpr}, ${varName}, ${count});`);
         lines.push(`${indent}}`);
     } else if (node.valueExpr !== undefined) {
         lines.push(`${indent}{`);
         lines.push(`${indent}${INDENT}const char* ${varName}[] = {${itemsList.join(', ')}};`);
         lines.push(`${indent}${INDENT}int val = ${node.valueExpr};`);
-        lines.push(`${indent}${INDENT}if (imx::renderer::list_box(${node.label}, &val, ${varName}, ${count})) {`);
+        lines.push(`${indent}${INDENT}if (imx::renderer::list_box(${label}, &val, ${varName}, ${count})) {`);
         if (node.onChangeExpr) {
             lines.push(`${indent}${INDENT}${INDENT}${node.onChangeExpr};`);
         }

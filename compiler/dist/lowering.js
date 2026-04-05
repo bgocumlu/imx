@@ -4,7 +4,7 @@ function getLoc(node, ctx) {
     const { line } = ctx.sourceFile.getLineAndCharacterOfPosition(node.getStart());
     return { file: ctx.sourceFile.fileName, line: line + 1 };
 }
-export function lowerComponent(parsed, validation) {
+export function lowerComponent(parsed, validation, externalInterfaces) {
     const func = parsed.component;
     const name = func.name.text;
     // Build state slots
@@ -24,19 +24,37 @@ export function lowerComponent(parsed, validation) {
     }
     // Detect props parameter
     let propsParam = null;
+    let namedPropsType;
     const params = [];
+    const propsFieldTypes = new Map();
     if (func.parameters.length > 0) {
         const param = func.parameters[0];
         if (ts.isIdentifier(param.name)) {
             propsParam = param.name.text;
         }
-        // Extract prop types from type annotation
-        if (param.type && ts.isTypeLiteralNode(param.type)) {
-            for (const member of param.type.members) {
-                if (ts.isPropertySignature(member) && member.name && ts.isIdentifier(member.name)) {
-                    const propName = member.name.text;
-                    const propType = inferPropType(member);
-                    params.push({ name: propName, type: propType });
+        if (param.type) {
+            if (ts.isTypeLiteralNode(param.type)) {
+                // Inline type literal: extract field types
+                for (const member of param.type.members) {
+                    if (ts.isPropertySignature(member) && member.name && ts.isIdentifier(member.name)) {
+                        const propName = member.name.text;
+                        const propType = inferPropType(member);
+                        params.push({ name: propName, type: propType });
+                        propsFieldTypes.set(propName, propType);
+                    }
+                }
+            }
+            else if (ts.isTypeReferenceNode(param.type) && ts.isIdentifier(param.type.typeName)) {
+                // Named interface reference: extract the type name and scan source for the interface
+                namedPropsType = param.type.typeName.text;
+                // First try the source file itself, then fall back to external interfaces
+                extractInterfaceFields(namedPropsType, parsed.sourceFile, propsFieldTypes);
+                if (propsFieldTypes.size === 0 && externalInterfaces) {
+                    const ext = externalInterfaces.get(namedPropsType);
+                    if (ext) {
+                        for (const [k, v] of ext)
+                            propsFieldTypes.set(k, v);
+                    }
                 }
             }
         }
@@ -45,6 +63,7 @@ export function lowerComponent(parsed, validation) {
         stateVars,
         setterMap,
         propsParam,
+        propsFieldTypes,
         bufferIndex: 0,
         sourceFile: parsed.sourceFile,
         customComponents: validation.customComponents,
@@ -62,6 +81,7 @@ export function lowerComponent(parsed, validation) {
         stateSlots,
         bufferCount: ctx.bufferIndex,
         params,
+        namedPropsType,
         body,
     };
 }
@@ -78,6 +98,45 @@ function inferPropType(member) {
     if (text === 'string')
         return 'string';
     return 'string';
+}
+/**
+ * Scan the source file for an interface declaration matching `interfaceName`
+ * and extract its field types into `fieldTypes`.
+ * Only handles direct fields — nested interface types are not resolved.
+ */
+function extractInterfaceFields(interfaceName, sourceFile, fieldTypes) {
+    for (const stmt of sourceFile.statements) {
+        if (ts.isInterfaceDeclaration(stmt) && stmt.name.text === interfaceName) {
+            for (const member of stmt.members) {
+                if (ts.isPropertySignature(member) && member.name && ts.isIdentifier(member.name)) {
+                    const fieldName = member.name.text;
+                    if (!member.type) {
+                        fieldTypes.set(fieldName, 'string');
+                        continue;
+                    }
+                    if (ts.isFunctionTypeNode(member.type)) {
+                        fieldTypes.set(fieldName, 'callback');
+                        continue;
+                    }
+                    const typeText = member.type.getText();
+                    if (typeText === 'number' || typeText === 'number | undefined') {
+                        fieldTypes.set(fieldName, 'float');
+                    }
+                    else if (typeText === 'boolean') {
+                        fieldTypes.set(fieldName, 'bool');
+                    }
+                    else if (typeText === 'string') {
+                        fieldTypes.set(fieldName, 'string');
+                    }
+                    else {
+                        // Array types, nested interfaces, etc. treated as opaque
+                        fieldTypes.set(fieldName, 'string');
+                    }
+                }
+            }
+            return;
+        }
+    }
 }
 function inferTypeFromExpr(expr) {
     if (ts.isNumericLiteral(expr)) {
@@ -151,6 +210,9 @@ export function exprToCpp(node, ctx) {
     if (ts.isPropertyAccessExpression(node)) {
         const obj = exprToCpp(node.expression, ctx);
         const prop = node.name.text;
+        // JS .length on arrays/vectors translates to C++ .size()
+        if (prop === 'length')
+            return `${obj}.size()`;
         return `${obj}.${prop}`;
     }
     // Parenthesized expression
@@ -167,6 +229,13 @@ export function exprToCpp(node, ctx) {
             op = '==';
         else if (op === '!==')
             op = '!=';
+        // String + non-string: JS string concatenation -> C++ std::string + std::to_string
+        if (op === '+' && (ts.isStringLiteral(node.left) || ts.isNoSubstitutionTemplateLiteral(node.left))) {
+            const rightType = inferExprType(node.right, ctx);
+            if (rightType === 'int' || rightType === 'float') {
+                return `(std::string(${left}) + std::to_string(${right}))`;
+            }
+        }
         return `${left} ${op} ${right}`;
     }
     // Prefix unary expression (e.g., !show)
@@ -258,8 +327,8 @@ function extractActionStatements(expr, ctx) {
     }
     // If not an arrow function, call it
     const code = exprToCpp(expr, ctx);
-    // Bare identifier (not already a call) needs () to invoke
-    if (ts.isIdentifier(expr)) {
+    // Bare identifier or property access (not already a call) needs () to invoke
+    if (ts.isIdentifier(expr) || ts.isPropertyAccessExpression(expr)) {
         return [code + '();'];
     }
     return [code + ';'];
@@ -703,8 +772,18 @@ function inferExprType(expr, ctx) {
         if (slot)
             return slot.type;
     }
-    // Property access: props.name -> look for string by default
+    // Property access: props.name -> look up field type if available
     if (ts.isPropertyAccessExpression(expr)) {
+        const prop = expr.name.text;
+        // .length maps to .size() in C++ — always int
+        if (prop === 'length')
+            return 'int';
+        // If accessing a direct field of the props param, look up its type
+        if (ctx.propsParam && ts.isIdentifier(expr.expression) && expr.expression.text === ctx.propsParam) {
+            const ft = ctx.propsFieldTypes.get(prop);
+            if (ft && ft !== 'callback')
+                return ft;
+        }
         return 'string';
     }
     // Binary expression: infer from operands
@@ -1048,8 +1127,9 @@ function lowerValueOnChange(rawAttrs, ctx) {
                 onChangeExpr = `${onChangeExpr}()`;
             }
         }
-        else if (valueExpr.startsWith('props.')) {
-            // No onChange + props reference = direct pointer binding
+        else if (valueRaw && ts.isPropertyAccessExpression(valueRaw)) {
+            // No onChange + property access = direct pointer binding
+            // This covers both props.field and course.field (loop item fields)
             directBind = true;
         }
     }

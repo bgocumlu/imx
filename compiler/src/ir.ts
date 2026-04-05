@@ -12,6 +12,7 @@ export interface IRComponent {
     stateSlots: IRStateSlot[];
     bufferCount: number;
     params: IRPropParam[];
+    namedPropsType?: string;   // set when root param is a named interface (e.g. "AppState")
     body: IRNode[];
 }
 
