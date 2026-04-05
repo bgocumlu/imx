@@ -64,7 +64,11 @@ export function compile(files, outputDir) {
     for (const comp of compiled) {
         resolveCustomComponents(comp.ir.body, componentMap);
         resolveDragDropTypes(comp.ir.body);
-        comp.boundProps = detectBoundProps(comp.ir.body);
+        // Only detect bound props for custom components (inline props).
+        // Root components with namedPropsType receive T& directly — no pointer wrapping needed.
+        if (!comp.ir.namedPropsType) {
+            comp.boundProps = detectBoundProps(comp.ir.body);
+        }
     }
     // Build boundProps map for cross-component emitter use
     const boundPropsMap = new Map();
