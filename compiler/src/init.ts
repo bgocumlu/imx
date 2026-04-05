@@ -8,11 +8,19 @@ const MAIN_CPP = `#include <imx/runtime.h>
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
 #include <GLFW/glfw3.h>
+#include <functional>
+
+struct AppState {
+    int count = 0;
+    float speed = 5.0f;
+    std::function<void()> onIncrement;
+};
 
 struct App {
     GLFWwindow*      window  = nullptr;
     ImGuiIO*         io      = nullptr;
     imx::Runtime runtime;
+    AppState state;
 };
 
 static void render_frame(App& app) {
@@ -27,7 +35,7 @@ static void render_frame(App& app) {
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
 
-    imx::render_root(app.runtime);
+    imx::render_root(app.runtime, app.state);
 
     ImGui::Render();
     glViewport(0, 0, fb_w, fb_h);
@@ -86,6 +94,7 @@ int main() {
     app.io = &io;
     glfwSetWindowUserPointer(window, &app);
     glfwSetWindowSizeCallback(window, window_size_callback);
+    app.state.onIncrement = [&]() { app.state.count++; };
 
     while (glfwWindowShouldClose(window) == 0) {
         glfwPollEvents();
@@ -106,25 +115,24 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) { return main(); }
 #endif
 `;
 
-const APP_TSX = `export default function App() {
-  const [count, setCount] = useState(0);
+const APP_TSX = `export default function App(props: AppState) {
+  const [showAbout, setShowAbout] = useState(false);
 
   return (
     <DockSpace>
-      <MenuBar>
-        <Menu label="File">
-          <MenuItem label="Exit" />
-        </Menu>
-      </MenuBar>
-      <Window title="Hello">
+      <Window title="Controls">
         <Column gap={8}>
-          <Text>Hello, World!</Text>
-          <Row gap={8}>
-            <Button title="Increment" onPress={() => setCount(count + 1)} />
-            <Text>Count: {count}</Text>
-          </Row>
+          <Text>Count: {props.count}</Text>
+          <Button title="Increment" onPress={props.onIncrement} />
+          <SliderFloat label="Speed" value={props.speed} min={0} max={100} />
+          <Separator />
+          <Button title="About" onPress={() => setShowAbout(!showAbout)} />
         </Column>
       </Window>
+      {showAbout && <Window title="About">
+        <Text>Built with IMX</Text>
+        <Button title="Close" onPress={() => setShowAbout(false)} />
+      </Window>}
     </DockSpace>
   );
 }
@@ -148,6 +156,12 @@ interface Style {
 
 declare function useState<T>(initial: T): [T, (value: T) => void];
 
+interface AppState {
+    count: number;
+    speed: number;
+    onIncrement: () => void;
+}
+
 interface WindowProps { title: string; open?: boolean; onClose?: () => void; noTitleBar?: boolean; noResize?: boolean; noMove?: boolean; noCollapse?: boolean; noDocking?: boolean; noScrollbar?: boolean; style?: Style; children?: any; }
 interface ViewProps { style?: Style; children?: any; }
 interface RowProps { gap?: number; style?: Style; children?: any; }
@@ -155,7 +169,7 @@ interface ColumnProps { gap?: number; style?: Style; children?: any; }
 interface TextProps { style?: Style; children?: any; }
 interface ButtonProps { title: string; onPress: () => void; disabled?: boolean; style?: Style; }
 interface TextInputProps { value: string; onChange: (v: string) => void; label?: string; placeholder?: string; style?: Style; }
-interface CheckboxProps { value: boolean; onChange: (v: boolean) => void; label?: string; style?: Style; }
+interface CheckboxProps { value: boolean; onChange?: (v: boolean) => void; label?: string; style?: Style; }
 interface SeparatorProps {}
 interface PopupProps { id: string; style?: Style; children?: any; }
 interface DockSpaceProps { style?: Style; children?: any; }
@@ -183,15 +197,15 @@ interface TabBarProps { style?: Style; children?: any; }
 interface TabItemProps { label: string; children?: any; }
 interface TreeNodeProps { label: string; children?: any; }
 interface CollapsingHeaderProps { label: string; children?: any; }
-interface SliderFloatProps { label: string; value: number; onChange: (v: number) => void; min: number; max: number; style?: Style; }
-interface SliderIntProps { label: string; value: number; onChange: (v: number) => void; min: number; max: number; style?: Style; }
-interface DragFloatProps { label: string; value: number; onChange: (v: number) => void; speed?: number; style?: Style; }
-interface DragIntProps { label: string; value: number; onChange: (v: number) => void; speed?: number; style?: Style; }
-interface ComboProps { label: string; value: number; onChange: (v: number) => void; items: string[]; style?: Style; }
-interface InputIntProps { label: string; value: number; onChange: (v: number) => void; style?: Style; }
-interface InputFloatProps { label: string; value: number; onChange: (v: number) => void; style?: Style; }
+interface SliderFloatProps { label: string; value: number; onChange?: (v: number) => void; min: number; max: number; style?: Style; }
+interface SliderIntProps { label: string; value: number; onChange?: (v: number) => void; min: number; max: number; style?: Style; }
+interface DragFloatProps { label: string; value: number; onChange?: (v: number) => void; speed?: number; style?: Style; }
+interface DragIntProps { label: string; value: number; onChange?: (v: number) => void; speed?: number; style?: Style; }
+interface ComboProps { label: string; value: number; onChange?: (v: number) => void; items: string[]; style?: Style; }
+interface InputIntProps { label: string; value: number; onChange?: (v: number) => void; style?: Style; }
+interface InputFloatProps { label: string; value: number; onChange?: (v: number) => void; style?: Style; }
 interface ColorEditProps { label: string; value: number[]; onChange: (v: number[]) => void; style?: Style; }
-interface ListBoxProps { label: string; value: number; onChange: (v: number) => void; items: string[]; style?: Style; }
+interface ListBoxProps { label: string; value: number; onChange?: (v: number) => void; items: string[]; style?: Style; }
 interface ProgressBarProps { value: number; overlay?: string; style?: Style; }
 interface TooltipProps { text: string; }
 interface BulletTextProps { style?: Style; children?: any; }
