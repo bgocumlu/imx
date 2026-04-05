@@ -106,7 +106,3 @@ Creates `src/App.tsx`, `src/imx.d.ts`, `tsconfig.json`, and prints the CMake lin
 - [Quick Start](docs/quick-start.md)
 - [LLM Prompt Reference](docs/llm-prompt-reference.md)
 - [Spec](docs/spec.md)
-
-## License
-
-MIT
