@@ -245,6 +245,7 @@ Exit criteria:
 
 Candidates (implement only when justified by real need):
 
+- Font loading — `imx::load_font("path.ttf", size)` helper for runtime loading from `public/`, plus `imx::load_font_embedded(data, size)` for compile-time baked fonts (like Image embed). Not a TSX component — fonts are global init, called once before the main loop.
 - `useEffect` — lifecycle hooks for timers, periodic updates
 - GPA calculator example — recreates notort in TSX with struct binding
 - Child component sub-struct binding (Approach 2) — pass sub-struct references to child components
