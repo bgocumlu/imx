@@ -200,4 +200,22 @@ function App() {
             expect(widget.callbackProps['onChange']).toContain('vol.set(v)');
         }
     });
+
+    it('sets directBind for props value without onChange', () => {
+        const ir = lower(`
+function App(props: { speed: number }) {
+  return (
+    <Window title="Test">
+      <SliderFloat label="Speed" value={props.speed} min={0} max={100} />
+    </Window>
+  );
+}
+        `);
+        const slider = ir.body[1];
+        expect(slider.kind).toBe('slider_float');
+        if (slider.kind === 'slider_float') {
+            expect(slider.directBind).toBe(true);
+            expect(slider.valueExpr).toBe('props.speed');
+        }
+    });
 });

@@ -596,6 +596,7 @@ function lowerCheckbox(attrs, rawAttrs, body, ctx, loc) {
         valueExprStr = exprToCpp(valueExpr, ctx);
     }
     // If not state-bound, get onChange expression
+    let directBind;
     if (!stateVar) {
         const onChangeRaw = rawAttrs.get('onChange');
         if (onChangeRaw) {
@@ -605,9 +606,12 @@ function lowerCheckbox(attrs, rawAttrs, body, ctx, loc) {
                 onChangeExprStr = `${onChangeExprStr}()`;
             }
         }
+        else if (valueExprStr && valueExprStr.startsWith('props.')) {
+            directBind = true;
+        }
     }
     const style = attrs['style'];
-    body.push({ kind: 'checkbox', label, stateVar, valueExpr: valueExprStr, onChangeExpr: onChangeExprStr, style, loc });
+    body.push({ kind: 'checkbox', label, stateVar, valueExpr: valueExprStr, onChangeExpr: onChangeExprStr, directBind, style, loc });
 }
 function lowerMenuItem(attrs, rawAttrs, body, ctx, loc) {
     const label = attrs['label'] ?? '""';
@@ -933,8 +937,8 @@ function lowerRadio(attrs, rawAttrs, body, ctx, loc) {
     const label = attrs['label'] ?? '""';
     const index = attrs['index'] ?? '0';
     const style = attrs['style'];
-    const { stateVar, valueExpr, onChangeExpr } = lowerValueOnChange(rawAttrs, ctx);
-    body.push({ kind: 'radio', label, stateVar, valueExpr, onChangeExpr, index, style, loc });
+    const { stateVar, valueExpr, onChangeExpr, directBind } = lowerValueOnChange(rawAttrs, ctx);
+    body.push({ kind: 'radio', label, stateVar, valueExpr, onChangeExpr, directBind, index, style, loc });
 }
 function lowerInputTextMultiline(attrs, rawAttrs, body, ctx, loc) {
     const label = attrs['label'] ?? '""';
@@ -1030,6 +1034,7 @@ function lowerValueOnChange(rawAttrs, ctx) {
     let stateVar = '';
     let valueExpr;
     let onChangeExpr;
+    let directBind;
     const valueRaw = rawAttrs.get('value');
     if (valueRaw && ts.isIdentifier(valueRaw) && ctx.stateVars.has(valueRaw.text)) {
         stateVar = valueRaw.text;
@@ -1043,57 +1048,61 @@ function lowerValueOnChange(rawAttrs, ctx) {
                 onChangeExpr = `${onChangeExpr}()`;
             }
         }
+        else if (valueExpr.startsWith('props.')) {
+            // No onChange + props reference = direct pointer binding
+            directBind = true;
+        }
     }
-    return { stateVar, valueExpr, onChangeExpr };
+    return { stateVar, valueExpr, onChangeExpr, directBind };
 }
 function lowerSliderFloat(attrs, rawAttrs, body, ctx, loc) {
     const label = attrs['label'] ?? '""';
     const min = attrs['min'] ?? '0.0f';
     const max = attrs['max'] ?? '1.0f';
     const style = attrs['style'];
-    const { stateVar, valueExpr, onChangeExpr } = lowerValueOnChange(rawAttrs, ctx);
-    body.push({ kind: 'slider_float', label, stateVar, valueExpr, onChangeExpr, min, max, style, loc });
+    const { stateVar, valueExpr, onChangeExpr, directBind } = lowerValueOnChange(rawAttrs, ctx);
+    body.push({ kind: 'slider_float', label, stateVar, valueExpr, onChangeExpr, directBind, min, max, style, loc });
 }
 function lowerSliderInt(attrs, rawAttrs, body, ctx, loc) {
     const label = attrs['label'] ?? '""';
     const min = attrs['min'] ?? '0';
     const max = attrs['max'] ?? '100';
     const style = attrs['style'];
-    const { stateVar, valueExpr, onChangeExpr } = lowerValueOnChange(rawAttrs, ctx);
-    body.push({ kind: 'slider_int', label, stateVar, valueExpr, onChangeExpr, min, max, style, loc });
+    const { stateVar, valueExpr, onChangeExpr, directBind } = lowerValueOnChange(rawAttrs, ctx);
+    body.push({ kind: 'slider_int', label, stateVar, valueExpr, onChangeExpr, directBind, min, max, style, loc });
 }
 function lowerDragFloat(attrs, rawAttrs, body, ctx, loc) {
     const label = attrs['label'] ?? '""';
     const speed = attrs['speed'] ?? '1.0f';
     const style = attrs['style'];
-    const { stateVar, valueExpr, onChangeExpr } = lowerValueOnChange(rawAttrs, ctx);
-    body.push({ kind: 'drag_float', label, stateVar, valueExpr, onChangeExpr, speed, style, loc });
+    const { stateVar, valueExpr, onChangeExpr, directBind } = lowerValueOnChange(rawAttrs, ctx);
+    body.push({ kind: 'drag_float', label, stateVar, valueExpr, onChangeExpr, directBind, speed, style, loc });
 }
 function lowerDragInt(attrs, rawAttrs, body, ctx, loc) {
     const label = attrs['label'] ?? '""';
     const speed = attrs['speed'] ?? '1.0f';
     const style = attrs['style'];
-    const { stateVar, valueExpr, onChangeExpr } = lowerValueOnChange(rawAttrs, ctx);
-    body.push({ kind: 'drag_int', label, stateVar, valueExpr, onChangeExpr, speed, style, loc });
+    const { stateVar, valueExpr, onChangeExpr, directBind } = lowerValueOnChange(rawAttrs, ctx);
+    body.push({ kind: 'drag_int', label, stateVar, valueExpr, onChangeExpr, directBind, speed, style, loc });
 }
 function lowerCombo(attrs, rawAttrs, body, ctx, loc) {
     const label = attrs['label'] ?? '""';
     const items = attrs['items'] ?? '';
     const style = attrs['style'];
-    const { stateVar, valueExpr, onChangeExpr } = lowerValueOnChange(rawAttrs, ctx);
-    body.push({ kind: 'combo', label, stateVar, valueExpr, onChangeExpr, items, style, loc });
+    const { stateVar, valueExpr, onChangeExpr, directBind } = lowerValueOnChange(rawAttrs, ctx);
+    body.push({ kind: 'combo', label, stateVar, valueExpr, onChangeExpr, directBind, items, style, loc });
 }
 function lowerInputInt(attrs, rawAttrs, body, ctx, loc) {
     const label = attrs['label'] ?? '""';
     const style = attrs['style'];
-    const { stateVar, valueExpr, onChangeExpr } = lowerValueOnChange(rawAttrs, ctx);
-    body.push({ kind: 'input_int', label, stateVar, valueExpr, onChangeExpr, style, loc });
+    const { stateVar, valueExpr, onChangeExpr, directBind } = lowerValueOnChange(rawAttrs, ctx);
+    body.push({ kind: 'input_int', label, stateVar, valueExpr, onChangeExpr, directBind, style, loc });
 }
 function lowerInputFloat(attrs, rawAttrs, body, ctx, loc) {
     const label = attrs['label'] ?? '""';
     const style = attrs['style'];
-    const { stateVar, valueExpr, onChangeExpr } = lowerValueOnChange(rawAttrs, ctx);
-    body.push({ kind: 'input_float', label, stateVar, valueExpr, onChangeExpr, style, loc });
+    const { stateVar, valueExpr, onChangeExpr, directBind } = lowerValueOnChange(rawAttrs, ctx);
+    body.push({ kind: 'input_float', label, stateVar, valueExpr, onChangeExpr, directBind, style, loc });
 }
 function lowerColorEdit(attrs, rawAttrs, body, ctx, loc) {
     const label = attrs['label'] ?? '""';
@@ -1110,8 +1119,8 @@ function lowerListBox(attrs, rawAttrs, body, ctx, loc) {
     const label = attrs['label'] ?? '""';
     const items = attrs['items'] ?? '';
     const style = attrs['style'];
-    const { stateVar, valueExpr, onChangeExpr } = lowerValueOnChange(rawAttrs, ctx);
-    body.push({ kind: 'list_box', label, stateVar, valueExpr, onChangeExpr, items, style, loc });
+    const { stateVar, valueExpr, onChangeExpr, directBind } = lowerValueOnChange(rawAttrs, ctx);
+    body.push({ kind: 'list_box', label, stateVar, valueExpr, onChangeExpr, directBind, items, style, loc });
 }
 function lowerProgressBar(attrs, rawAttrs, body, ctx, loc) {
     const value = attrs['value'] ?? '0.0f';

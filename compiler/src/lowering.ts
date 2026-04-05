@@ -651,6 +651,7 @@ function lowerCheckbox(attrs: Record<string, string>, rawAttrs: Map<string, ts.E
     }
 
     // If not state-bound, get onChange expression
+    let directBind: boolean | undefined;
     if (!stateVar) {
         const onChangeRaw = rawAttrs.get('onChange');
         if (onChangeRaw) {
@@ -659,11 +660,13 @@ function lowerCheckbox(attrs: Record<string, string>, rawAttrs: Map<string, ts.E
             if (!onChangeExprStr.startsWith('[') && !onChangeExprStr.endsWith(')')) {
                 onChangeExprStr = `${onChangeExprStr}()`;
             }
+        } else if (valueExprStr && valueExprStr.startsWith('props.')) {
+            directBind = true;
         }
     }
 
     const style = attrs['style'];
-    body.push({ kind: 'checkbox', label, stateVar, valueExpr: valueExprStr, onChangeExpr: onChangeExprStr, style, loc });
+    body.push({ kind: 'checkbox', label, stateVar, valueExpr: valueExprStr, onChangeExpr: onChangeExprStr, directBind, style, loc });
 }
 
 function lowerMenuItem(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext, loc: SourceLoc): void {
@@ -995,8 +998,8 @@ function lowerRadio(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expr
     const label = attrs['label'] ?? '""';
     const index = attrs['index'] ?? '0';
     const style = attrs['style'];
-    const { stateVar, valueExpr, onChangeExpr } = lowerValueOnChange(rawAttrs, ctx);
-    body.push({ kind: 'radio', label, stateVar, valueExpr, onChangeExpr, index, style, loc });
+    const { stateVar, valueExpr, onChangeExpr, directBind } = lowerValueOnChange(rawAttrs, ctx);
+    body.push({ kind: 'radio', label, stateVar, valueExpr, onChangeExpr, directBind, index, style, loc });
 }
 
 function lowerInputTextMultiline(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext, loc: SourceLoc): void {
@@ -1094,10 +1097,11 @@ function getRawAttributes(attributes: ts.JsxAttributes): Map<string, ts.Expressi
     return result;
 }
 
-function lowerValueOnChange(rawAttrs: Map<string, ts.Expression | null>, ctx: LoweringContext): { stateVar: string; valueExpr?: string; onChangeExpr?: string } {
+function lowerValueOnChange(rawAttrs: Map<string, ts.Expression | null>, ctx: LoweringContext): { stateVar: string; valueExpr?: string; onChangeExpr?: string; directBind?: boolean } {
     let stateVar = '';
     let valueExpr: string | undefined;
     let onChangeExpr: string | undefined;
+    let directBind: boolean | undefined;
     const valueRaw = rawAttrs.get('value');
     if (valueRaw && ts.isIdentifier(valueRaw) && ctx.stateVars.has(valueRaw.text)) {
         stateVar = valueRaw.text;
@@ -1109,9 +1113,12 @@ function lowerValueOnChange(rawAttrs: Map<string, ts.Expression | null>, ctx: Lo
             if (!onChangeExpr.startsWith('[') && !onChangeExpr.endsWith(')')) {
                 onChangeExpr = `${onChangeExpr}()`;
             }
+        } else if (valueExpr.startsWith('props.')) {
+            // No onChange + props reference = direct pointer binding
+            directBind = true;
         }
     }
-    return { stateVar, valueExpr, onChangeExpr };
+    return { stateVar, valueExpr, onChangeExpr, directBind };
 }
 
 function lowerSliderFloat(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext, loc: SourceLoc): void {
@@ -1119,8 +1126,8 @@ function lowerSliderFloat(attrs: Record<string, string>, rawAttrs: Map<string, t
     const min = attrs['min'] ?? '0.0f';
     const max = attrs['max'] ?? '1.0f';
     const style = attrs['style'];
-    const { stateVar, valueExpr, onChangeExpr } = lowerValueOnChange(rawAttrs, ctx);
-    body.push({ kind: 'slider_float', label, stateVar, valueExpr, onChangeExpr, min, max, style, loc });
+    const { stateVar, valueExpr, onChangeExpr, directBind } = lowerValueOnChange(rawAttrs, ctx);
+    body.push({ kind: 'slider_float', label, stateVar, valueExpr, onChangeExpr, directBind, min, max, style, loc });
 }
 
 function lowerSliderInt(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext, loc: SourceLoc): void {
@@ -1128,46 +1135,46 @@ function lowerSliderInt(attrs: Record<string, string>, rawAttrs: Map<string, ts.
     const min = attrs['min'] ?? '0';
     const max = attrs['max'] ?? '100';
     const style = attrs['style'];
-    const { stateVar, valueExpr, onChangeExpr } = lowerValueOnChange(rawAttrs, ctx);
-    body.push({ kind: 'slider_int', label, stateVar, valueExpr, onChangeExpr, min, max, style, loc });
+    const { stateVar, valueExpr, onChangeExpr, directBind } = lowerValueOnChange(rawAttrs, ctx);
+    body.push({ kind: 'slider_int', label, stateVar, valueExpr, onChangeExpr, directBind, min, max, style, loc });
 }
 
 function lowerDragFloat(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext, loc: SourceLoc): void {
     const label = attrs['label'] ?? '""';
     const speed = attrs['speed'] ?? '1.0f';
     const style = attrs['style'];
-    const { stateVar, valueExpr, onChangeExpr } = lowerValueOnChange(rawAttrs, ctx);
-    body.push({ kind: 'drag_float', label, stateVar, valueExpr, onChangeExpr, speed, style, loc });
+    const { stateVar, valueExpr, onChangeExpr, directBind } = lowerValueOnChange(rawAttrs, ctx);
+    body.push({ kind: 'drag_float', label, stateVar, valueExpr, onChangeExpr, directBind, speed, style, loc });
 }
 
 function lowerDragInt(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext, loc: SourceLoc): void {
     const label = attrs['label'] ?? '""';
     const speed = attrs['speed'] ?? '1.0f';
     const style = attrs['style'];
-    const { stateVar, valueExpr, onChangeExpr } = lowerValueOnChange(rawAttrs, ctx);
-    body.push({ kind: 'drag_int', label, stateVar, valueExpr, onChangeExpr, speed, style, loc });
+    const { stateVar, valueExpr, onChangeExpr, directBind } = lowerValueOnChange(rawAttrs, ctx);
+    body.push({ kind: 'drag_int', label, stateVar, valueExpr, onChangeExpr, directBind, speed, style, loc });
 }
 
 function lowerCombo(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext, loc: SourceLoc): void {
     const label = attrs['label'] ?? '""';
     const items = attrs['items'] ?? '';
     const style = attrs['style'];
-    const { stateVar, valueExpr, onChangeExpr } = lowerValueOnChange(rawAttrs, ctx);
-    body.push({ kind: 'combo', label, stateVar, valueExpr, onChangeExpr, items, style, loc });
+    const { stateVar, valueExpr, onChangeExpr, directBind } = lowerValueOnChange(rawAttrs, ctx);
+    body.push({ kind: 'combo', label, stateVar, valueExpr, onChangeExpr, directBind, items, style, loc });
 }
 
 function lowerInputInt(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext, loc: SourceLoc): void {
     const label = attrs['label'] ?? '""';
     const style = attrs['style'];
-    const { stateVar, valueExpr, onChangeExpr } = lowerValueOnChange(rawAttrs, ctx);
-    body.push({ kind: 'input_int', label, stateVar, valueExpr, onChangeExpr, style, loc });
+    const { stateVar, valueExpr, onChangeExpr, directBind } = lowerValueOnChange(rawAttrs, ctx);
+    body.push({ kind: 'input_int', label, stateVar, valueExpr, onChangeExpr, directBind, style, loc });
 }
 
 function lowerInputFloat(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext, loc: SourceLoc): void {
     const label = attrs['label'] ?? '""';
     const style = attrs['style'];
-    const { stateVar, valueExpr, onChangeExpr } = lowerValueOnChange(rawAttrs, ctx);
-    body.push({ kind: 'input_float', label, stateVar, valueExpr, onChangeExpr, style, loc });
+    const { stateVar, valueExpr, onChangeExpr, directBind } = lowerValueOnChange(rawAttrs, ctx);
+    body.push({ kind: 'input_float', label, stateVar, valueExpr, onChangeExpr, directBind, style, loc });
 }
 
 function lowerColorEdit(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext, loc: SourceLoc): void {
@@ -1186,8 +1193,8 @@ function lowerListBox(attrs: Record<string, string>, rawAttrs: Map<string, ts.Ex
     const label = attrs['label'] ?? '""';
     const items = attrs['items'] ?? '';
     const style = attrs['style'];
-    const { stateVar, valueExpr, onChangeExpr } = lowerValueOnChange(rawAttrs, ctx);
-    body.push({ kind: 'list_box', label, stateVar, valueExpr, onChangeExpr, items, style, loc });
+    const { stateVar, valueExpr, onChangeExpr, directBind } = lowerValueOnChange(rawAttrs, ctx);
+    body.push({ kind: 'list_box', label, stateVar, valueExpr, onChangeExpr, directBind, items, style, loc });
 }
 
 function lowerProgressBar(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext, loc: SourceLoc): void {

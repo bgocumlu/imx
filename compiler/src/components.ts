@@ -65,7 +65,7 @@ export const HOST_COMPONENTS: Record<string, HostComponentDef> = {
     Checkbox: {
         props: {
             value: { type: 'boolean', required: true },
-            onChange: { type: 'callback', required: true },
+            onChange: { type: 'callback', required: false },
             label: { type: 'string', required: false },
             style: { type: 'style', required: false },
         },
@@ -127,7 +127,7 @@ export const HOST_COMPONENTS: Record<string, HostComponentDef> = {
         props: {
             label: { type: 'string', required: true },
             value: { type: 'number', required: true },
-            onChange: { type: 'callback', required: true },
+            onChange: { type: 'callback', required: false },
             min: { type: 'number', required: true },
             max: { type: 'number', required: true },
             style: { type: 'style', required: false },
@@ -138,7 +138,7 @@ export const HOST_COMPONENTS: Record<string, HostComponentDef> = {
         props: {
             label: { type: 'string', required: true },
             value: { type: 'number', required: true },
-            onChange: { type: 'callback', required: true },
+            onChange: { type: 'callback', required: false },
             min: { type: 'number', required: true },
             max: { type: 'number', required: true },
             style: { type: 'style', required: false },
@@ -149,7 +149,7 @@ export const HOST_COMPONENTS: Record<string, HostComponentDef> = {
         props: {
             label: { type: 'string', required: true },
             value: { type: 'number', required: true },
-            onChange: { type: 'callback', required: true },
+            onChange: { type: 'callback', required: false },
             speed: { type: 'number', required: false },
             style: { type: 'style', required: false },
         },
@@ -159,7 +159,7 @@ export const HOST_COMPONENTS: Record<string, HostComponentDef> = {
         props: {
             label: { type: 'string', required: true },
             value: { type: 'number', required: true },
-            onChange: { type: 'callback', required: true },
+            onChange: { type: 'callback', required: false },
             speed: { type: 'number', required: false },
             style: { type: 'style', required: false },
         },
@@ -169,7 +169,7 @@ export const HOST_COMPONENTS: Record<string, HostComponentDef> = {
         props: {
             label: { type: 'string', required: true },
             value: { type: 'number', required: true },
-            onChange: { type: 'callback', required: true },
+            onChange: { type: 'callback', required: false },
             items: { type: 'string', required: true },
             style: { type: 'style', required: false },
         },
@@ -179,7 +179,7 @@ export const HOST_COMPONENTS: Record<string, HostComponentDef> = {
         props: {
             label: { type: 'string', required: true },
             value: { type: 'number', required: true },
-            onChange: { type: 'callback', required: true },
+            onChange: { type: 'callback', required: false },
             style: { type: 'style', required: false },
         },
         hasChildren: false, isContainer: false,
@@ -188,7 +188,7 @@ export const HOST_COMPONENTS: Record<string, HostComponentDef> = {
         props: {
             label: { type: 'string', required: true },
             value: { type: 'number', required: true },
-            onChange: { type: 'callback', required: true },
+            onChange: { type: 'callback', required: false },
             style: { type: 'style', required: false },
         },
         hasChildren: false, isContainer: false,
@@ -206,7 +206,7 @@ export const HOST_COMPONENTS: Record<string, HostComponentDef> = {
         props: {
             label: { type: 'string', required: true },
             value: { type: 'number', required: true },
-            onChange: { type: 'callback', required: true },
+            onChange: { type: 'callback', required: false },
             items: { type: 'string', required: true },
             style: { type: 'style', required: false },
         },

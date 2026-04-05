@@ -64,6 +64,7 @@ export interface IRCheckbox {
     stateVar: string;
     valueExpr?: string;
     onChangeExpr?: string;
+    directBind?: boolean;
     style?: string;
     loc?: SourceLoc;
 }
@@ -125,6 +126,7 @@ export interface IRSliderFloat {
     stateVar: string;
     valueExpr?: string;
     onChangeExpr?: string;
+    directBind?: boolean;
     min: string;
     max: string;
     style?: string;
@@ -136,6 +138,7 @@ export interface IRSliderInt {
     stateVar: string;
     valueExpr?: string;
     onChangeExpr?: string;
+    directBind?: boolean;
     min: string;
     max: string;
     style?: string;
@@ -147,6 +150,7 @@ export interface IRDragFloat {
     stateVar: string;
     valueExpr?: string;
     onChangeExpr?: string;
+    directBind?: boolean;
     speed: string;
     style?: string;
     loc?: SourceLoc;
@@ -157,6 +161,7 @@ export interface IRDragInt {
     stateVar: string;
     valueExpr?: string;
     onChangeExpr?: string;
+    directBind?: boolean;
     speed: string;
     style?: string;
     loc?: SourceLoc;
@@ -167,6 +172,7 @@ export interface IRCombo {
     stateVar: string;
     valueExpr?: string;
     onChangeExpr?: string;
+    directBind?: boolean;
     items: string;
     style?: string;
     loc?: SourceLoc;
@@ -177,6 +183,7 @@ export interface IRInputInt {
     stateVar: string;
     valueExpr?: string;
     onChangeExpr?: string;
+    directBind?: boolean;
     style?: string;
     loc?: SourceLoc;
 }
@@ -186,6 +193,7 @@ export interface IRInputFloat {
     stateVar: string;
     valueExpr?: string;
     onChangeExpr?: string;
+    directBind?: boolean;
     style?: string;
     loc?: SourceLoc;
 }
@@ -193,6 +201,7 @@ export interface IRColorEdit {
     kind: 'color_edit';
     label: string;
     stateVar: string;
+    directBind?: boolean;
     style?: string;
     loc?: SourceLoc;
 }
@@ -202,6 +211,7 @@ export interface IRListBox {
     stateVar: string;
     valueExpr?: string;
     onChangeExpr?: string;
+    directBind?: boolean;
     items: string;
     style?: string;
     loc?: SourceLoc;
@@ -252,6 +262,7 @@ export interface IRRadio {
     stateVar: string;
     valueExpr?: string;
     onChangeExpr?: string;
+    directBind?: boolean;
     index: string;
     style?: string;
     loc?: SourceLoc;
@@ -268,6 +279,7 @@ export interface IRColorPicker {
     kind: 'color_picker';
     label: string;
     stateVar: string;
+    directBind?: boolean;
     style?: string;
     loc?: SourceLoc;
 }
