@@ -110,10 +110,6 @@ endif()
 
 # --- Examples ---
 if(IMX_BUILD_EXAMPLES)
-    # Legacy app (kept until example replaces it)
-    add_executable(app main.cpp)
-    target_link_libraries(app PRIVATE imgui_lib)
-
     # --- hello_app: codegen + native binary ---
     include(ImxCompile)
 
