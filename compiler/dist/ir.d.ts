@@ -57,6 +57,9 @@ export interface IRTextInput {
     label: string;
     bufferIndex: number;
     stateVar: string;
+    valueExpr?: string;
+    onChangeExpr?: string;
+    directBind?: boolean;
     style?: string;
     loc?: SourceLoc;
 }
@@ -100,6 +103,7 @@ export interface IRListMap {
     array: string;
     itemVar: string;
     indexVar: string;
+    internalIndexVar: string;
     key: string;
     componentName: string;
     stateCount: number;

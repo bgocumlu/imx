@@ -8,6 +8,7 @@ interface LoweringContext {
     propsParam: string | null;
     propsFieldTypes: Map<string, IRType | 'callback'>;
     bufferIndex: number;
+    mapCounter: number;
     sourceFile: ts.SourceFile;
     customComponents: Map<string, string>;
 }

@@ -65,6 +65,7 @@ export function lowerComponent(parsed, validation, externalInterfaces) {
         propsParam,
         propsFieldTypes,
         bufferIndex: 0,
+        mapCounter: 0,
         sourceFile: parsed.sourceFile,
         customComponents: validation.customComponents,
     };
@@ -642,17 +643,9 @@ function lowerButton(attrs, rawAttrs, body, ctx, loc) {
 function lowerTextInput(attrs, rawAttrs, body, ctx, loc) {
     const label = attrs['label'] ?? '""';
     const bufferIndex = ctx.bufferIndex++;
-    // Detect bound state variable from value prop
-    let stateVar = '';
-    const valueExpr = rawAttrs.get('value');
-    if (valueExpr && ts.isIdentifier(valueExpr)) {
-        const varName = valueExpr.text;
-        if (ctx.stateVars.has(varName)) {
-            stateVar = varName;
-        }
-    }
     const style = attrs['style'];
-    body.push({ kind: 'text_input', label, bufferIndex, stateVar, style, loc });
+    const { stateVar, valueExpr, onChangeExpr, directBind } = lowerValueOnChange(rawAttrs, ctx);
+    body.push({ kind: 'text_input', label, bufferIndex, stateVar: stateVar, valueExpr, onChangeExpr, directBind, style, loc });
 }
 function lowerCheckbox(attrs, rawAttrs, body, ctx, loc) {
     const label = attrs['label'] ?? '""';
@@ -862,12 +855,14 @@ function lowerListMap(node, body, ctx, loc) {
             lowerJsxExpression(callback.body, mapBody, ctx);
         }
     }
+    const internalIndexVar = `_map_idx_${ctx.mapCounter++}`;
     body.push({
         kind: 'list_map',
         array,
         itemVar,
         indexVar,
-        key: indexVar,
+        internalIndexVar,
+        key: internalIndexVar,
         componentName: 'ListItem',
         stateCount: 0,
         bufferCount: 0,

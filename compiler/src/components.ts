@@ -55,7 +55,7 @@ export const HOST_COMPONENTS: Record<string, HostComponentDef> = {
     TextInput: {
         props: {
             value: { type: 'string', required: true },
-            onChange: { type: 'callback', required: true },
+            onChange: { type: 'callback', required: false },
             label: { type: 'string', required: false },
             placeholder: { type: 'string', required: false },
             style: { type: 'style', required: false },

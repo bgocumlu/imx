@@ -184,7 +184,7 @@ interface RowProps { gap?: number; style?: Style; children?: any; }
 interface ColumnProps { gap?: number; style?: Style; children?: any; }
 interface TextProps { style?: Style; children?: any; }
 interface ButtonProps { title: string; onPress: () => void; disabled?: boolean; style?: Style; }
-interface TextInputProps { value: string; onChange: (v: string) => void; label?: string; placeholder?: string; style?: Style; }
+interface TextInputProps { value: string; onChange?: (v: string) => void; label?: string; placeholder?: string; style?: Style; }
 interface CheckboxProps { value: boolean; onChange?: (v: boolean) => void; label?: string; style?: Style; }
 interface SeparatorProps {}
 interface PopupProps { id: string; style?: Style; children?: any; }

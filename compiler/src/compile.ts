@@ -18,6 +18,7 @@ interface CompiledComponent {
     ir: IRComponent;
     imports: Map<string, string>;
     hasProps: boolean;
+    boundProps: Set<string>;
 }
 
 export interface CompileResult {
@@ -76,6 +77,7 @@ export function compile(files: string[], outputDir: string): CompileResult {
             ir,
             imports,
             hasProps: ir.params.length > 0 || !!ir.namedPropsType,
+            boundProps: new Set<string>(),
         });
     }
 
@@ -92,7 +94,17 @@ export function compile(files: string[], outputDir: string): CompileResult {
     // Phase 3: Resolve imported component stateCount/bufferCount in IR, then emit
     for (const comp of compiled) {
         resolveCustomComponents(comp.ir.body, componentMap);
+        resolveDragDropTypes(comp.ir.body);
+        comp.boundProps = detectBoundProps(comp.ir.body);
+    }
 
+    // Build boundProps map for cross-component emitter use
+    const boundPropsMap = new Map<string, Set<string>>();
+    for (const comp of compiled) {
+        boundPropsMap.set(comp.name, comp.boundProps);
+    }
+
+    for (const comp of compiled) {
         const importInfos: ImportInfo[] = [];
         for (const [importedName] of comp.imports) {
             const importedComp = componentMap.get(importedName);
@@ -104,7 +116,7 @@ export function compile(files: string[], outputDir: string): CompileResult {
             }
         }
 
-        const cppOutput = emitComponent(comp.ir, importInfos, comp.sourceFile);
+        const cppOutput = emitComponent(comp.ir, importInfos, comp.sourceFile, comp.boundProps, boundPropsMap);
         const baseName = comp.name;
         const outPath = path.join(outputDir, `${baseName}.gen.cpp`);
         fs.writeFileSync(outPath, cppOutput);
@@ -120,7 +132,7 @@ export function compile(files: string[], outputDir: string): CompileResult {
         // Only generate a header for inline props (not for named interface types —
         // those are declared in the user's main.cpp)
         if (comp.hasProps && !comp.ir.namedPropsType) {
-            const headerOutput = emitComponentHeader(comp.ir, comp.sourceFile);
+            const headerOutput = emitComponentHeader(comp.ir, comp.sourceFile, comp.boundProps);
             const headerPath = path.join(outputDir, `${baseName}.gen.h`);
             fs.writeFileSync(headerPath, headerOutput);
             console.log(`  ${baseName} -> ${headerPath} (header)`);
@@ -157,6 +169,50 @@ function resolveCustomComponents(nodes: IRNode[], map: Map<string, CompiledCompo
             if (node.elseBody) resolveCustomComponents(node.elseBody, map);
         } else if (node.kind === 'list_map') {
             resolveCustomComponents(node.body, map);
+        }
+    }
+}
+
+export function resolveDragDropTypes(nodes: IRNode[]): void {
+    const typeMap = new Map<string, string>();
+    collectDragDropTypes(nodes, typeMap);
+    applyDragDropTypes(nodes, typeMap);
+}
+
+function collectDragDropTypes(nodes: IRNode[], typeMap: Map<string, string>): void {
+    for (const node of nodes) {
+        if (node.kind === 'begin_container' && node.tag === 'DragDropTarget') {
+            const onDrop = node.props['onDrop'] ?? '';
+            const parts = onDrop.split('|');
+            if (parts.length >= 3) {
+                const cppType = parts[0];
+                const typeStr = node.props['type'] ?? '';
+                const key = typeStr.replace(/^"|"$/g, '');
+                if (key) typeMap.set(key, cppType);
+            }
+        } else if (node.kind === 'conditional') {
+            collectDragDropTypes(node.body, typeMap);
+            if (node.elseBody) collectDragDropTypes(node.elseBody, typeMap);
+        } else if (node.kind === 'list_map') {
+            collectDragDropTypes(node.body, typeMap);
+        }
+    }
+}
+
+function applyDragDropTypes(nodes: IRNode[], typeMap: Map<string, string>): void {
+    for (const node of nodes) {
+        if (node.kind === 'begin_container' && node.tag === 'DragDropSource') {
+            const typeStr = node.props['type'] ?? '';
+            const key = typeStr.replace(/^"|"$/g, '');
+            const cppType = typeMap.get(key);
+            if (cppType) {
+                node.props['_payloadType'] = cppType;
+            }
+        } else if (node.kind === 'conditional') {
+            applyDragDropTypes(node.body, typeMap);
+            if (node.elseBody) applyDragDropTypes(node.elseBody, typeMap);
+        } else if (node.kind === 'list_map') {
+            applyDragDropTypes(node.body, typeMap);
         }
     }
 }
@@ -213,6 +269,30 @@ function generateEmbedHeaders(images: IRImage[], sourceDir: string, outputDir: s
 
         fs.writeFileSync(headerPath, header);
         console.log(`  ${rawSrc} -> ${headerPath} (embed)`);
+    }
+}
+
+function detectBoundProps(nodes: IRNode[]): Set<string> {
+    const bound = new Set<string>();
+    walkNodesForBinding(nodes, bound);
+    return bound;
+}
+
+function walkNodesForBinding(nodes: IRNode[], bound: Set<string>): void {
+    for (const node of nodes) {
+        if ('directBind' in node && (node as any).directBind && 'valueExpr' in node) {
+            const expr = (node as any).valueExpr as string;
+            if (expr && expr.startsWith('props.')) {
+                const propName = expr.slice(6).split('.')[0].split('[')[0];
+                bound.add(propName);
+            }
+        }
+        if (node.kind === 'conditional') {
+            walkNodesForBinding(node.body, bound);
+            if (node.elseBody) walkNodesForBinding(node.elseBody, bound);
+        } else if (node.kind === 'list_map') {
+            walkNodesForBinding(node.body, bound);
+        }
     }
 }
 

@@ -1,5 +1,7 @@
 const INDENT = '    ';
 let currentCompName = '';
+let currentBoundProps = new Set();
+let allBoundProps = new Map();
 function emitLocComment(loc, tag, lines, indent) {
     if (loc) {
         lines.push(`${indent}// ${loc.file}:${loc.line} <${tag}>`);
@@ -33,6 +35,19 @@ function asCharPtr(expr) {
         return expr;
     // Expression — assume std::string, add .c_str()
     return `${expr}.c_str()`;
+}
+/**
+ * For directBind emitters: if the valueExpr references a bound prop (pointer),
+ * return &*expr for bound props (C++ identity: &*ptr == ptr, and the *
+ * blocks the post-processing regex lookbehind from dereferencing again).
+ * Otherwise, emit &expr.
+ */
+function emitDirectBindPtr(valueExpr) {
+    const propName = valueExpr.startsWith('props.') ? valueExpr.slice(6).split('.')[0].split('[')[0] : '';
+    if (currentBoundProps.has(propName)) {
+        return `&*${valueExpr}`; // already a pointer; &* is identity, * blocks regex lookbehind
+    }
+    return `&${valueExpr}`;
 }
 function emitImVec4(arrayStr) {
     const parts = arrayStr.split(',').map(s => {
@@ -96,7 +111,7 @@ function emitDockSetupFunction(layout, compName, lines) {
  * Emit a .gen.h header for a component that has props.
  * Contains the props struct and function forward declaration.
  */
-export function emitComponentHeader(comp, sourceFile) {
+export function emitComponentHeader(comp, sourceFile, boundProps) {
     const lines = [];
     if (sourceFile) {
         lines.push(`// Generated from ${sourceFile} by imxc`);
@@ -110,7 +125,12 @@ export function emitComponentHeader(comp, sourceFile) {
     // Props struct
     lines.push(`struct ${comp.name}Props {`);
     for (const p of comp.params) {
-        lines.push(`${INDENT}${cppPropType(p.type)} ${p.name};`);
+        if (boundProps && boundProps.has(p.name)) {
+            lines.push(`${INDENT}${cppPropType(p.type)}* ${p.name} = nullptr;`);
+        }
+        else {
+            lines.push(`${INDENT}${cppPropType(p.type)} ${p.name};`);
+        }
     }
     lines.push('};');
     lines.push('');
@@ -119,7 +139,7 @@ export function emitComponentHeader(comp, sourceFile) {
     lines.push('');
     return lines.join('\n');
 }
-export function emitComponent(comp, imports, sourceFile) {
+export function emitComponent(comp, imports, sourceFile, boundProps, boundPropsMap) {
     const lines = [];
     // Reset counters for each component
     styleCounter = 0;
@@ -132,6 +152,8 @@ export function emitComponent(comp, imports, sourceFile) {
     dragDropSourceStack.length = 0;
     dragDropTargetStack.length = 0;
     currentCompName = comp.name;
+    currentBoundProps = boundProps ?? new Set();
+    allBoundProps = boundPropsMap ?? new Map();
     // hasProps: true for inline prop struct OR named interface
     const hasProps = comp.params.length > 0 || !!comp.namedPropsType;
     // propsTypeName: for named interface use it directly; for inline use ComponentProps convention
@@ -227,6 +249,18 @@ export function emitComponent(comp, imports, sourceFile) {
     }
     // Body IR nodes
     emitNodes(comp.body, lines, 1);
+    // Post-processing: dereference bound prop reads in expressions
+    if (currentBoundProps.size > 0) {
+        for (let i = 0; i < lines.length; i++) {
+            if (lines[i].trimStart().startsWith('//'))
+                continue;
+            for (const prop of currentBoundProps) {
+                // Replace props.X reads with (*props.X) — but not &props.X or *props.X (already handled)
+                const pattern = new RegExp(`(?<![&*])\\bprops\\.${prop}\\b`, 'g');
+                lines[i] = lines[i].replace(pattern, `(*props.${prop})`);
+            }
+        }
+    }
     lines.push('}');
     lines.push('');
     return lines.join('\n');
@@ -938,7 +972,8 @@ function emitEndContainer(node, lines, indent) {
             const payload = props['payload'] ?? '0';
             lines.push(`${indent}ImGui::EndGroup();`);
             lines.push(`${indent}if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID)) {`);
-            lines.push(`${indent}    float _dd_payload = static_cast<float>(${payload});`);
+            const payloadType = props['_payloadType'] ?? 'float';
+            lines.push(`${indent}    ${payloadType} _dd_payload = static_cast<${payloadType}>(${payload});`);
             lines.push(`${indent}    ImGui::SetDragDropPayload(${typeStr}, &_dd_payload, sizeof(_dd_payload));`);
             lines.push(`${indent}    ImGui::Text("Dragging...");`);
             lines.push(`${indent}    ImGui::EndDragDropSource();`);
@@ -1043,6 +1078,30 @@ function emitTextInput(node, lines, indent) {
         lines.push(`${indent}${INDENT}}`);
         lines.push(`${indent}}`);
     }
+    else if (node.directBind && node.valueExpr) {
+        const propName = node.valueExpr.startsWith('props.') ? node.valueExpr.slice(6).split('.')[0].split('[')[0] : '';
+        const isBound = currentBoundProps.has(propName);
+        const readExpr = isBound ? `(*${node.valueExpr})` : node.valueExpr;
+        const writeExpr = isBound ? `(*${node.valueExpr})` : node.valueExpr;
+        lines.push(`${indent}{`);
+        lines.push(`${indent}${INDENT}auto& buf = ctx.get_buffer(${node.bufferIndex});`);
+        lines.push(`${indent}${INDENT}buf.sync_from(${readExpr});`);
+        lines.push(`${indent}${INDENT}if (imx::renderer::text_input(${label}, buf)) {`);
+        lines.push(`${indent}${INDENT}${INDENT}${writeExpr} = buf.value();`);
+        lines.push(`${indent}${INDENT}}`);
+        lines.push(`${indent}}`);
+    }
+    else if (node.valueExpr !== undefined) {
+        lines.push(`${indent}{`);
+        lines.push(`${indent}${INDENT}auto& buf = ctx.get_buffer(${node.bufferIndex});`);
+        lines.push(`${indent}${INDENT}buf.sync_from(${node.valueExpr});`);
+        lines.push(`${indent}${INDENT}if (imx::renderer::text_input(${label}, buf)) {`);
+        if (node.onChangeExpr) {
+            lines.push(`${indent}${INDENT}${INDENT}${node.onChangeExpr};`);
+        }
+        lines.push(`${indent}${INDENT}}`);
+        lines.push(`${indent}}`);
+    }
     else {
         lines.push(`${indent}auto& buf_${node.bufferIndex} = ctx.get_buffer(${node.bufferIndex});`);
         lines.push(`${indent}imx::renderer::text_input(${label}, buf_${node.bufferIndex});`);
@@ -1063,7 +1122,7 @@ function emitCheckbox(node, lines, indent) {
     }
     else if (node.directBind && node.valueExpr) {
         // Direct pointer binding — no temp variable
-        lines.push(`${indent}imx::renderer::checkbox(${label}, &${node.valueExpr});`);
+        lines.push(`${indent}imx::renderer::checkbox(${label}, ${emitDirectBindPtr(node.valueExpr)});`);
     }
     else if (node.valueExpr !== undefined) {
         // Props-bound / expression-bound case
@@ -1096,9 +1155,10 @@ function emitListMap(node, lines, indent, depth) {
     if (node.loc) {
         lines.push(`${indent}// ${node.loc.file}:${node.loc.line} .map()`);
     }
-    const idx = node.indexVar;
+    const idx = node.internalIndexVar;
     lines.push(`${indent}for (size_t ${idx} = 0; ${idx} < ${node.array}.size(); ${idx}++) {`);
     lines.push(`${indent}${INDENT}auto& ${node.itemVar} = ${node.array}[${idx}];`);
+    lines.push(`${indent}${INDENT}size_t ${node.indexVar} = ${idx};`);
     lines.push(`${indent}${INDENT}ctx.begin_instance("${node.componentName}", (int)${idx}, ${node.stateCount}, ${node.bufferCount});`);
     emitNodes(node.body, lines, depth + 2);
     lines.push(`${indent}${INDENT}ctx.end_instance();`);
@@ -1108,13 +1168,19 @@ function emitCustomComponent(node, lines, indent) {
     emitLocComment(node.loc, node.name, lines, indent);
     const instanceIndex = customComponentCounter++;
     const propsEntries = Object.entries(node.props);
+    const childBound = allBoundProps.get(node.name) ?? new Set();
     lines.push(`${indent}ctx.begin_instance("${node.name}", ${instanceIndex}, ${node.stateCount}, ${node.bufferCount});`);
     if (propsEntries.length > 0) {
         // MSVC-compatible: use variable-based prop assignment instead of designated initializers
         lines.push(`${indent}{`);
         lines.push(`${indent}${INDENT}${node.name}Props p;`);
         for (const [k, v] of propsEntries) {
-            lines.push(`${indent}${INDENT}p.${k} = ${v};`);
+            if (childBound.has(k)) {
+                lines.push(`${indent}${INDENT}p.${k} = &${v};`);
+            }
+            else {
+                lines.push(`${indent}${INDENT}p.${k} = ${v};`);
+            }
         }
         lines.push(`${indent}${INDENT}${node.name}_render(ctx, p);`);
         lines.push(`${indent}}`);
@@ -1163,7 +1229,7 @@ function emitSliderFloat(node, lines, indent) {
     }
     else if (node.directBind && node.valueExpr) {
         // Direct pointer binding
-        lines.push(`${indent}imx::renderer::slider_float(${label}, &${node.valueExpr}, ${min}, ${max});`);
+        lines.push(`${indent}imx::renderer::slider_float(${label}, ${emitDirectBindPtr(node.valueExpr)}, ${min}, ${max});`);
     }
     else if (node.valueExpr !== undefined) {
         lines.push(`${indent}{`);
@@ -1188,7 +1254,7 @@ function emitSliderInt(node, lines, indent) {
         lines.push(`${indent}}`);
     }
     else if (node.directBind && node.valueExpr) {
-        lines.push(`${indent}imx::renderer::slider_int(${label}, &${node.valueExpr}, ${node.min}, ${node.max});`);
+        lines.push(`${indent}imx::renderer::slider_int(${label}, ${emitDirectBindPtr(node.valueExpr)}, ${node.min}, ${node.max});`);
     }
     else if (node.valueExpr !== undefined) {
         lines.push(`${indent}{`);
@@ -1214,7 +1280,7 @@ function emitDragFloat(node, lines, indent) {
         lines.push(`${indent}}`);
     }
     else if (node.directBind && node.valueExpr) {
-        lines.push(`${indent}imx::renderer::drag_float(${label}, &${node.valueExpr}, ${speed});`);
+        lines.push(`${indent}imx::renderer::drag_float(${label}, ${emitDirectBindPtr(node.valueExpr)}, ${speed});`);
     }
     else if (node.valueExpr !== undefined) {
         lines.push(`${indent}{`);
@@ -1240,7 +1306,7 @@ function emitDragInt(node, lines, indent) {
         lines.push(`${indent}}`);
     }
     else if (node.directBind && node.valueExpr) {
-        lines.push(`${indent}imx::renderer::drag_int(${label}, &${node.valueExpr}, ${speed});`);
+        lines.push(`${indent}imx::renderer::drag_int(${label}, ${emitDirectBindPtr(node.valueExpr)}, ${speed});`);
     }
     else if (node.valueExpr !== undefined) {
         lines.push(`${indent}{`);
@@ -1271,7 +1337,7 @@ function emitCombo(node, lines, indent) {
     else if (node.directBind && node.valueExpr) {
         lines.push(`${indent}{`);
         lines.push(`${indent}${INDENT}const char* ${varName}[] = {${itemsList.join(', ')}};`);
-        lines.push(`${indent}${INDENT}imx::renderer::combo(${label}, &${node.valueExpr}, ${varName}, ${count});`);
+        lines.push(`${indent}${INDENT}imx::renderer::combo(${label}, ${emitDirectBindPtr(node.valueExpr)}, ${varName}, ${count});`);
         lines.push(`${indent}}`);
     }
     else if (node.valueExpr !== undefined) {
@@ -1298,7 +1364,7 @@ function emitInputInt(node, lines, indent) {
         lines.push(`${indent}}`);
     }
     else if (node.directBind && node.valueExpr) {
-        lines.push(`${indent}imx::renderer::input_int(${label}, &${node.valueExpr});`);
+        lines.push(`${indent}imx::renderer::input_int(${label}, ${emitDirectBindPtr(node.valueExpr)});`);
     }
     else if (node.valueExpr !== undefined) {
         lines.push(`${indent}{`);
@@ -1323,7 +1389,7 @@ function emitInputFloat(node, lines, indent) {
         lines.push(`${indent}}`);
     }
     else if (node.directBind && node.valueExpr) {
-        lines.push(`${indent}imx::renderer::input_float(${label}, &${node.valueExpr});`);
+        lines.push(`${indent}imx::renderer::input_float(${label}, ${emitDirectBindPtr(node.valueExpr)});`);
     }
     else if (node.valueExpr !== undefined) {
         lines.push(`${indent}{`);
@@ -1348,7 +1414,10 @@ function emitColorEdit(node, lines, indent) {
         lines.push(`${indent}}`);
     }
     else if (node.directBind && node.valueExpr) {
-        lines.push(`${indent}imx::renderer::color_edit(${label}, ${node.valueExpr}.data());`);
+        const propName = node.valueExpr.startsWith('props.') ? node.valueExpr.slice(6).split('.')[0].split('[')[0] : '';
+        const isBound = currentBoundProps.has(propName);
+        const dataExpr = isBound ? `(${node.valueExpr})->data()` : `${node.valueExpr}.data()`;
+        lines.push(`${indent}imx::renderer::color_edit(${label}, ${dataExpr});`);
     }
     else if (node.valueExpr !== undefined) {
         lines.push(`${indent}{`);
@@ -1379,7 +1448,7 @@ function emitListBox(node, lines, indent) {
     else if (node.directBind && node.valueExpr) {
         lines.push(`${indent}{`);
         lines.push(`${indent}${INDENT}const char* ${varName}[] = {${itemsList.join(', ')}};`);
-        lines.push(`${indent}${INDENT}imx::renderer::list_box(${label}, &${node.valueExpr}, ${varName}, ${count});`);
+        lines.push(`${indent}${INDENT}imx::renderer::list_box(${label}, ${emitDirectBindPtr(node.valueExpr)}, ${varName}, ${count});`);
         lines.push(`${indent}}`);
     }
     else if (node.valueExpr !== undefined) {
@@ -1451,7 +1520,7 @@ function emitRadio(node, lines, indent) {
         lines.push(`${indent}}`);
     }
     else if (node.directBind && node.valueExpr) {
-        lines.push(`${indent}imx::renderer::radio(${label}, &${node.valueExpr}, ${node.index});`);
+        lines.push(`${indent}imx::renderer::radio(${label}, ${emitDirectBindPtr(node.valueExpr)}, ${node.index});`);
     }
     else if (node.valueExpr !== undefined) {
         lines.push(`${indent}{`);
@@ -1493,7 +1562,10 @@ function emitColorPicker(node, lines, indent) {
         lines.push(`${indent}}`);
     }
     else if (node.directBind && node.valueExpr) {
-        lines.push(`${indent}imx::renderer::color_picker(${label}, ${node.valueExpr}.data());`);
+        const propName = node.valueExpr.startsWith('props.') ? node.valueExpr.slice(6).split('.')[0].split('[')[0] : '';
+        const isBound = currentBoundProps.has(propName);
+        const dataExpr = isBound ? `(${node.valueExpr})->data()` : `${node.valueExpr}.data()`;
+        lines.push(`${indent}imx::renderer::color_picker(${label}, ${dataExpr});`);
     }
     else if (node.valueExpr !== undefined) {
         lines.push(`${indent}{`);

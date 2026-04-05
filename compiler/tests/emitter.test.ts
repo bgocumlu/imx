@@ -1,8 +1,12 @@
 import { describe, it, expect } from 'vitest';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+import * as os from 'node:os';
 import { parseFile } from '../src/parser.js';
 import { validate } from '../src/validator.js';
 import { lowerComponent } from '../src/lowering.js';
 import { emitComponent, emitComponentHeader, emitRoot } from '../src/emitter.js';
+import { compile as compileFiles, resolveDragDropTypes } from '../src/compile.js';
 
 function compile(source: string, sourceFile?: string): string {
     const parsed = parseFile('Test.tsx', source);
@@ -10,6 +14,7 @@ function compile(source: string, sourceFile?: string): string {
     const validation = validate(parsed);
     expect(validation.errors).toHaveLength(0);
     const ir = lowerComponent(parsed, validation);
+    resolveDragDropTypes(ir.body);
     return emitComponent(ir, undefined, sourceFile);
 }
 
@@ -695,6 +700,203 @@ function App(props: { items: number[] }) {
   );
 }
         `);
-        expect(output).toContain('auto& item = props.items[i]');
+        expect(output).toContain('auto& item = props.items[_map_idx_0]');
+        expect(output).toMatch(/size_t i = _map_idx_0/);
+    });
+
+    it('emits TextInput with direct struct binding', () => {
+        const output = compile(`
+function App(props: { name: string }) {
+  return (
+    <Window title="Test">
+      <TextInput value={props.name} label="Name" />
+    </Window>
+  );
+}
+        `);
+
+        expect(output).toContain('buf.sync_from(props.name)');
+        expect(output).toContain('imx::renderer::text_input("Name"');
+        expect(output).toContain('props.name = buf.value()');
+        expect(output).not.toContain('.get()');
+        expect(output).not.toContain('.set(');
+    });
+
+    it('emits TextInput with onChange callback', () => {
+        const output = compile(`
+function App(props: { name: string, onNameChange: (v: string) => void }) {
+  return (
+    <Window title="Test">
+      <TextInput value={props.name} onChange={(v: string) => props.onNameChange(v)} label="Name" />
+    </Window>
+  );
+}
+        `);
+
+        expect(output).toContain('buf.sync_from(props.name)');
+        expect(output).toContain('imx::renderer::text_input("Name"');
+        expect(output).toContain('onNameChange');
+        expect(output).not.toContain('props.name = buf.value()');
+    });
+
+    it('emits unique loop counters for nested maps', () => {
+        const output = compile(`
+function App(props: { groups: { items: number[] }[] }) {
+  return (
+    <Window title="Test">
+      {props.groups.map((group, i) => (
+        <View>
+          {group.items.map((item, i) => (
+            <Text>{item}</Text>
+          ))}
+        </View>
+      ))}
+    </Window>
+  );
+}
+        `);
+
+        expect(output).toContain('_map_idx_0');
+        expect(output).toContain('_map_idx_1');
+        expect(output).toMatch(/size_t i = _map_idx_0/);
+        expect(output).toMatch(/size_t i = _map_idx_1/);
+    });
+
+    it('emits DragDrop payload type matching target onDrop annotation', () => {
+        const output = compile(`
+function App(props: { items: { id: number, name: string }[] }) {
+  return (
+    <Window title="Test">
+      {props.items.map((item, i) => (
+        <DragDropSource type="item" payload={item.id}>
+          <Text>{item.name}</Text>
+        </DragDropSource>
+      ))}
+      <DragDropTarget type="item" onDrop={(id: number) => {}}>
+        <Text>Drop here</Text>
+      </DragDropTarget>
+    </Window>
+  );
+}
+        `);
+
+        // Default for number is float — but verify the pipeline connects source to target
+        expect(output).toContain('float _dd_payload');
+    });
+
+    it('emits DragDrop boolean payload when target uses boolean type', () => {
+        const output = compile(`
+function App() {
+  return (
+    <Window title="Test">
+      <DragDropSource type="flag" payload={true}>
+        <Text>Drag</Text>
+      </DragDropSource>
+      <DragDropTarget type="flag" onDrop={(v: boolean) => {}}>
+        <Text>Drop here</Text>
+      </DragDropTarget>
+    </Window>
+  );
+}
+        `);
+
+        expect(output).toContain('bool _dd_payload');
+        expect(output).not.toContain('float _dd_payload');
+    });
+});
+
+function compileMultiFiles(files: Record<string, string>): Record<string, string> {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'imx-test-'));
+    const outDir = path.join(tmpDir, 'out');
+    fs.mkdirSync(outDir, { recursive: true });
+
+    const paths: string[] = [];
+    for (const [name, content] of Object.entries(files)) {
+        const filePath = path.join(tmpDir, name);
+        fs.writeFileSync(filePath, content);
+        paths.push(filePath);
+    }
+
+    compileFiles(paths, outDir);
+
+    const result: Record<string, string> = {};
+    for (const file of fs.readdirSync(outDir)) {
+        result[file] = fs.readFileSync(path.join(outDir, file), 'utf-8');
+    }
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+    return result;
+}
+
+describe('custom component pointer propagation', () => {
+    it('emits pointer props for custom components with direct binding', () => {
+        const files = compileMultiFiles({
+            'App.tsx': `
+import { TodoItem } from './TodoItem';
+export default function App(props: { items: { done: boolean, text: string }[] }) {
+  return (
+    <Window title="Test">
+      {props.items.map((item, i) => (
+        <TodoItem done={item.done} text={item.text} />
+      ))}
+    </Window>
+  );
+}`,
+            'TodoItem.tsx': `
+export function TodoItem(props: { done: boolean, text: string }) {
+  return (
+    <Row>
+      <Checkbox value={props.done} />
+      <Text>{props.text}</Text>
+    </Row>
+  );
+}`
+        });
+
+        const header = files['TodoItem.gen.h'] ?? '';
+        const todoCpp = files['TodoItem.gen.cpp'] ?? '';
+        const appCpp = files['App.gen.cpp'] ?? '';
+
+        // Props struct should have bool* for bound prop
+        expect(header).toContain('bool* done');
+
+        // Call site should pass address
+        expect(appCpp).toContain('&item.done');
+
+        // Inside TodoItem, checkbox uses pointer directly (no extra &)
+        expect(todoCpp).toContain('props.done');
+        // Text for non-bound prop should NOT dereference
+        expect(todoCpp).not.toContain('(*props.text)');
+    });
+
+    it('dereferences bound props in conditional expressions', () => {
+        const files = compileMultiFiles({
+            'App.tsx': `
+import { StatusItem } from './StatusItem';
+export default function App(props: { items: { active: boolean }[] }) {
+  return (
+    <Window title="Test">
+      {props.items.map((item, i) => (
+        <StatusItem active={item.active} />
+      ))}
+    </Window>
+  );
+}`,
+            'StatusItem.tsx': `
+export function StatusItem(props: { active: boolean }) {
+  return (
+    <View>
+      {props.active && <Text>Active</Text>}
+      <Checkbox value={props.active} />
+    </View>
+  );
+}`
+        });
+
+        const todoCpp = files['StatusItem.gen.cpp'] ?? '';
+
+        // Conditional should dereference: (*props.active)
+        expect(todoCpp).toContain('(*props.active)');
+        // Checkbox directBind should use &*props.active (identity for pointer)
+        expect(todoCpp).toContain('&*props.active');
     });
 });

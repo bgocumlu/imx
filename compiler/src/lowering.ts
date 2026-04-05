@@ -24,6 +24,7 @@ interface LoweringContext {
     propsParam: string | null;       // name of props parameter, if any
     propsFieldTypes: Map<string, IRType | 'callback'>;  // field name -> type (from named interface)
     bufferIndex: number;
+    mapCounter: number;
     sourceFile: ts.SourceFile;
     customComponents: Map<string, string>;
 }
@@ -100,6 +101,7 @@ export function lowerComponent(
         propsParam,
         propsFieldTypes,
         bufferIndex: 0,
+        mapCounter: 0,
         sourceFile: parsed.sourceFile,
         customComponents: validation.customComponents,
     };
@@ -699,19 +701,9 @@ function lowerButton(attrs: Record<string, string>, rawAttrs: Map<string, ts.Exp
 function lowerTextInput(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext, loc: SourceLoc): void {
     const label = attrs['label'] ?? '""';
     const bufferIndex = ctx.bufferIndex++;
-
-    // Detect bound state variable from value prop
-    let stateVar = '';
-    const valueExpr = rawAttrs.get('value');
-    if (valueExpr && ts.isIdentifier(valueExpr)) {
-        const varName = valueExpr.text;
-        if (ctx.stateVars.has(varName)) {
-            stateVar = varName;
-        }
-    }
-
     const style = attrs['style'];
-    body.push({ kind: 'text_input', label, bufferIndex, stateVar, style, loc });
+    const { stateVar, valueExpr, onChangeExpr, directBind } = lowerValueOnChange(rawAttrs, ctx);
+    body.push({ kind: 'text_input', label, bufferIndex, stateVar: stateVar, valueExpr, onChangeExpr, directBind, style, loc });
 }
 
 function lowerCheckbox(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext, loc: SourceLoc): void {
@@ -926,12 +918,15 @@ function lowerListMap(node: ts.CallExpression, body: IRNode[], ctx: LoweringCont
         }
     }
 
+    const internalIndexVar = `_map_idx_${ctx.mapCounter++}`;
+
     body.push({
         kind: 'list_map',
         array,
         itemVar,
         indexVar,
-        key: indexVar,
+        internalIndexVar,
+        key: internalIndexVar,
         componentName: 'ListItem',
         stateCount: 0,
         bufferCount: 0,

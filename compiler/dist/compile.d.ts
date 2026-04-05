@@ -1,3 +1,4 @@
+import type { IRNode } from './ir.js';
 export interface CompileResult {
     success: boolean;
     componentCount: number;
@@ -8,3 +9,4 @@ export interface CompileResult {
  * Returns a result object instead of calling process.exit().
  */
 export declare function compile(files: string[], outputDir: string): CompileResult;
+export declare function resolveDragDropTypes(nodes: IRNode[]): void;
