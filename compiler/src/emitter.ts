@@ -139,7 +139,7 @@ export function emitComponentHeader(comp: IRComponent, sourceFile?: string): str
     lines.push('');
 
     // Function forward declaration
-    lines.push(`void ${comp.name}_render(imx::RenderContext& ctx, const ${comp.name}Props& props);`);
+    lines.push(`void ${comp.name}_render(imx::RenderContext& ctx, ${comp.name}Props& props);`);
     lines.push('');
 
     return lines.join('\n');
@@ -224,7 +224,7 @@ export function emitComponent(comp: IRComponent, imports?: ImportInfo[], sourceF
     }
 
     // Function signature
-    const propsArg = hasProps ? `, const ${comp.name}Props& props` : '';
+    const propsArg = hasProps ? `, ${comp.name}Props& props` : '';
     lines.push(`void ${comp.name}_render(imx::RenderContext& ctx${propsArg}) {`);
 
     // State declarations

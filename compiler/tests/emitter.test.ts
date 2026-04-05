@@ -71,7 +71,8 @@ function Greeting(props: { name: string, age: number }) {
         // The .gen.cpp now includes its own .gen.h instead of inlining the struct
         const output = compile(source);
         expect(output).toContain('#include "Greeting.gen.h"');
-        expect(output).toContain('const GreetingProps& props');
+        expect(output).toContain('GreetingProps& props');
+        expect(output).not.toContain('const GreetingProps& props');
         expect(output).toContain('imx::renderer::text(');
 
         // The struct is in the header
@@ -79,7 +80,7 @@ function Greeting(props: { name: string, age: number }) {
         expect(header).toContain('struct GreetingProps');
         expect(header).toContain('std::string name;');
         expect(header).toContain('int age;');
-        expect(header).toContain('void Greeting_render(imx::RenderContext& ctx, const GreetingProps& props);');
+        expect(header).toContain('void Greeting_render(imx::RenderContext& ctx, GreetingProps& props);');
     });
 
     it('emits ternary conditional with else', () => {
@@ -431,6 +432,21 @@ function App() {
         expect(output).toContain('.frame_padding = ImVec2(');
         expect(output).toContain('begin_style_var(');
         expect(output).toContain('end_style_var()');
+    });
+
+    it('emits mutable reference for root component with props', () => {
+        const output = compile(`
+function App(props: { speed: number }) {
+  return (
+    <Window title="Test">
+      <SliderFloat label="Speed" value={props.speed} min={0} max={100} />
+    </Window>
+  );
+}
+        `);
+        // Should use non-const reference for props (mutable binding)
+        expect(output).toContain('AppProps& props');
+        expect(output).not.toContain('const AppProps& props');
     });
 });
 
