@@ -454,7 +454,7 @@ Thread safety: developer's responsibility (same as raw ImGui).
 
 ### Struct Binding Notes
 
-- **TextInput**: supports struct binding via `value={props.name}` — buffer syncs to/from the struct field each frame.
+- **TextInput / InputTextMultiline**: supports struct binding via `value={props.name}` — buffer syncs to/from the struct field each frame.
 - **Custom component props**: bound props (used with `value={props.x}` without onChange) are automatically passed as `T*` pointers through custom components. Direct binding works at any nesting level.
 - **Nested `.map()`**: auto-generated unique loop indices — same variable name in nested maps is safe.
 - **ColorEdit/ColorPicker**: works with struct binding via `std::vector<float>` fields (emits `.data()`).

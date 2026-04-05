@@ -93,7 +93,7 @@ React-Native-like authoring model for Dear ImGui. Write .tsx, compile to native 
 ## Current status (Phases 1-12 complete)
 - 54 host components covering all ImGui widgets
 - C++ struct binding (Phase 11): direct pointer binding for props without onChange, template render_root overload
-- Struct binding fixes (Phase 12): TextInput struct binding, custom component pointer propagation, DragDrop typed payloads, auto-generated map indices
+- Struct binding fixes (Phase 12): TextInput + InputTextMultiline struct binding, custom component pointer propagation (chains through 3+ levels), DragDrop typed payloads, auto-generated map indices
 - Adaptive frame loop: runtime-driven idle/active rendering (request_frame API)
 - 5-prop theme system: accentColor, backgroundColor, textColor, borderColor, surfaceColor → all 55 ImGui color slots
 - Image component: runtime file loading + compile-time embed (stb_image + OpenGL texture cache)
@@ -106,6 +106,6 @@ React-Native-like authoring model for Dear ImGui. Write .tsx, compile to native 
 - TypeScript type definitions for IDE support
 - CLI: `imxc init` (full scaffold + .gitignore), `imxc add` (existing project), `imxc watch` (file watcher)
 - API documentation + LLM prompt reference complete
-- Packaging: `imxc@0.5.4` on npm, FetchContent for C++ (compiler/dist/ committed)
+- Packaging: `imxc@0.5.5` on npm, FetchContent for C++ (compiler/dist/ committed)
 - Release builds hide console on Windows (WIN32_EXECUTABLE), Debug shows it
 - Next: Phase 13 candidates (GPA example, useEffect, more examples)
