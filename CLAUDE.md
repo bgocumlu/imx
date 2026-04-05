@@ -52,10 +52,10 @@ React-Native-like authoring model for Dear ImGui. Write .tsx, compile to native 
 - `compiler/src/` — TypeScript compiler (parser, validator, ir, lowering, emitter, compile, init)
 - `compiler/dist/` — compiled JS (committed to git so FetchContent works without npm)
 - `cmake/ImxCompile.cmake` — CMake helper for compiling .tsx files
-- `examples/hello/` — main example app with TodoItem, all Batch 1-2 components, Image
+- `examples/hello/` — main example app with TodoItem, all Batch 1-5 components, Canvas, DragDrop, Image
 - `examples/hello/public/` — static assets copied to exe directory at build time
-- `examples/settings/` — LLM-generated settings panel (validates API surface)
 - `docs/` — spec, mvp, roadmap, api-reference, quick-start, llm-prompt-reference
+- `docs/superpowers/` — design specs and implementation plans for each phase
 
 ## Do's and Don'ts
 
@@ -86,15 +86,20 @@ React-Native-like authoring model for Dear ImGui. Write .tsx, compile to native 
 - Don't call `before_child()` in modal/popup begin functions — overlays don't participate in layout
 - Don't work around compiler bugs by modifying example code — fix the pipeline
 
-## Current status (Phases 1-8 + Phase 10 Batches 1-5 + C++ Struct Binding complete)
-- 54 host components (41 + Group, ID, StyleColor, StyleVar, DragDropSource, DragDropTarget, Canvas, DrawLine, DrawRect, DrawCircle, DrawText, Disabled, Child)
-- C++ struct binding: direct pointer binding for props without onChange, template render_root overload
+## Current status (Phases 1-11 complete)
+- 54 host components covering all ImGui widgets
+- C++ struct binding (Phase 11): direct pointer binding for props without onChange, template render_root overload
+- 5-prop theme system: accentColor, backgroundColor, textColor, borderColor, surfaceColor → all 55 ImGui color slots
 - Image component: runtime file loading + compile-time embed (stb_image + OpenGL texture cache)
 - Custom widgets: `imx::register_widget()` + `WidgetArgs` for C++ ImGui widgets from TSX
 - Custom themes: `imx::register_theme()` for user theme presets
+- Canvas drawing: DrawLine, DrawRect, DrawCircle, DrawText with relative coordinates
+- DragDrop: DragDropSource/DragDropTarget with typed payloads
+- Style overrides: StyleColor (20 color props), StyleVar (11 style vars)
 - Multi-component support with imports, props, callbacks
 - TypeScript type definitions for IDE support
-- API documentation complete
-- Two example apps (hello + gpa), public/ folder for static assets
-- Packaging: `imxc@0.2.0` on npm, FetchContent for C++ (compiler/dist/ committed)
-- Next: Phase 10 Batch 6+ (ContextMenu, Disabled, Tooltip improvements, etc.)
+- CLI: `imxc init` (full scaffold), `imxc add` (existing project), `imxc watch` (file watcher)
+- API documentation + LLM prompt reference complete
+- Packaging: `imxc@0.4.1` on npm, FetchContent for C++ (compiler/dist/ committed)
+- Release builds hide console on Windows (WIN32_EXECUTABLE), Debug shows it
+- Next: Phase 12 candidates (GPA example, child component sub-struct binding, useEffect)
