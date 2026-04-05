@@ -629,4 +629,22 @@ function App() {
         expect(output).toContain('true');
         expect(output).toContain('ImGui::EndChild()');
     });
+
+    it('emits direct pointer binding for props without onChange', () => {
+        const output = compile(`
+function App(props: { speed: number, muted: boolean }) {
+  return (
+    <Window title="Test">
+      <SliderFloat label="Speed" value={props.speed} min={0} max={100} />
+      <Checkbox label="Muted" value={props.muted} />
+    </Window>
+  );
+}
+        `);
+        expect(output).toContain('&props.speed');
+        expect(output).toContain('&props.muted');
+        // Should NOT contain temp variable pattern
+        expect(output).not.toContain('float val = props.speed');
+        expect(output).not.toContain('bool val = props.muted');
+    });
 });

@@ -984,6 +984,10 @@ function emitCheckbox(node, lines, indent) {
         lines.push(`${indent}${INDENT}}`);
         lines.push(`${indent}}`);
     }
+    else if (node.directBind && node.valueExpr) {
+        // Direct pointer binding — no temp variable
+        lines.push(`${indent}imx::renderer::checkbox(${label}, &${node.valueExpr});`);
+    }
     else if (node.valueExpr !== undefined) {
         // Props-bound / expression-bound case
         lines.push(`${indent}{`);
@@ -1078,6 +1082,10 @@ function emitSliderFloat(node, lines, indent) {
         lines.push(`${indent}${INDENT}}`);
         lines.push(`${indent}}`);
     }
+    else if (node.directBind && node.valueExpr) {
+        // Direct pointer binding
+        lines.push(`${indent}imx::renderer::slider_float(${node.label}, &${node.valueExpr}, ${min}, ${max});`);
+    }
     else if (node.valueExpr !== undefined) {
         lines.push(`${indent}{`);
         lines.push(`${indent}${INDENT}float val = ${node.valueExpr};`);
@@ -1098,6 +1106,9 @@ function emitSliderInt(node, lines, indent) {
         lines.push(`${indent}${INDENT}${INDENT}${node.stateVar}.set(val);`);
         lines.push(`${indent}${INDENT}}`);
         lines.push(`${indent}}`);
+    }
+    else if (node.directBind && node.valueExpr) {
+        lines.push(`${indent}imx::renderer::slider_int(${node.label}, &${node.valueExpr}, ${node.min}, ${node.max});`);
     }
     else if (node.valueExpr !== undefined) {
         lines.push(`${indent}{`);
@@ -1121,6 +1132,9 @@ function emitDragFloat(node, lines, indent) {
         lines.push(`${indent}${INDENT}}`);
         lines.push(`${indent}}`);
     }
+    else if (node.directBind && node.valueExpr) {
+        lines.push(`${indent}imx::renderer::drag_float(${node.label}, &${node.valueExpr}, ${speed});`);
+    }
     else if (node.valueExpr !== undefined) {
         lines.push(`${indent}{`);
         lines.push(`${indent}${INDENT}float val = ${node.valueExpr};`);
@@ -1142,6 +1156,9 @@ function emitDragInt(node, lines, indent) {
         lines.push(`${indent}${INDENT}${INDENT}${node.stateVar}.set(val);`);
         lines.push(`${indent}${INDENT}}`);
         lines.push(`${indent}}`);
+    }
+    else if (node.directBind && node.valueExpr) {
+        lines.push(`${indent}imx::renderer::drag_int(${node.label}, &${node.valueExpr}, ${speed});`);
     }
     else if (node.valueExpr !== undefined) {
         lines.push(`${indent}{`);
@@ -1168,6 +1185,12 @@ function emitCombo(node, lines, indent) {
         lines.push(`${indent}${INDENT}}`);
         lines.push(`${indent}}`);
     }
+    else if (node.directBind && node.valueExpr) {
+        lines.push(`${indent}{`);
+        lines.push(`${indent}${INDENT}const char* ${varName}[] = {${itemsList.join(', ')}};`);
+        lines.push(`${indent}${INDENT}imx::renderer::combo(${node.label}, &${node.valueExpr}, ${varName}, ${count});`);
+        lines.push(`${indent}}`);
+    }
     else if (node.valueExpr !== undefined) {
         lines.push(`${indent}{`);
         lines.push(`${indent}${INDENT}const char* ${varName}[] = {${itemsList.join(', ')}};`);
@@ -1190,6 +1213,9 @@ function emitInputInt(node, lines, indent) {
         lines.push(`${indent}${INDENT}}`);
         lines.push(`${indent}}`);
     }
+    else if (node.directBind && node.valueExpr) {
+        lines.push(`${indent}imx::renderer::input_int(${node.label}, &${node.valueExpr});`);
+    }
     else if (node.valueExpr !== undefined) {
         lines.push(`${indent}{`);
         lines.push(`${indent}${INDENT}int val = ${node.valueExpr};`);
@@ -1210,6 +1236,9 @@ function emitInputFloat(node, lines, indent) {
         lines.push(`${indent}${INDENT}${INDENT}${node.stateVar}.set(val);`);
         lines.push(`${indent}${INDENT}}`);
         lines.push(`${indent}}`);
+    }
+    else if (node.directBind && node.valueExpr) {
+        lines.push(`${indent}imx::renderer::input_float(${node.label}, &${node.valueExpr});`);
     }
     else if (node.valueExpr !== undefined) {
         lines.push(`${indent}{`);
@@ -1245,6 +1274,12 @@ function emitListBox(node, lines, indent) {
         lines.push(`${indent}${INDENT}if (imx::renderer::list_box(${node.label}, &val, ${varName}, ${count})) {`);
         lines.push(`${indent}${INDENT}${INDENT}${node.stateVar}.set(val);`);
         lines.push(`${indent}${INDENT}}`);
+        lines.push(`${indent}}`);
+    }
+    else if (node.directBind && node.valueExpr) {
+        lines.push(`${indent}{`);
+        lines.push(`${indent}${INDENT}const char* ${varName}[] = {${itemsList.join(', ')}};`);
+        lines.push(`${indent}${INDENT}imx::renderer::list_box(${node.label}, &${node.valueExpr}, ${varName}, ${count});`);
         lines.push(`${indent}}`);
     }
     else if (node.valueExpr !== undefined) {
@@ -1314,6 +1349,9 @@ function emitRadio(node, lines, indent) {
         lines.push(`${indent}${INDENT}${INDENT}${node.stateVar}.set(val);`);
         lines.push(`${indent}${INDENT}}`);
         lines.push(`${indent}}`);
+    }
+    else if (node.directBind && node.valueExpr) {
+        lines.push(`${indent}imx::renderer::radio(${label}, &${node.valueExpr}, ${node.index});`);
     }
     else if (node.valueExpr !== undefined) {
         lines.push(`${indent}{`);
