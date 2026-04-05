@@ -10,13 +10,12 @@ Example apps for `examples/` that stress-test different compiler paths and catch
 
 - **Kanban Board** (`examples/kanban/`) — nested .map() (columns containing cards), DragDropSource with payloads, custom components inside map loops. Caught: .map() hardcoded loop variable as `i`, causing shadowing in nested maps and breaking user-specified index variables.
 
+- **Dashboard** (`examples/dashboard/`) — Table with .map() rows, PlotLines/PlotHistogram with struct-bound vector data, multi-window DockLayout with nested DockSplit, ProgressBar, live-updating metrics. Caught: PlotLines/PlotHistogram can't use struct vector values (emitted C array init from vector), string concat with numbers in props generates pointer arithmetic instead of string concat.
+
 ## Planned
 
 ### Calculator
 Tests **expression complexity**: nested arithmetic in Text children (`{a + b * c}`), ternary in props (`title={result === 0 ? "Zero" : "Result"}`), chained property access. Uses TabBar for history/main views.
-
-### Dashboard
-Tests **DockLayout complexity**: multiple windows with DockSplit nesting, PlotLines/PlotHistogram with dynamic data, Table with many rows, ProgressBar. Tests dock persistence and per-frame ID counters.
 
 ### Theme Showcase
 Tests **style overrides stacking**: nested StyleColor + StyleVar, Theme with all 5 color props, conditional styling (`{dark && <StyleColor ...>}`), multiple themes switching via Combo. Tests push/pop stack correctness.

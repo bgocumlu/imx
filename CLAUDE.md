@@ -100,6 +100,6 @@ React-Native-like authoring model for Dear ImGui. Write .tsx, compile to native 
 - TypeScript type definitions for IDE support
 - CLI: `imxc init` (full scaffold), `imxc add` (existing project), `imxc watch` (file watcher)
 - API documentation + LLM prompt reference complete
-- Packaging: `imxc@0.4.1` on npm, FetchContent for C++ (compiler/dist/ committed)
+- Packaging: `imxc@0.5.0` on npm, FetchContent for C++ (compiler/dist/ committed)
 - Release builds hide console on Windows (WIN32_EXECUTABLE), Debug shows it
 - Next: Phase 12 candidates (GPA example, child component sub-struct binding, useEffect)
