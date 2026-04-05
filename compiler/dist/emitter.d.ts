@@ -9,4 +9,4 @@ export interface ImportInfo {
     headerFile: string;
 }
 export declare function emitComponent(comp: IRComponent, imports?: ImportInfo[], sourceFile?: string): string;
-export declare function emitRoot(rootName: string, stateCount: number, bufferCount: number, sourceFile?: string): string;
+export declare function emitRoot(rootName: string, stateCount: number, bufferCount: number, sourceFile?: string, propsType?: string): string;

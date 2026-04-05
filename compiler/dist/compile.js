@@ -90,7 +90,8 @@ export function compile(files, outputDir) {
     // Phase 4: Emit root entry point
     if (compiled.length > 0) {
         const root = compiled[0];
-        const rootOutput = emitRoot(root.name, root.stateCount, root.bufferCount, root.sourceFile);
+        const propsType = root.hasProps ? root.name + 'Props' : undefined;
+        const rootOutput = emitRoot(root.name, root.stateCount, root.bufferCount, root.sourceFile, propsType);
         const rootPath = path.join(outputDir, 'app_root.gen.cpp');
         fs.writeFileSync(rootPath, rootOutput);
         console.log(`  -> ${rootPath} (root entry point)`);

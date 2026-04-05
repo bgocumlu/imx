@@ -250,27 +250,44 @@ export function emitComponent(comp: IRComponent, imports?: ImportInfo[], sourceF
     return lines.join('\n');
 }
 
-export function emitRoot(rootName: string, stateCount: number, bufferCount: number, sourceFile?: string): string {
+export function emitRoot(rootName: string, stateCount: number, bufferCount: number, sourceFile?: string, propsType?: string): string {
     const lines: string[] = [];
 
     if (sourceFile) {
         lines.push(`// Generated from ${sourceFile} by imxc`);
     }
     lines.push('#include <imx/runtime.h>');
-    lines.push('');
-    lines.push(`void ${rootName}_render(imx::RenderContext& ctx);`);
-    lines.push('');
-    lines.push('namespace imx {');
-    lines.push('void render_root(Runtime& runtime) {');
-    lines.push(`${INDENT}auto& ctx = runtime.begin_frame();`);
-    lines.push(`${INDENT}ctx.begin_instance("${rootName}", 0, ${stateCount}, ${bufferCount});`);
-    lines.push(`${INDENT}${rootName}_render(ctx);`);
-    lines.push(`${INDENT}ctx.end_instance();`);
-    lines.push(`${INDENT}runtime.end_frame();`);
-    lines.push('}');
-    lines.push('} // namespace imx');
-    lines.push('');
 
+    if (propsType) {
+        lines.push(`#include "${rootName}.gen.h"`);
+        lines.push('');
+        lines.push(`void ${rootName}_render(imx::RenderContext& ctx, ${propsType}& props);`);
+        lines.push('');
+        lines.push('namespace imx {');
+        lines.push(`void render_root(Runtime& runtime, ${propsType}& state) {`);
+        lines.push(`${INDENT}auto& ctx = runtime.begin_frame();`);
+        lines.push(`${INDENT}ctx.begin_instance("${rootName}", 0, ${stateCount}, ${bufferCount});`);
+        lines.push(`${INDENT}${rootName}_render(ctx, state);`);
+        lines.push(`${INDENT}ctx.end_instance();`);
+        lines.push(`${INDENT}runtime.end_frame();`);
+        lines.push('}');
+        lines.push('} // namespace imx');
+    } else {
+        lines.push('');
+        lines.push(`void ${rootName}_render(imx::RenderContext& ctx);`);
+        lines.push('');
+        lines.push('namespace imx {');
+        lines.push('void render_root(Runtime& runtime) {');
+        lines.push(`${INDENT}auto& ctx = runtime.begin_frame();`);
+        lines.push(`${INDENT}ctx.begin_instance("${rootName}", 0, ${stateCount}, ${bufferCount});`);
+        lines.push(`${INDENT}${rootName}_render(ctx);`);
+        lines.push(`${INDENT}ctx.end_instance();`);
+        lines.push(`${INDENT}runtime.end_frame();`);
+        lines.push('}');
+        lines.push('} // namespace imx');
+    }
+
+    lines.push('');
     return lines.join('\n');
 }
 

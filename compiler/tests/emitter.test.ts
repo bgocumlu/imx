@@ -663,4 +663,23 @@ function App(props: { speed: number, muted: boolean }) {
         expect(output).not.toContain('float val = props.speed');
         expect(output).not.toContain('bool val = props.muted');
     });
+
+    it('emits render_root with state parameter when root has props', () => {
+        const parsed = parseFile('Test.tsx', `
+function App(props: { speed: number }) {
+  return (
+    <Window title="Test">
+      <SliderFloat label="Speed" value={props.speed} min={0} max={100} />
+    </Window>
+  );
+}
+        `);
+        expect(parsed.errors).toHaveLength(0);
+        const validation = validate(parsed);
+        expect(validation.errors).toHaveLength(0);
+        const ir = lowerComponent(parsed, validation);
+        const root = emitRoot(ir.name, ir.stateSlots.length, ir.bufferCount, undefined, ir.params.length > 0 ? ir.name + 'Props' : undefined);
+        expect(root).toContain('render_root(Runtime& runtime, AppProps& state)');
+        expect(root).toContain('App_render(ctx, state)');
+    });
 });
