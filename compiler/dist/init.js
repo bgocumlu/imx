@@ -98,6 +98,11 @@ int main() {
     glfwTerminate();
     return 0;
 }
+
+#ifdef _WIN32
+#include <windows.h>
+int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) { return main(); }
+#endif
 `;
 const APP_TSX = `export default function App() {
   const [count, setCount] = useState(0);
@@ -376,6 +381,7 @@ add_executable(${projectName}
     src/main.cpp
     \${GENERATED}
 )
+set_target_properties(${projectName} PROPERTIES WIN32_EXECUTABLE $<CONFIG:Release>)
 target_link_libraries(${projectName} PRIVATE imx::renderer)
 target_include_directories(${projectName} PRIVATE \${CMAKE_BINARY_DIR}/generated)
 
