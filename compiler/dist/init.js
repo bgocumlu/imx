@@ -1,5 +1,10 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
+const GITIGNORE = `build/
+node_modules/
+*.ini
+.cache/
+`;
 const APPSTATE_H = `#pragma once
 #include <functional>
 
@@ -490,6 +495,7 @@ export function initProject(projectDir, projectName) {
     fs.writeFileSync(path.join(srcDir, 'imx.d.ts'), IMX_DTS);
     fs.writeFileSync(path.join(projectDir, 'tsconfig.json'), TSCONFIG);
     fs.writeFileSync(path.join(projectDir, 'CMakeLists.txt'), cmakeTemplate(name, 'https://github.com/bgocumlu/imx.git'));
+    fs.writeFileSync(path.join(projectDir, '.gitignore'), GITIGNORE);
     console.log(`imxc: initialized project "${name}"`);
     console.log('');
     console.log('  Created:');
@@ -499,6 +505,7 @@ export function initProject(projectDir, projectName) {
     console.log(`    src/imx.d.ts          — type definitions for IDE support`);
     console.log(`    tsconfig.json         — TypeScript config`);
     console.log(`    CMakeLists.txt        — build config with FetchContent`);
+    console.log(`    .gitignore            — ignores build/, node_modules/, *.ini`);
     console.log(`    public/               — static assets (copied to exe directory)`);
     console.log('');
     console.log('  Next steps:');
