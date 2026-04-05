@@ -191,4 +191,22 @@ if(IMX_BUILD_EXAMPLES)
         ${CMAKE_CURRENT_SOURCE_DIR}/examples/kanban/src
     )
 
+    # --- dashboard_app: Table + .map(), plots, multi-window docking ---
+    imx_compile_tsx(DASHBOARD_GENERATED
+        SOURCES
+            examples/dashboard/src/App.tsx
+        OUTPUT_DIR ${CMAKE_BINARY_DIR}/generated_dashboard
+    )
+
+    add_executable(dashboard_app
+        examples/dashboard/src/main.cpp
+        ${DASHBOARD_GENERATED}
+    )
+    set_target_properties(dashboard_app PROPERTIES WIN32_EXECUTABLE $<CONFIG:Release>)
+    target_link_libraries(dashboard_app PRIVATE imx_renderer)
+    target_include_directories(dashboard_app PRIVATE
+        ${CMAKE_BINARY_DIR}/generated_dashboard
+        ${CMAKE_CURRENT_SOURCE_DIR}/examples/dashboard/src
+    )
+
 endif()

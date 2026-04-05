@@ -1508,33 +1508,54 @@ function emitColorPicker(node, lines, indent) {
 }
 function emitPlotLines(node, lines, indent) {
     emitLocComment(node.loc, 'PlotLines', lines, indent);
-    const idx = plotCounter++;
-    const varName = `_plot_${idx}`;
-    const values = node.values.split(',').map(v => ensureFloatLiteral(v.trim()));
-    const count = values.length;
-    lines.push(`${indent}{`);
-    const innerIndent = indent + INDENT;
-    const styleVar = buildStyleVar(node.style, innerIndent, lines);
-    lines.push(`${innerIndent}float ${varName}[] = {${values.join(', ')}};`);
     const overlay = node.overlay ? `, ${node.overlay}` : ', nullptr';
-    const styleArg = styleVar ? `, ${styleVar}` : '';
-    lines.push(`${innerIndent}imx::renderer::plot_lines(${node.label}, ${varName}, ${count}${overlay}${styleArg});`);
-    lines.push(`${indent}}`);
+    // Check if values is a variable/property access (struct binding) vs literal array
+    if (node.values.includes('.') || /^[a-zA-Z_]\w*$/.test(node.values)) {
+        lines.push(`${indent}{`);
+        const innerIndent = indent + INDENT;
+        const styleVar = buildStyleVar(node.style, innerIndent, lines);
+        const styleArg = styleVar ? `, ${styleVar}` : '';
+        lines.push(`${innerIndent}imx::renderer::plot_lines(${node.label}, ${node.values}.data(), static_cast<int>(${node.values}.size())${overlay}${styleArg});`);
+        lines.push(`${indent}}`);
+    }
+    else {
+        const idx = plotCounter++;
+        const varName = `_plot_${idx}`;
+        const values = node.values.split(',').map(v => ensureFloatLiteral(v.trim()));
+        const count = values.length;
+        lines.push(`${indent}{`);
+        const innerIndent = indent + INDENT;
+        const styleVar = buildStyleVar(node.style, innerIndent, lines);
+        const styleArg = styleVar ? `, ${styleVar}` : '';
+        lines.push(`${innerIndent}float ${varName}[] = {${values.join(', ')}};`);
+        lines.push(`${innerIndent}imx::renderer::plot_lines(${node.label}, ${varName}, ${count}${overlay}${styleArg});`);
+        lines.push(`${indent}}`);
+    }
 }
 function emitPlotHistogram(node, lines, indent) {
     emitLocComment(node.loc, 'PlotHistogram', lines, indent);
-    const idx = plotCounter++;
-    const varName = `_plot_${idx}`;
-    const values = node.values.split(',').map(v => ensureFloatLiteral(v.trim()));
-    const count = values.length;
-    lines.push(`${indent}{`);
-    const innerIndent = indent + INDENT;
-    const styleVar = buildStyleVar(node.style, innerIndent, lines);
-    lines.push(`${innerIndent}float ${varName}[] = {${values.join(', ')}};`);
     const overlay = node.overlay ? `, ${node.overlay}` : ', nullptr';
-    const styleArg = styleVar ? `, ${styleVar}` : '';
-    lines.push(`${innerIndent}imx::renderer::plot_histogram(${node.label}, ${varName}, ${count}${overlay}${styleArg});`);
-    lines.push(`${indent}}`);
+    if (node.values.includes('.') || /^[a-zA-Z_]\w*$/.test(node.values)) {
+        lines.push(`${indent}{`);
+        const innerIndent = indent + INDENT;
+        const styleVar = buildStyleVar(node.style, innerIndent, lines);
+        const styleArg = styleVar ? `, ${styleVar}` : '';
+        lines.push(`${innerIndent}imx::renderer::plot_histogram(${node.label}, ${node.values}.data(), static_cast<int>(${node.values}.size())${overlay}${styleArg});`);
+        lines.push(`${indent}}`);
+    }
+    else {
+        const idx = plotCounter++;
+        const varName = `_plot_${idx}`;
+        const values = node.values.split(',').map(v => ensureFloatLiteral(v.trim()));
+        const count = values.length;
+        lines.push(`${indent}{`);
+        const innerIndent = indent + INDENT;
+        const styleVar = buildStyleVar(node.style, innerIndent, lines);
+        const styleArg = styleVar ? `, ${styleVar}` : '';
+        lines.push(`${innerIndent}float ${varName}[] = {${values.join(', ')}};`);
+        lines.push(`${innerIndent}imx::renderer::plot_histogram(${node.label}, ${varName}, ${count}${overlay}${styleArg});`);
+        lines.push(`${indent}}`);
+    }
 }
 function emitImage(node, lines, indent) {
     emitLocComment(node.loc, 'Image', lines, indent);
