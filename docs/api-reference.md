@@ -816,6 +816,323 @@ A popup/modal window. Shown when opened programmatically.
 
 ---
 
+### Styling
+
+#### Theme
+
+Applies a color theme to all children. Supports built-in presets (`"dark"`, `"light"`, `"classic"`) and custom registered themes.
+
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| preset | string | Yes | Theme name: `"dark"`, `"light"`, `"classic"`, or a custom registered name |
+| accentColor | [r,g,b,a] | No | Primary accent color for buttons, headers, tabs, etc. |
+| windowBg | [r,g,b,a] | No | Window background color |
+| textColor | [r,g,b,a] | No | Text color |
+| rounding | number | No | Corner rounding for frames, windows, tabs, popups |
+| borderSize | number | No | Border thickness for frames and windows |
+| spacing | number | No | Item spacing |
+
+```tsx
+<Theme preset="dark" accentColor={[0.9, 0.2, 0.2, 1.0]} rounding={6}>
+  <DockSpace>
+    <Window title="Themed"><Text>Red accent</Text></Window>
+  </DockSpace>
+</Theme>
+```
+
+---
+
+#### StyleColor
+
+Pushes individual ImGui color overrides for all children. Only set props are pushed; unset props inherit from the current style.
+
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| text | [r,g,b,a] | No | Text color |
+| textDisabled | [r,g,b,a] | No | Disabled text color |
+| windowBg | [r,g,b,a] | No | Window background |
+| frameBg | [r,g,b,a] | No | Frame background (inputs, sliders) |
+| frameBgHovered | [r,g,b,a] | No | Frame background on hover |
+| frameBgActive | [r,g,b,a] | No | Frame background when active |
+| titleBg | [r,g,b,a] | No | Title bar background |
+| titleBgActive | [r,g,b,a] | No | Title bar background when focused |
+| button | [r,g,b,a] | No | Button color |
+| buttonHovered | [r,g,b,a] | No | Button color on hover |
+| buttonActive | [r,g,b,a] | No | Button color when clicked |
+| header | [r,g,b,a] | No | Header color (collapsing headers, tree nodes) |
+| headerHovered | [r,g,b,a] | No | Header color on hover |
+| headerActive | [r,g,b,a] | No | Header color when active |
+| separator | [r,g,b,a] | No | Separator line color |
+| checkMark | [r,g,b,a] | No | Checkbox check mark color |
+| sliderGrab | [r,g,b,a] | No | Slider grab color |
+| border | [r,g,b,a] | No | Border color |
+| popupBg | [r,g,b,a] | No | Popup background color |
+| tab | [r,g,b,a] | No | Tab color |
+
+```tsx
+<StyleColor button={[1, 0, 0, 1]} buttonHovered={[1, 0.3, 0.3, 1]} buttonActive={[0.8, 0, 0, 1]}>
+  <Button title="Red Button" onPress={() => {}} />
+</StyleColor>
+```
+
+---
+
+#### StyleVar
+
+Pushes individual ImGui style variable overrides for all children. Accepts float scalars and `[x, y]` vec2 pairs.
+
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| alpha | number | No | Global alpha |
+| windowPadding | [x, y] | No | Window content padding |
+| windowRounding | number | No | Window corner rounding |
+| framePadding | [x, y] | No | Frame padding (inputs, buttons) |
+| frameRounding | number | No | Frame corner rounding |
+| frameBorderSize | number | No | Frame border thickness |
+| itemSpacing | [x, y] | No | Spacing between items |
+| itemInnerSpacing | [x, y] | No | Spacing within a composed item |
+| indentSpacing | number | No | Horizontal indent for tree nodes |
+| cellPadding | [x, y] | No | Table cell padding |
+| tabRounding | number | No | Tab corner rounding |
+
+```tsx
+<StyleVar frameRounding={8} framePadding={[12, 6]}>
+  <Button title="Rounded" onPress={() => {}} />
+</StyleVar>
+```
+
+---
+
+### Scoping
+
+#### Group
+
+Groups children into a single item for alignment and bounding. Maps to `ImGui::BeginGroup()` / `EndGroup()`.
+
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| style | Style | No | Reserved for future use |
+
+```tsx
+<Group>
+  <Text>Name:</Text>
+  <TextInput value={name} label="##name" />
+</Group>
+```
+
+---
+
+#### ID
+
+Pushes an explicit ImGui ID scope around children. Useful when you have duplicate labels in different contexts.
+
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| scope | string \| number | Yes | The ID to push |
+
+```tsx
+<ID scope="player1">
+  <SliderFloat label="HP" value={hp1} min={0} max={100} />
+</ID>
+<ID scope="player2">
+  <SliderFloat label="HP" value={hp2} min={0} max={100} />
+</ID>
+```
+
+---
+
+#### Disabled
+
+Grays out and disables interaction for all children. Maps to `ImGui::BeginDisabled()` / `EndDisabled()`.
+
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| disabled | boolean | No | Whether to disable (default: true) |
+
+```tsx
+<Disabled>
+  <Button title="Can't click" onPress={() => {}} />
+  <Text>This section is disabled</Text>
+</Disabled>
+```
+
+---
+
+#### Child
+
+A scrollable sub-region within a window. Maps to `ImGui::BeginChild()` / `EndChild()`.
+
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| id | string | Yes | Unique child region identifier |
+| width | number | No | Width in pixels (0 = fill available) |
+| height | number | No | Height in pixels (0 = fill available) |
+| border | boolean | No | Show border around the region |
+| style | Style | No | Layout and appearance styles |
+
+```tsx
+<Child id="log" width={0} height={150} border>
+  <Text>Line 1</Text>
+  <Text>Line 2</Text>
+  <Text>Line 3</Text>
+</Child>
+```
+
+---
+
+### Interaction
+
+#### DragDropSource
+
+Makes children draggable. Wraps children in a group and attaches a drag payload.
+
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| type | string | Yes | Payload type identifier (must match target) |
+| payload | number \| string | Yes | Data to transfer |
+
+```tsx
+<DragDropSource type="item" payload={item.id}>
+  <Text>{item.name}</Text>
+</DragDropSource>
+```
+
+---
+
+#### DragDropTarget
+
+Accepts drops from matching drag sources. The `onDrop` callback receives the payload.
+
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| type | string | Yes | Accepted payload type (must match source) |
+| onDrop | (payload) => void | Yes | Called with the payload when a matching drop occurs |
+
+```tsx
+<DragDropTarget type="item" onDrop={(id: number) => moveItem(id)}>
+  <View style={{ minHeight: 50 }}>
+    <Text>Drop here</Text>
+  </View>
+</DragDropTarget>
+```
+
+> **Note:** The callback parameter type annotation (e.g., `id: number`) determines the C++ cast type.
+
+---
+
+### Drawing
+
+#### Canvas
+
+A sized drawing region for custom graphics. Children must be draw primitives. All coordinates are relative to the canvas top-left (0,0).
+
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| width | number | Yes | Canvas width in pixels |
+| height | number | Yes | Canvas height in pixels |
+| style | Style | No | backgroundColor fills the canvas |
+
+```tsx
+<Canvas width={300} height={200} style={{ backgroundColor: [0.1, 0.1, 0.1, 1] }}>
+  <DrawLine p1={[0, 0]} p2={[300, 200]} color={[1, 0, 0, 1]} thickness={2} />
+  <DrawCircle center={[150, 100]} radius={40} color={[0, 0.5, 1, 1]} />
+</Canvas>
+```
+
+---
+
+#### DrawLine
+
+Draws a line on the parent Canvas.
+
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| p1 | [x, y] | Yes | Start point |
+| p2 | [x, y] | Yes | End point |
+| color | [r,g,b,a] | Yes | Line color |
+| thickness | number | No | Line thickness (default: 1.0) |
+
+---
+
+#### DrawRect
+
+Draws a rectangle on the parent Canvas.
+
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| min | [x, y] | Yes | Top-left corner |
+| max | [x, y] | Yes | Bottom-right corner |
+| color | [r,g,b,a] | Yes | Rectangle color |
+| filled | boolean | No | Fill vs stroke (default: false) |
+| thickness | number | No | Stroke thickness (default: 1.0) |
+| rounding | number | No | Corner rounding (default: 0.0) |
+
+---
+
+#### DrawCircle
+
+Draws a circle on the parent Canvas.
+
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| center | [x, y] | Yes | Center point |
+| radius | number | Yes | Circle radius |
+| color | [r,g,b,a] | Yes | Circle color |
+| filled | boolean | No | Fill vs stroke (default: false) |
+| thickness | number | No | Stroke thickness (default: 1.0) |
+
+---
+
+#### DrawText
+
+Draws text at a position on the parent Canvas.
+
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| pos | [x, y] | Yes | Text position |
+| text | string | Yes | Text content |
+| color | [r,g,b,a] | Yes | Text color |
+
+---
+
+### Dock Configuration
+
+#### DockLayout
+
+Declares the initial dock layout for a DockSpace. Children are DockSplit and DockPanel nodes. The layout is applied once on first run and when `resetLayout()` is called.
+
+```tsx
+<DockLayout>
+  <DockSplit direction="horizontal" size={0.3}>
+    <DockPanel>Sidebar</DockPanel>
+    <DockPanel>Main</DockPanel>
+  </DockSplit>
+</DockLayout>
+```
+
+---
+
+#### DockSplit
+
+Splits a dock region in a given direction. Used inside DockLayout.
+
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| direction | string | Yes | `"horizontal"` or `"vertical"` |
+| size | number | Yes | Fraction of the region for the first child (0.0-1.0) |
+
+---
+
+#### DockPanel
+
+Assigns windows to a dock region by name. The string children are window titles.
+
+```tsx
+<DockPanel>Todos</DockPanel>
+```
+
+---
+
 ## State
 
 ### useState
