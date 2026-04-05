@@ -64,7 +64,7 @@ export interface IREndContainer {
 export interface IRText { kind: 'text'; format: string; args: string[]; loc?: SourceLoc; }
 export interface IRButton { kind: 'button'; title: string; action: string[]; style?: string; loc?: SourceLoc; }
 export interface IRTextInput { kind: 'text_input'; label: string; bufferIndex: number; stateVar: string; style?: string; loc?: SourceLoc; }
-export interface IRCheckbox { kind: 'checkbox'; label: string; stateVar: string; valueExpr?: string; onChangeExpr?: string; style?: string; loc?: SourceLoc; }
+export interface IRCheckbox { kind: 'checkbox'; label: string; stateVar: string; valueExpr?: string; onChangeExpr?: string; directBind?: boolean; style?: string; loc?: SourceLoc; }
 export interface IRSeparator { kind: 'separator'; loc?: SourceLoc; }
 export interface IRBeginPopup { kind: 'begin_popup'; id: string; style?: string; loc?: SourceLoc; }
 export interface IREndPopup { kind: 'end_popup'; }
@@ -73,15 +73,15 @@ export interface IRConditional { kind: 'conditional'; condition: string; body: I
 export interface IRListMap { kind: 'list_map'; array: string; itemVar: string; key: string; componentName: string; stateCount: number; bufferCount: number; body: IRNode[]; loc?: SourceLoc; }
 export interface IRCustomComponent { kind: 'custom_component'; name: string; props: Record<string, string>; key?: string; stateCount: number; bufferCount: number; loc?: SourceLoc; }
 export interface IRMenuItem { kind: 'menu_item'; label: string; shortcut?: string; action: string[]; loc?: SourceLoc; }
-export interface IRSliderFloat { kind: 'slider_float'; label: string; stateVar: string; valueExpr?: string; onChangeExpr?: string; min: string; max: string; style?: string; loc?: SourceLoc; }
-export interface IRSliderInt { kind: 'slider_int'; label: string; stateVar: string; valueExpr?: string; onChangeExpr?: string; min: string; max: string; style?: string; loc?: SourceLoc; }
-export interface IRDragFloat { kind: 'drag_float'; label: string; stateVar: string; valueExpr?: string; onChangeExpr?: string; speed: string; style?: string; loc?: SourceLoc; }
-export interface IRDragInt { kind: 'drag_int'; label: string; stateVar: string; valueExpr?: string; onChangeExpr?: string; speed: string; style?: string; loc?: SourceLoc; }
-export interface IRCombo { kind: 'combo'; label: string; stateVar: string; valueExpr?: string; onChangeExpr?: string; items: string; style?: string; loc?: SourceLoc; }
-export interface IRInputInt { kind: 'input_int'; label: string; stateVar: string; valueExpr?: string; onChangeExpr?: string; style?: string; loc?: SourceLoc; }
-export interface IRInputFloat { kind: 'input_float'; label: string; stateVar: string; valueExpr?: string; onChangeExpr?: string; style?: string; loc?: SourceLoc; }
-export interface IRColorEdit { kind: 'color_edit'; label: string; stateVar: string; style?: string; loc?: SourceLoc; }
-export interface IRListBox { kind: 'list_box'; label: string; stateVar: string; valueExpr?: string; onChangeExpr?: string; items: string; style?: string; loc?: SourceLoc; }
+export interface IRSliderFloat { kind: 'slider_float'; label: string; stateVar: string; valueExpr?: string; onChangeExpr?: string; directBind?: boolean; min: string; max: string; style?: string; loc?: SourceLoc; }
+export interface IRSliderInt { kind: 'slider_int'; label: string; stateVar: string; valueExpr?: string; onChangeExpr?: string; directBind?: boolean; min: string; max: string; style?: string; loc?: SourceLoc; }
+export interface IRDragFloat { kind: 'drag_float'; label: string; stateVar: string; valueExpr?: string; onChangeExpr?: string; directBind?: boolean; speed: string; style?: string; loc?: SourceLoc; }
+export interface IRDragInt { kind: 'drag_int'; label: string; stateVar: string; valueExpr?: string; onChangeExpr?: string; directBind?: boolean; speed: string; style?: string; loc?: SourceLoc; }
+export interface IRCombo { kind: 'combo'; label: string; stateVar: string; valueExpr?: string; onChangeExpr?: string; directBind?: boolean; items: string; style?: string; loc?: SourceLoc; }
+export interface IRInputInt { kind: 'input_int'; label: string; stateVar: string; valueExpr?: string; onChangeExpr?: string; directBind?: boolean; style?: string; loc?: SourceLoc; }
+export interface IRInputFloat { kind: 'input_float'; label: string; stateVar: string; valueExpr?: string; onChangeExpr?: string; directBind?: boolean; style?: string; loc?: SourceLoc; }
+export interface IRColorEdit { kind: 'color_edit'; label: string; stateVar: string; directBind?: boolean; style?: string; loc?: SourceLoc; }
+export interface IRListBox { kind: 'list_box'; label: string; stateVar: string; valueExpr?: string; onChangeExpr?: string; directBind?: boolean; items: string; style?: string; loc?: SourceLoc; }
 export interface IRProgressBar { kind: 'progress_bar'; value: string; overlay?: string; style?: string; loc?: SourceLoc; }
 export interface IRTooltip { kind: 'tooltip'; text: string; loc?: SourceLoc; }
 
@@ -97,9 +97,9 @@ export interface IRNativeWidget {
 export interface IRBulletText { kind: 'bullet_text'; format: string; args: string[]; loc?: SourceLoc; }
 export interface IRLabelText { kind: 'label_text'; label: string; value: string; loc?: SourceLoc; }
 export interface IRSelectable { kind: 'selectable'; label: string; selected: string; action: string[]; style?: string; loc?: SourceLoc; }
-export interface IRRadio { kind: 'radio'; label: string; stateVar: string; valueExpr?: string; onChangeExpr?: string; index: string; style?: string; loc?: SourceLoc; }
+export interface IRRadio { kind: 'radio'; label: string; stateVar: string; valueExpr?: string; onChangeExpr?: string; directBind?: boolean; index: string; style?: string; loc?: SourceLoc; }
 export interface IRInputTextMultiline { kind: 'input_text_multiline'; label: string; bufferIndex: number; stateVar: string; style?: string; loc?: SourceLoc; }
-export interface IRColorPicker { kind: 'color_picker'; label: string; stateVar: string; style?: string; loc?: SourceLoc; }
+export interface IRColorPicker { kind: 'color_picker'; label: string; stateVar: string; directBind?: boolean; style?: string; loc?: SourceLoc; }
 export interface IRPlotLines { kind: 'plot_lines'; label: string; values: string; overlay?: string; style?: string; loc?: SourceLoc; }
 export interface IRPlotHistogram { kind: 'plot_histogram'; label: string; values: string; overlay?: string; style?: string; loc?: SourceLoc; }
 
