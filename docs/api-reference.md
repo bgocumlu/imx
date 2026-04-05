@@ -825,17 +825,28 @@ Applies a color theme to all children. Supports built-in presets (`"dark"`, `"li
 | Prop | Type | Required | Description |
 |------|------|----------|-------------|
 | preset | string | Yes | Theme name: `"dark"`, `"light"`, `"classic"`, or a custom registered name |
-| accentColor | [r,g,b,a] | No | Primary accent color for buttons, headers, tabs, etc. |
-| windowBg | [r,g,b,a] | No | Window background color |
-| textColor | [r,g,b,a] | No | Text color |
+| accentColor | [r,g,b,a] | No | Interactive elements (buttons, headers, tabs, sliders, grips, checkmarks, plots) |
+| backgroundColor | [r,g,b,a] | No | All background surfaces (window, child, popup, menubar, scrollbar) |
+| textColor | [r,g,b,a] | No | Text and disabled text |
+| borderColor | [r,g,b,a] | No | Borders, separators, table lines, tree lines |
+| surfaceColor | [r,g,b,a] | No | Title bars, table rows, nav highlights |
 | rounding | number | No | Corner rounding for frames, windows, tabs, popups |
 | borderSize | number | No | Border thickness for frames and windows |
 | spacing | number | No | Item spacing |
 
+Each color prop derives normal/hovered/active/dimmed variants automatically. 5 props control all 55 ImGui color slots.
+
 ```tsx
-<Theme preset="dark" accentColor={[0.9, 0.2, 0.2, 1.0]} rounding={6}>
+<Theme preset="dark"
+  accentColor={[0.9, 0.2, 0.2, 1.0]}
+  backgroundColor={[0.12, 0.12, 0.15, 1.0]}
+  textColor={[0.95, 0.95, 0.95, 1.0]}
+  borderColor={[0.3, 0.3, 0.35, 1.0]}
+  surfaceColor={[0.18, 0.18, 0.22, 1.0]}
+  rounding={6}
+>
   <DockSpace>
-    <Window title="Themed"><Text>Red accent</Text></Window>
+    <Window title="Themed"><Text>Fully themed</Text></Window>
   </DockSpace>
 </Theme>
 ```

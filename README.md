@@ -75,6 +75,33 @@ The compiler parses TSX, lowers it to an intermediate representation, and emits 
 </Theme>
 ```
 
+## C++ Struct Binding
+
+Use TSX as a UI layer on existing C++ state. No `onChange` needed — widgets write directly through pointers.
+
+```cpp
+// AppState.h
+struct AppState {
+    float speed = 5.0f;
+    int count = 0;
+    std::function<void()> onReset;
+};
+```
+
+```tsx
+export default function App(props: AppState) {
+  return (
+    <Window title="Controls">
+      <SliderFloat label="Speed" value={props.speed} min={0} max={100} />
+      <Text>Count: {props.count}</Text>
+      <Button title="Reset" onPress={props.onReset} />
+    </Window>
+  );
+}
+```
+
+Generated code emits `ImGui::SliderFloat("Speed", &props.speed, ...)` — direct pointer, zero overhead. `useState` still works alongside for UI-only state like modals and tabs.
+
 ## Custom C++ Widgets
 
 Register native ImGui widgets in C++ and use them from TSX:

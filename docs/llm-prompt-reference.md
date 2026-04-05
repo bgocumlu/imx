@@ -72,7 +72,7 @@ Image: src(string, required) | embed?(boolean) | width?(number) | height?(number
 
 ### Styling
 ```
-Theme: preset(string, required) | accentColor?([r,g,b,a]) | windowBg?([r,g,b,a]) | textColor?([r,g,b,a]) | rounding?(number) | borderSize?(number) | spacing?(number) | children
+Theme: preset(string, required) | accentColor?([r,g,b,a]) | backgroundColor?([r,g,b,a]) | textColor?([r,g,b,a]) | borderColor?([r,g,b,a]) | surfaceColor?([r,g,b,a]) | rounding?(number) | borderSize?(number) | spacing?(number) | children — 5 color props derive all 55 ImGui color slots
 StyleColor: text? | textDisabled? | windowBg? | frameBg? | frameBgHovered? | frameBgActive? | titleBg? | titleBgActive? | button? | buttonHovered? | buttonActive? | header? | headerHovered? | headerActive? | separator? | checkMark? | sliderGrab? | border? | popupBg? | tab? — all [r,g,b,a], push/pop color overrides
 StyleVar: alpha?(number) | windowPadding?([x,y]) | windowRounding?(number) | framePadding?([x,y]) | frameRounding?(number) | frameBorderSize?(number) | itemSpacing?([x,y]) | itemInnerSpacing?([x,y]) | indentSpacing?(number) | cellPadding?([x,y]) | tabRounding?(number) — push/pop style var overrides
 ```
