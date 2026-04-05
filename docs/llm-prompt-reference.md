@@ -405,3 +405,28 @@ Requirements:
 - Callbacks with a value parameter need a type annotation: `(v: number) => ...`
 
 Custom themes work via `imx::register_theme("name", fn)` and `<Theme preset="name">`.
+
+## C++ Struct Binding
+
+Root component receives C++ struct as mutable reference. `value={props.field}` without `onChange` emits direct pointer (`&props.field`). No temp variables, no copies.
+
+```tsx
+// App.tsx — props type matches C++ struct name
+export default function App(props: AppState) {
+  const [showModal, setShowModal] = useState(false); // UI-only state still works
+  return (
+    <Window title="Controls">
+      <SliderFloat label="Speed" value={props.speed} min={0} max={100} />
+      <Checkbox label="Muted" value={props.muted} />
+      <Button title="Connect" onPress={props.onConnect} />
+      {props.items.map((item, i) => (
+        <DragFloat key={i} label={"##" + i} value={item.value} speed={0.5} />
+      ))}
+    </Window>
+  );
+}
+```
+
+C++ side: define struct in `AppState.h`, pass to `imx::render_root(runtime, state)`.
+Callbacks: `std::function<void()>` fields. Vector iteration: `.map()` emits `auto&` reference.
+Thread safety: developer's responsibility (same as raw ImGui).

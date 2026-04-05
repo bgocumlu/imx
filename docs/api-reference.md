@@ -1319,6 +1319,104 @@ Override props (`accentColor`, `rounding`, etc.) still apply on top of your cust
 
 ---
 
+## C++ Struct Binding
+
+Instead of using `useState` for all state, you can pass a C++ struct directly to the root component. Fields are read/written via pointers — no copies, no callbacks needed.
+
+### Setup
+
+1. Define your struct in a header file (e.g., `AppState.h`):
+
+```cpp
+// AppState.h
+#pragma once
+#include <vector>
+#include <functional>
+
+struct AppState {
+    float speed = 5.0f;
+    bool muted = false;
+    std::vector<Item> items;
+    float computed_result = 0.0f;
+    std::function<void()> onConnect;
+};
+```
+
+2. In `main.cpp`, include the header and pass the struct to `render_root`:
+
+```cpp
+#include "AppState.h"
+
+AppState state;
+state.onConnect = [&]() { client.connect(); };
+
+// In your render loop:
+imx::render_root(runtime, state);
+```
+
+3. In `App.tsx`, declare props with the struct name:
+
+```tsx
+export default function App(props: AppState) {
+    return (
+        <Window title="Controls">
+            <SliderFloat label="Speed" value={props.speed} min={0} max={100} />
+            <Checkbox label="Muted" value={props.muted} />
+            <Button title="Connect" onPress={props.onConnect} />
+            <Text>Result: {props.computed_result}</Text>
+        </Window>
+    );
+}
+```
+
+4. Declare the type in `imx.d.ts`:
+
+```typescript
+interface AppState {
+    speed: number;
+    muted: boolean;
+    items: Item[];
+    computed_result: number;
+    onConnect: () => void;
+}
+```
+
+### Binding Rules
+
+| Pattern | Generated C++ |
+|---------|--------------|
+| `value={props.field}` without `onChange` | `&props.field` (direct pointer) |
+| `value={props.field}` with `onChange` | Temp variable + callback (existing behavior) |
+| `value={stateVar}` (useState) | `.get()`/`.set()` pattern (existing behavior) |
+| `{props.field}` in Text | Read-only display |
+| `onPress={props.callback}` | `props.callback()` invocation |
+| `props.vec.map(...)` | `for` loop with `auto&` reference |
+
+### Coexistence
+
+Both `useState` (UI-only state) and struct binding work in the same component:
+
+```tsx
+export default function App(props: AppState) {
+    const [showModal, setShowModal] = useState(false);
+    return (
+        <Window title="App">
+            <SliderFloat label="Speed" value={props.speed} min={0} max={100} />
+            <Button title="Save" onPress={() => setShowModal(true)} />
+            <Modal title="Confirm" open={showModal} onClose={() => setShowModal(false)}>
+                <Text>Save changes?</Text>
+            </Modal>
+        </Window>
+    );
+}
+```
+
+### Thread Safety
+
+Bound struct fields are accessed directly by ImGui on the render thread. If C++ code modifies bound fields from another thread, you must synchronize access (mutex, atomic, etc.). IMX does not add synchronization — same rules as raw ImGui.
+
+---
+
 ## Styles
 
 Styles are passed as an object to the `style` prop. They control layout sizing, spacing, and colors.

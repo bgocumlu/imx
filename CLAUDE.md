@@ -22,6 +22,7 @@ React-Native-like authoring model for Dear ImGui. Write .tsx, compile to native 
 - TextInput: runtime-owned persistent buffers, sync each frame
 - ImGui ID scoping: begin_instance/end_instance calls PushID/PopID (guarded by GetCurrentContext for tests)
 - Per-frame counters (g_table_id, g_tabbar_id) reset in begin_dockspace()
+- C++ struct binding: `value={props.field}` without onChange emits `&props.field` (direct pointer). Root receives mutable ref. Struct defined in user header (`AppState.h`), included by generated code.
 
 ## MSVC gotchas
 - No designated initializers (`{.gap = 8}`) — use variable assignment
@@ -85,14 +86,15 @@ React-Native-like authoring model for Dear ImGui. Write .tsx, compile to native 
 - Don't call `before_child()` in modal/popup begin functions — overlays don't participate in layout
 - Don't work around compiler bugs by modifying example code — fix the pipeline
 
-## Current status (Phases 1-8 + Phase 10 Batches 1-5 complete)
+## Current status (Phases 1-8 + Phase 10 Batches 1-5 + C++ Struct Binding complete)
 - 54 host components (41 + Group, ID, StyleColor, StyleVar, DragDropSource, DragDropTarget, Canvas, DrawLine, DrawRect, DrawCircle, DrawText, Disabled, Child)
+- C++ struct binding: direct pointer binding for props without onChange, template render_root overload
 - Image component: runtime file loading + compile-time embed (stb_image + OpenGL texture cache)
 - Custom widgets: `imx::register_widget()` + `WidgetArgs` for C++ ImGui widgets from TSX
 - Custom themes: `imx::register_theme()` for user theme presets
 - Multi-component support with imports, props, callbacks
 - TypeScript type definitions for IDE support
 - API documentation complete
-- Two example apps (hello + settings), public/ folder for static assets
+- Two example apps (hello + gpa), public/ folder for static assets
 - Packaging: `imxc@0.2.0` on npm, FetchContent for C++ (compiler/dist/ committed)
 - Next: Phase 10 Batch 6+ (ContextMenu, Disabled, Tooltip improvements, etc.)
