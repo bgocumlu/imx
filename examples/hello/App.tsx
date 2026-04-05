@@ -16,6 +16,7 @@ export default function App() {
   const [size, setSize] = useState(0);
   const [selected, setSelected] = useState(0);
   const [notes, setNotes] = useState("Type here...");
+  const [toggle, setToggle] = useState(false);
   const [pickerColor, setPickerColor] = useState([0.2, 0.8, 0.4, 1.0]);
   const [showConfirm, setShowConfirm] = useState(false);
 
@@ -160,6 +161,20 @@ export default function App() {
             </Group>
           </StyleVar>
         </StyleColor>
+        <Text>Custom Widget:</Text>
+        <ToggleSwitch value={toggle} onToggle={(v: boolean) => setToggle(v)} />
+        <Disabled>
+          <Button title="Disabled Button" onPress={() => {}} />
+          <Text>This section is disabled</Text>
+        </Disabled>
+        <Child id="scrollable" width={0} height={100} border>
+          <Text>Scrollable child region:</Text>
+          <Text>Line 1</Text>
+          <Text>Line 2</Text>
+          <Text>Line 3</Text>
+          <Text>Line 4</Text>
+          <Text>Line 5</Text>
+        </Child>
       </Window>
       <Window title="Canvas Demo">
         <Canvas width={300} height={200} style={{ backgroundColor: [0.1, 0.1, 0.1, 1.0] }}>

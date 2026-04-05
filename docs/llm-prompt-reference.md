@@ -67,6 +67,44 @@ ListBox: label(string, required) | value(number, required) | onChange((v: number
 ```
 Modal: title(string, required) | open?(boolean) | onClose?(() => void) | style?(Style) | children — blocking modal dialog
 Popup: id(string, required) | style?(Style) | children
+Image: src(string, required) | embed?(boolean) | width?(number) | height?(number) — texture display (embed bakes into exe)
+```
+
+### Styling
+```
+Theme: preset(string, required) | accentColor?([r,g,b,a]) | windowBg?([r,g,b,a]) | textColor?([r,g,b,a]) | rounding?(number) | borderSize?(number) | spacing?(number) | children
+StyleColor: text? | textDisabled? | windowBg? | frameBg? | frameBgHovered? | frameBgActive? | titleBg? | titleBgActive? | button? | buttonHovered? | buttonActive? | header? | headerHovered? | headerActive? | separator? | checkMark? | sliderGrab? | border? | popupBg? | tab? — all [r,g,b,a], push/pop color overrides
+StyleVar: alpha?(number) | windowPadding?([x,y]) | windowRounding?(number) | framePadding?([x,y]) | frameRounding?(number) | frameBorderSize?(number) | itemSpacing?([x,y]) | itemInnerSpacing?([x,y]) | indentSpacing?(number) | cellPadding?([x,y]) | tabRounding?(number) — push/pop style var overrides
+```
+
+### Scoping
+```
+Group: style?(Style) | children — BeginGroup/EndGroup, makes children act as single item
+ID: scope(string|number, required) | children — PushID/PopID explicit ID scope
+Disabled: disabled?(boolean) | children — BeginDisabled/EndDisabled, grays out children (default: true)
+Child: id(string, required) | width?(number) | height?(number) | border?(boolean) | style?(Style) | children — scrollable sub-region
+```
+
+### Interaction
+```
+DragDropSource: type(string, required) | payload(number|string, required) | children — makes children draggable
+DragDropTarget: type(string, required) | onDrop((payload) => void, required) | children — accepts drops, callback param type annotation sets C++ cast
+```
+
+### Drawing
+```
+Canvas: width(number, required) | height(number, required) | style?(Style) | children — sized drawing region, children are draw primitives, coords relative to canvas origin
+DrawLine: p1([x,y], required) | p2([x,y], required) | color([r,g,b,a], required) | thickness?(number)
+DrawRect: min([x,y], required) | max([x,y], required) | color([r,g,b,a], required) | filled?(boolean) | thickness?(number) | rounding?(number)
+DrawCircle: center([x,y], required) | radius(number, required) | color([r,g,b,a], required) | filled?(boolean) | thickness?(number)
+DrawText: pos([x,y], required) | text(string, required) | color([r,g,b,a], required)
+```
+
+### Dock Configuration
+```
+DockLayout: children — declares initial dock layout (applied once + on resetLayout())
+DockSplit: direction(string, required) | size(number, required) | children — splits dock region ("horizontal"|"vertical", size 0.0-1.0)
+DockPanel: children (string) — assigns window titles to a dock region
 ```
 
 ## State
@@ -248,6 +286,63 @@ const [scores, setScores] = useState([2, 5, 8, 12, 7, 3]);
 
 // Embedded in executable (no file needed at runtime)
 <Image src="splash.png" embed width={800} height={600} />
+```
+
+## Component Examples (Batch 3-4)
+
+### StyleColor + StyleVar
+```tsx
+<StyleColor button={[0.2, 0.8, 0.2, 1.0]} buttonHovered={[0.3, 0.9, 0.3, 1.0]} buttonActive={[0.1, 0.6, 0.1, 1.0]}>
+  <StyleVar frameRounding={8} framePadding={[12, 6]}>
+    <Button title="Green Rounded" onPress={() => {}} />
+  </StyleVar>
+</StyleColor>
+```
+
+### DragDrop
+```tsx
+const [dropped, setDropped] = useState(0);
+
+<DragDropSource type="item" payload={42}>
+  <Text>Drag me</Text>
+</DragDropSource>
+<DragDropTarget type="item" onDrop={(id: number) => setDropped(id)}>
+  <View style={{ minHeight: 50 }}>
+    <Text>Drop here</Text>
+  </View>
+</DragDropTarget>
+```
+
+### Canvas
+```tsx
+<Canvas width={300} height={200} style={{ backgroundColor: [0.1, 0.1, 0.1, 1.0] }}>
+  <DrawLine p1={[0, 0]} p2={[300, 200]} color={[1, 0, 0, 1]} thickness={2} />
+  <DrawRect min={[20, 20]} max={[120, 80]} color={[0, 1, 0, 1]} filled rounding={4} />
+  <DrawCircle center={[200, 100]} radius={40} color={[0, 0.5, 1, 1]} thickness={3} />
+  <DrawText pos={[10, 185]} text="Canvas" color={[1, 1, 1, 1]} />
+</Canvas>
+```
+
+### Disabled + Child
+```tsx
+<Disabled>
+  <Button title="Can't click" onPress={() => {}} />
+</Disabled>
+<Child id="scrollable" width={0} height={150} border>
+  <Text>Line 1</Text>
+  <Text>Line 2</Text>
+  <Text>Line 3</Text>
+</Child>
+```
+
+### Group + ID
+```tsx
+<ID scope="player1">
+  <Group>
+    <Text>Player 1</Text>
+    <SliderFloat label="HP" value={hp} min={0} max={100} onChange={setHp} />
+  </Group>
+</ID>
 ```
 
 ## Full Example
