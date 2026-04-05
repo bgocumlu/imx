@@ -23,17 +23,17 @@ export default function App(props: DashboardState) {
           <Row gap={16}>
             <Column gap={2}>
               <Text>CPU Usage</Text>
-              <ProgressBar value={props.cpuUsage / 100} style={{ width: 200 }} />
+              <ProgressBar value={props.cpuUsage / 100} overlay={props.cpuUsage + "%"} style={{ width: 200 }} />
             </Column>
             <Column gap={2}>
               <Text>Memory Usage</Text>
-              <ProgressBar value={props.memoryUsage / 100} style={{ width: 200 }} />
+              <ProgressBar value={props.memoryUsage / 100} overlay={props.memoryUsage + "%"} style={{ width: 200 }} />
             </Column>
           </Row>
           <Separator />
           <Row gap={16}>
-            <Text>Connections: {props.activeConnections}</Text>
-            <Text>Requests/s: {props.requestsPerSec}</Text>
+            <LabelText label="Connections" value={props.activeConnections + ""} />
+            <LabelText label="Requests/s" value={props.requestsPerSec + ""} />
           </Row>
           <Separator />
           <Button title="Reset Charts" onPress={props.onRefresh} />

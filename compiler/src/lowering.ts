@@ -263,10 +263,14 @@ export function exprToCpp(node: ts.Expression, ctx: LoweringContext): string {
         if (op === '===') op = '==';
         else if (op === '!==') op = '!=';
         // String + non-string: JS string concatenation -> C++ std::string + std::to_string
-        if (op === '+' && (ts.isStringLiteral(node.left) || ts.isNoSubstitutionTemplateLiteral(node.left))) {
-            const rightType = inferExprType(node.right, ctx);
-            if (rightType === 'int' || rightType === 'float') {
-                return `(std::string(${left}) + std::to_string(${right}))`;
+        if (op === '+') {
+            const leftIsString = ts.isStringLiteral(node.left) || ts.isNoSubstitutionTemplateLiteral(node.left) || inferExprType(node.left, ctx) === 'string';
+            const rightIsString = ts.isStringLiteral(node.right) || ts.isNoSubstitutionTemplateLiteral(node.right) || inferExprType(node.right, ctx) === 'string';
+            if (leftIsString && !rightIsString) {
+                return `(std::string(${left}) + std::to_string(${right})).c_str()`;
+            }
+            if (!leftIsString && rightIsString) {
+                return `(std::to_string(${left}) + std::string(${right})).c_str()`;
             }
         }
         return `${left} ${op} ${right}`;
