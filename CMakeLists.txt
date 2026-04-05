@@ -139,16 +139,4 @@ if(IMX_BUILD_EXAMPLES)
         COMMENT "Copying hello public/ assets"
     )
 
-    # --- gpa_app: GPA calculator example ---
-    imx_compile_tsx(GPA_GENERATED
-        SOURCES examples/gpa/App.tsx
-        OUTPUT_DIR ${CMAKE_BINARY_DIR}/gpa_generated
-    )
-
-    add_executable(gpa_app
-        examples/gpa/main.cpp
-        ${GPA_GENERATED}
-    )
-    target_link_libraries(gpa_app PRIVATE imx_renderer)
-    target_include_directories(gpa_app PRIVATE ${CMAKE_BINARY_DIR}/gpa_generated ${CMAKE_CURRENT_SOURCE_DIR}/examples/gpa)
 endif()

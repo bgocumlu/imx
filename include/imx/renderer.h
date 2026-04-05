@@ -158,7 +158,7 @@ bool begin_popup(const char* id, const Style& style = {});
 void end_popup();
 void open_popup(const char* id);
 
-void begin_dockspace(const Style& style = {});
+void begin_dockspace(const Style& style = {}, bool has_menu_bar = false);
 void end_dockspace();
 
 bool begin_menu_bar();

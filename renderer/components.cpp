@@ -103,7 +103,7 @@ void open_popup(const char* id) {
     ImGui::OpenPopup(id);
 }
 
-void begin_dockspace(const Style& style) {
+void begin_dockspace(const Style& style, bool has_menu_bar) {
     g_table_id = 0;
     g_tabbar_id = 0;
 
@@ -116,8 +116,8 @@ void begin_dockspace(const Style& style) {
     ImGuiWindowFlags host_flags = ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoTitleBar |
                                   ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize |
                                   ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBringToFrontOnFocus |
-                                  ImGuiWindowFlags_NoNavFocus | ImGuiWindowFlags_NoBackground |
-                                  ImGuiWindowFlags_MenuBar;
+                                  ImGuiWindowFlags_NoNavFocus | ImGuiWindowFlags_NoBackground;
+    if (has_menu_bar) host_flags |= ImGuiWindowFlags_MenuBar;
 
     ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0F);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0F);

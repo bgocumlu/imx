@@ -622,7 +622,11 @@ function emitBeginContainer(node, lines, indent) {
         }
         case 'DockSpace': {
             const style = buildStyleBlock(node, indent, lines);
-            if (style) {
+            const hasMenuBar = node.props['hasMenuBar'] === 'true';
+            if (hasMenuBar) {
+                lines.push(`${indent}imx::renderer::begin_dockspace(${style ?? '{}'}, true);`);
+            }
+            else if (style) {
                 lines.push(`${indent}imx::renderer::begin_dockspace(${style});`);
             }
             else {
