@@ -384,8 +384,7 @@ void begin_theme(const char* preset, const ThemeConfig& config) {
     int var_count = 0;
     ImGuiStyle& style = ImGui::GetStyle();
 
-    // Resolve background_color (new name) or window_bg (legacy alias)
-    auto bg_opt = config.background_color ? config.background_color : config.window_bg;
+    auto bg_opt = config.background_color;
 
     // --- accentColor: interactive elements ---
     if (config.accent_color) {

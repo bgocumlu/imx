@@ -30,8 +30,6 @@ struct ThemeConfig {
     std::optional<ImVec4> text_color;
     std::optional<ImVec4> border_color;
     std::optional<ImVec4> surface_color;
-    // Legacy alias — maps to background_color
-    std::optional<ImVec4> window_bg;
     std::optional<float> rounding;
     std::optional<float> border_size;
     std::optional<float> spacing;

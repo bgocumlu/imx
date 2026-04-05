@@ -328,7 +328,6 @@ export const HOST_COMPONENTS: Record<string, HostComponentDef> = {
             textColor: { type: 'style', required: false },
             borderColor: { type: 'style', required: false },
             surfaceColor: { type: 'style', required: false },
-            windowBg: { type: 'style', required: false },
             rounding: { type: 'number', required: false },
             borderSize: { type: 'number', required: false },
             spacing: { type: 'number', required: false },

@@ -668,9 +668,6 @@ function emitBeginContainer(node: IRBeginContainer, lines: string[], indent: str
             if (node.props['backgroundColor']) {
                 lines.push(`${indent}${varName}.background_color = ${emitImVec4(node.props['backgroundColor'])};`);
             }
-            if (node.props['windowBg']) {
-                lines.push(`${indent}${varName}.window_bg = ${emitImVec4(node.props['windowBg'])};`);
-            }
             if (node.props['textColor']) {
                 lines.push(`${indent}${varName}.text_color = ${emitImVec4(node.props['textColor'])};`);
             }

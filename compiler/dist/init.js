@@ -161,7 +161,6 @@ interface ThemeProps {
   textColor?: [number, number, number, number];
   borderColor?: [number, number, number, number];
   surfaceColor?: [number, number, number, number];
-  windowBg?: [number, number, number, number];
   rounding?: number;
   borderSize?: number;
   spacing?: number;
