@@ -84,6 +84,9 @@ add_library(imx::renderer ALIAS imx_renderer)
 set(IMX_COMPILER "${CMAKE_CURRENT_SOURCE_DIR}/compiler/dist/index.js"
     CACHE FILEPATH "Path to the IMX TSX compiler (index.js)")
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+if(NOT PROJECT_IS_TOP_LEVEL)
+    set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH}" PARENT_SCOPE)
+endif()
 
 # --- Tests ---
 if(IMX_BUILD_TESTS)
