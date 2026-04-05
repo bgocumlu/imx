@@ -151,11 +151,16 @@ bool menu_item(const char* label, const char* shortcut) {
     return ImGui::MenuItem(label, shortcut);
 }
 
-bool begin_table(const char* id, int column_count, const char** column_names, const Style& style) {
+bool begin_table(const char* id, int column_count, const char** column_names, const Style& style, bool scroll_y) {
     before_child();
     char table_id[64];
     snprintf(table_id, sizeof(table_id), "##table_%d", g_table_id++);
-    if (ImGui::BeginTable(table_id, column_count, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_Resizable)) {
+    ImGuiTableFlags flags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_Resizable;
+    if (scroll_y) flags |= ImGuiTableFlags_ScrollY;
+    ImVec2 size(0, 0);
+    if (style.width) size.x = *style.width;
+    if (style.height) size.y = *style.height;
+    if (ImGui::BeginTable(table_id, column_count, flags, size)) {
         for (int i = 0; i < column_count; i++) {
             ImGui::TableSetupColumn(column_names[i]);
         }

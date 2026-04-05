@@ -169,7 +169,7 @@ void end_menu();
 
 bool menu_item(const char* label, const char* shortcut = nullptr);
 
-bool begin_table(const char* id, int column_count, const char** column_names, const Style& style = {});
+bool begin_table(const char* id, int column_count, const char** column_names, const Style& style = {}, bool scroll_y = false);
 void end_table();
 void begin_table_row();
 void end_table_row();

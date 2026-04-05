@@ -690,8 +690,17 @@ function emitBeginContainer(node: IRBeginContainer, lines: string[], indent: str
             const columnNames = columnsRaw.split(',').map(s => s.trim()).filter(s => s.length > 0);
             const count = columnNames.length;
             const varName = `table_cols_${styleCounter++}`;
+            const style = buildStyleVar(node.style, indent, lines);
+            const scrollY = node.props['scrollY'] === 'true';
             lines.push(`${indent}const char* ${varName}[] = {${columnNames.join(', ')}};`);
-            lines.push(`${indent}if (imx::renderer::begin_table("##table", ${count}, ${varName})) {`);
+            const styleArg = style ?? '{}';
+            if (scrollY) {
+                lines.push(`${indent}if (imx::renderer::begin_table("##table", ${count}, ${varName}, ${styleArg}, true)) {`);
+            } else if (style) {
+                lines.push(`${indent}if (imx::renderer::begin_table("##table", ${count}, ${varName}, ${styleArg})) {`);
+            } else {
+                lines.push(`${indent}if (imx::renderer::begin_table("##table", ${count}, ${varName})) {`);
+            }
             break;
         }
         case 'TableRow': {

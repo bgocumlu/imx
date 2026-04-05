@@ -100,7 +100,7 @@ export const HOST_COMPONENTS: Record<string, HostComponentDef> = {
         hasChildren: false, isContainer: false,
     },
     Table: {
-        props: { columns: { type: 'string', required: true }, style: { type: 'style', required: false } },
+        props: { columns: { type: 'string', required: true }, scrollY: { type: 'boolean', required: false }, style: { type: 'style', required: false } },
         hasChildren: true, isContainer: true,
     },
     TableRow: {
