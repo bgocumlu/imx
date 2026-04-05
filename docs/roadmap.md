@@ -219,36 +219,40 @@ Exit criteria:
 - every ImGui widget has a corresponding IMX component
 - custom C++ widgets can be used alongside IMX components
 
-## Phase 11: Advanced Features
+## Phase 11: C++ Struct Binding (DONE)
 
 Goal:
 
-- decide whether extra complexity is justified after the core model works
+- make IMX a pure UI layer on existing C++ applications — TSX reads/writes C++ variables directly
 
-Candidates:
+Deliverables:
 
-- `useEffect`
-- native IR instead of C++ codegen
-- hot reload
-- **Complete Theme System** — expand `<Theme>` from 3 color props to ~5 semantic props that intelligently derive all 55 ImGui color slots:
-  - `accentColor` — interactive elements (buttons, tabs, sliders, headers, grips, checkmarks)
-  - `backgroundColor` — all background surfaces (window, popup, child, frame, menu bar, scrollbar track)
-  - `textColor` — all text variants (normal, disabled, placeholder)
-  - `borderColor` — borders, separators, table lines
-  - `surfaceColor` — secondary surfaces (table rows, title bars, modal dim overlay)
-  - Each prop derives normal/hovered/active/dimmed variants automatically
-  - Goal: 5 props → full control of all 55 ImGui color slots via smart derivation
-- **Remote Image Loading** — `<Image src="https://..." />` with async HTTP fetch, texture caching, placeholder while loading (requires networking dependency like libcurl)
-- plugin APIs
-
-Near-term DX:
-
-- **`imxc add`** — integrate IMX into an existing CMake project. Creates `src/App.tsx` + `imx.d.ts` + `tsconfig.json` + `public/`, prints the CMake lines to paste (FetchContent + ImxCompile) instead of overwriting their CMakeLists. Guided integration, not a full scaffold.
-
-Non-goals:
-
-- **Tauri-like CLI wrapper** — IMX integrates into existing CMake projects via FetchContent. The build stays CMake-native. `imxc` is for scaffolding and TSX compilation, not for wrapping the C++ build. Users who have existing apps (like udpstuff) just add a few CMake lines.
+- Root component receives a C++ struct as mutable reference (`T&`)
+- `value={props.field}` without `onChange` emits `&props.field` (direct pointer binding)
+- `std::function` callback fields for triggering C++ actions from TSX
+- Vector iteration via `.map()` with `auto&` reference binding
+- `useState` coexists for UI-only state (modals, tabs, toggles)
+- Template `render_root<T>(runtime, state)` overload
+- `imxc init` scaffold demonstrates binding + useState together
+- `imxc add` for integrating into existing CMake projects
 
 Exit criteria:
 
-- each advanced feature is justified by demonstrated need, not by imitation of React
+- TSX can bind to any C++ struct field and the generated code is equivalent to hand-written ImGui
+- Thread safety is the developer's responsibility (documented)
+
+## Phase 12: Future
+
+Candidates (implement only when justified by real need):
+
+- `useEffect` — lifecycle hooks for timers, periodic updates
+- GPA calculator example — recreates notort in TSX with struct binding
+- Child component sub-struct binding (Approach 2) — pass sub-struct references to child components
+- Remote image loading — `<Image src="https://..." />` (requires networking dependency)
+- Plugin APIs
+
+Non-goals:
+
+- **Native IR / interpreter** — contradicts "no runtime in shipped binary"
+- **Hot reload** — compile-run cycle is already short enough for native apps
+- **Tauri-like CLI wrapper** — IMX integrates via FetchContent, build stays CMake-native
