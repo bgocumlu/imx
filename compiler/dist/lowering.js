@@ -631,8 +631,9 @@ function lowerButton(attrs, rawAttrs, body, ctx, loc) {
     if (onPressExpr) {
         action = extractActionStatements(onPressExpr, ctx);
     }
+    const disabled = attrs['disabled'] === 'true' ? true : undefined;
     const style = attrs['style'];
-    body.push({ kind: 'button', title, action, style, loc });
+    body.push({ kind: 'button', title, action, disabled, style, loc });
 }
 function lowerTextInput(attrs, rawAttrs, body, ctx, loc) {
     const label = attrs['label'] ?? '""';

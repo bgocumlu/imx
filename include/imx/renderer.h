@@ -146,7 +146,7 @@ void end_column();
 
 void text(const char* fmt, ...) IM_FMTARGS(1);
 
-bool button(const char* title, const Style& style = {});
+bool button(const char* title, const Style& style = {}, bool disabled = false);
 
 bool text_input(const char* label, TextBuffer& buffer, const Style& style = {});
 
@@ -169,7 +169,7 @@ void end_menu();
 
 bool menu_item(const char* label, const char* shortcut = nullptr);
 
-bool begin_table(const char* id, int column_count, const char** column_names, const Style& style = {}, bool scroll_y = false);
+bool begin_table(const char* id, int column_count, const char** column_names, const Style& style = {}, bool scroll_y = false, bool no_borders = false, bool no_row_bg = false);
 void end_table();
 void begin_table_row();
 void end_table_row();

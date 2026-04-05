@@ -188,7 +188,7 @@ interface ThemeProps {
 interface MenuBarProps { children?: any; }
 interface MenuProps { label: string; children?: any; }
 interface MenuItemProps { label: string; onPress?: () => void; shortcut?: string; }
-interface TableProps { columns: string[]; scrollY?: boolean; style?: Style; children?: any; }
+interface TableProps { columns: string[]; scrollY?: boolean; noBorders?: boolean; noRowBg?: boolean; style?: Style; children?: any; }
 interface TableRowProps { key?: number | string; children?: any; }
 interface TabBarProps { style?: Style; children?: any; }
 interface TabItemProps { label: string; children?: any; }

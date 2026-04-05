@@ -64,12 +64,15 @@ void text(const char* fmt, ...) {
     va_end(args);
 }
 
-bool button(const char* title, const Style& style) {
+bool button(const char* title, const Style& style, bool disabled) {
     before_child();
+    if (disabled) ImGui::BeginDisabled();
     ImVec2 size(0, 0);
     if (style.width) size.x = *style.width;
     if (style.height) size.y = *style.height;
-    return ImGui::Button(title, size);
+    bool pressed = ImGui::Button(title, size);
+    if (disabled) ImGui::EndDisabled();
+    return pressed;
 }
 
 void separator() {
@@ -151,11 +154,13 @@ bool menu_item(const char* label, const char* shortcut) {
     return ImGui::MenuItem(label, shortcut);
 }
 
-bool begin_table(const char* id, int column_count, const char** column_names, const Style& style, bool scroll_y) {
+bool begin_table(const char* id, int column_count, const char** column_names, const Style& style, bool scroll_y, bool no_borders, bool no_row_bg) {
     before_child();
     char table_id[64];
     snprintf(table_id, sizeof(table_id), "##table_%d", g_table_id++);
-    ImGuiTableFlags flags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_Resizable;
+    ImGuiTableFlags flags = ImGuiTableFlags_Resizable;
+    if (!no_borders) flags |= ImGuiTableFlags_Borders;
+    if (!no_row_bg) flags |= ImGuiTableFlags_RowBg;
     if (scroll_y) flags |= ImGuiTableFlags_ScrollY;
     ImVec2 size(0, 0);
     if (style.width) size.x = *style.width;
@@ -213,52 +218,82 @@ void end_collapsing_header() {
 
 bool slider_float(const char* label, float* value, float min, float max, const Style& style) {
     before_child();
-    return ImGui::SliderFloat(label, value, min, max);
+    if (style.width) ImGui::PushItemWidth(*style.width);
+    bool r = ImGui::SliderFloat(label, value, min, max);
+    if (style.width) ImGui::PopItemWidth();
+    return r;
 }
 
 bool slider_int(const char* label, int* value, int min, int max, const Style& style) {
     before_child();
-    return ImGui::SliderInt(label, value, min, max);
+    if (style.width) ImGui::PushItemWidth(*style.width);
+    bool r = ImGui::SliderInt(label, value, min, max);
+    if (style.width) ImGui::PopItemWidth();
+    return r;
 }
 
 bool drag_float(const char* label, float* value, float speed, const Style& style) {
     before_child();
-    return ImGui::DragFloat(label, value, speed);
+    if (style.width) ImGui::PushItemWidth(*style.width);
+    bool r = ImGui::DragFloat(label, value, speed);
+    if (style.width) ImGui::PopItemWidth();
+    return r;
 }
 
 bool drag_int(const char* label, int* value, float speed, const Style& style) {
     before_child();
-    return ImGui::DragInt(label, value, speed);
+    if (style.width) ImGui::PushItemWidth(*style.width);
+    bool r = ImGui::DragInt(label, value, speed);
+    if (style.width) ImGui::PopItemWidth();
+    return r;
 }
 
 bool combo(const char* label, int* current_item, const char* const items[], int items_count, const Style& style) {
     before_child();
-    return ImGui::Combo(label, current_item, items, items_count);
+    if (style.width) ImGui::PushItemWidth(*style.width);
+    bool r = ImGui::Combo(label, current_item, items, items_count);
+    if (style.width) ImGui::PopItemWidth();
+    return r;
 }
 
 bool input_int(const char* label, int* value, const Style& style) {
     before_child();
-    return ImGui::InputInt(label, value);
+    if (style.width) ImGui::PushItemWidth(*style.width);
+    bool r = ImGui::InputInt(label, value);
+    if (style.width) ImGui::PopItemWidth();
+    return r;
 }
 
 bool input_float(const char* label, float* value, const Style& style) {
     before_child();
-    return ImGui::InputFloat(label, value);
+    if (style.width) ImGui::PushItemWidth(*style.width);
+    bool r = ImGui::InputFloat(label, value);
+    if (style.width) ImGui::PopItemWidth();
+    return r;
 }
 
 bool color_edit(const char* label, float color[4], const Style& style) {
     before_child();
-    return ImGui::ColorEdit4(label, color);
+    if (style.width) ImGui::PushItemWidth(*style.width);
+    bool r = ImGui::ColorEdit4(label, color);
+    if (style.width) ImGui::PopItemWidth();
+    return r;
 }
 
 bool list_box(const char* label, int* current_item, const char* const items[], int items_count, const Style& style) {
     before_child();
-    return ImGui::ListBox(label, current_item, items, items_count);
+    if (style.width) ImGui::PushItemWidth(*style.width);
+    bool r = ImGui::ListBox(label, current_item, items, items_count);
+    if (style.width) ImGui::PopItemWidth();
+    return r;
 }
 
 void progress_bar(float fraction, const char* overlay, const Style& style) {
     before_child();
-    ImGui::ProgressBar(fraction, ImVec2(-FLT_MIN, 0), overlay);
+    ImVec2 size(-FLT_MIN, 0);
+    if (style.width) size.x = *style.width;
+    if (style.height) size.y = *style.height;
+    ImGui::ProgressBar(fraction, size, overlay);
 }
 
 void tooltip(const char* text) {

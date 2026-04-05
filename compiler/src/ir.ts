@@ -63,7 +63,7 @@ export interface IREndContainer {
        | 'Group' | 'ID' | 'StyleColor' | 'StyleVar' | 'DragDropSource' | 'DragDropTarget' | 'Canvas' | 'Disabled' | 'Child';
 }
 export interface IRText { kind: 'text'; format: string; args: string[]; loc?: SourceLoc; }
-export interface IRButton { kind: 'button'; title: string; action: string[]; style?: string; loc?: SourceLoc; }
+export interface IRButton { kind: 'button'; title: string; action: string[]; disabled?: boolean; style?: string; loc?: SourceLoc; }
 export interface IRTextInput { kind: 'text_input'; label: string; bufferIndex: number; stateVar: string; style?: string; loc?: SourceLoc; }
 export interface IRCheckbox { kind: 'checkbox'; label: string; stateVar: string; valueExpr?: string; onChangeExpr?: string; directBind?: boolean; style?: string; loc?: SourceLoc; }
 export interface IRSeparator { kind: 'separator'; loc?: SourceLoc; }

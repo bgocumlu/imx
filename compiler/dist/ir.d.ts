@@ -48,6 +48,7 @@ export interface IRButton {
     kind: 'button';
     title: string;
     action: string[];
+    disabled?: boolean;
     style?: string;
     loc?: SourceLoc;
 }

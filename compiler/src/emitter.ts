@@ -692,10 +692,12 @@ function emitBeginContainer(node: IRBeginContainer, lines: string[], indent: str
             const varName = `table_cols_${styleCounter++}`;
             const style = buildStyleVar(node.style, indent, lines);
             const scrollY = node.props['scrollY'] === 'true';
+            const noBorders = node.props['noBorders'] === 'true';
+            const noRowBg = node.props['noRowBg'] === 'true';
             lines.push(`${indent}const char* ${varName}[] = {${columnNames.join(', ')}};`);
             const styleArg = style ?? '{}';
-            if (scrollY) {
-                lines.push(`${indent}if (imx::renderer::begin_table("##table", ${count}, ${varName}, ${styleArg}, true)) {`);
+            if (scrollY || noBorders || noRowBg) {
+                lines.push(`${indent}if (imx::renderer::begin_table("##table", ${count}, ${varName}, ${styleArg}, ${scrollY}, ${noBorders}, ${noRowBg})) {`);
             } else if (style) {
                 lines.push(`${indent}if (imx::renderer::begin_table("##table", ${count}, ${varName}, ${styleArg})) {`);
             } else {
@@ -1030,10 +1032,11 @@ function emitText(node: IRText, lines: string[], indent: string): void {
 function emitButton(node: IRButton, lines: string[], indent: string, depth: number): void {
     emitLocComment(node.loc, 'Button', lines, indent);
     const title = asCharPtr(node.title);
+    const disabledArg = node.disabled ? ', {}, true' : '';
     if (node.action.length === 0) {
-        lines.push(`${indent}imx::renderer::button(${title});`);
+        lines.push(`${indent}imx::renderer::button(${title}${disabledArg});`);
     } else {
-        lines.push(`${indent}if (imx::renderer::button(${title})) {`);
+        lines.push(`${indent}if (imx::renderer::button(${title}${disabledArg})) {`);
         for (const stmt of node.action) {
             lines.push(`${indent}${INDENT}${stmt}`);
         }
