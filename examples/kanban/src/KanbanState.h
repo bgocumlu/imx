@@ -12,6 +12,7 @@ struct KanbanColumn {
     std::string name;
     std::vector<KanbanCard> cards;
     std::function<void()> onAdd;
+    std::function<void(int)> onDrop;
 };
 
 struct KanbanState {

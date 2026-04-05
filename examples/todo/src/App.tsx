@@ -30,7 +30,7 @@ export default function App(props: TodoState) {
           <Separator />
 
           {props.items.map((item, i) => (
-            <ID scope={i} key={i}>
+            <ID scope={i}>
               {filter === 0 && <TodoItem text={item.text} done={item.done} onToggle={item.onToggle} onRemove={item.onRemove} />}
               {filter === 1 && !item.done && <TodoItem text={item.text} done={item.done} onToggle={item.onToggle} onRemove={item.onRemove} />}
               {filter === 2 && item.done && <TodoItem text={item.text} done={item.done} onToggle={item.onToggle} onRemove={item.onRemove} />}

@@ -15,16 +15,16 @@ export default function App(props: KanbanState) {
         <Column gap={8}>
           <Row gap={16}>
             {props.columns.map((col, ci) => (
-              <ID scope={ci} key={ci}>
+              <ID scope={ci}>
                 <Column gap={4} style={{ minWidth: 200 }}>
                   <Text style={{ fontSize: 16 }}>{col.name}</Text>
                   <Separator />
                   {col.cards.map((card, i) => (
-                    <ID scope={i} key={i}>
+                    <ID scope={i}>
                       <KanbanCard title={card.title} id={card.id} />
                     </ID>
                   ))}
-                  <DragDropTarget type="card" onDrop={(cardId: number) => {}}>
+                  <DragDropTarget type="card" onDrop={(cardId: number) => col.onDrop(cardId)}>
                     <View style={{ minHeight: 30, backgroundColor: [0.15, 0.15, 0.2, 1.0] }}>
                       <Text style={{ textColor: [0.5, 0.5, 0.5, 1.0] }}>Drop here</Text>
                     </View>

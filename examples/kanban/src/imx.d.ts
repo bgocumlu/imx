@@ -25,15 +25,13 @@ interface KanbanColumn {
     name: string;
     cards: KanbanCard[];
     onAdd: () => void;
+    onDrop: (cardId: number) => void;
 }
 
 interface KanbanState {
     columns: KanbanColumn[];
     onClearAll: () => void;
 }
-
-interface DropZoneProps { column: number; }
-declare function DropZone(props: DropZoneProps): any;
 
 interface WindowProps { title: string; open?: boolean; onClose?: () => void; noTitleBar?: boolean; noResize?: boolean; noMove?: boolean; noCollapse?: boolean; noDocking?: boolean; noScrollbar?: boolean; style?: Style; children?: any; }
 interface ViewProps { style?: Style; children?: any; }

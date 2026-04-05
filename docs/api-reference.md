@@ -1422,6 +1422,14 @@ export default function App(props: AppState) {
 }
 ```
 
+### Limitations
+
+- **TextInput**: buffer does not sync to/from C++ struct fields. Use `useState` for text state, or register a native widget for input+action flows.
+- **Custom component props are copies**: `<Checkbox value={props.done} />` inside a custom component modifies a local copy, not the struct field. Use an `onChange` callback to propagate changes, or place the widget directly in the `.map()` loop for true direct pointer binding.
+- **Nested `.map()`**: use different index variable names for each level (e.g., `ci` for outer, `i` for inner).
+- **ColorEdit/ColorPicker**: use `std::vector<float>` fields in C++. Direct pointer binding emits `.data()`.
+- **DragDrop payloads**: always `float` internally — TSX `number` has no int/float distinction.
+
 ### Thread Safety
 
 Bound struct fields are accessed directly by ImGui on the render thread. If C++ code modifies bound fields from another thread, you must synchronize access (mutex, atomic, etc.). IMX does not add synchronization — same rules as raw ImGui.

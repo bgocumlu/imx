@@ -420,7 +420,9 @@ export default function App(props: AppState) {
       <Checkbox label="Muted" value={props.muted} />
       <Button title="Connect" onPress={props.onConnect} />
       {props.items.map((item, i) => (
-        <DragFloat key={i} label={"##" + i} value={item.value} speed={0.5} />
+        <ID scope={i}>
+          <DragFloat label={"##" + i} value={item.value} speed={0.5} />
+        </ID>
       ))}
     </Window>
   );
@@ -428,5 +430,13 @@ export default function App(props: AppState) {
 ```
 
 C++ side: define struct in `AppState.h`, pass to `imx::render_root(runtime, state)`.
-Callbacks: `std::function<void()>` fields. Vector iteration: `.map()` emits `auto&` reference.
+Callbacks: `std::function<void()>` or `std::function<void(int)>` fields. Vector iteration: `.map()` emits `auto&` reference.
 Thread safety: developer's responsibility (same as raw ImGui).
+
+### Struct Binding Limitations
+
+- **TextInput**: buffer does not sync to/from C++ struct fields. Use `useState` for text state, or a native widget for input+action flows.
+- **Custom component props are copies**: `<Checkbox value={props.done} />` inside a custom component modifies a local copy. Use an `onChange` callback to propagate, or use the widget directly in the `.map()` loop for direct pointer binding.
+- **Nested `.map()`**: use different index variable names for each level (e.g., `ci` for outer, `i` for inner).
+- **ColorEdit/ColorPicker**: works with struct binding via `std::vector<float>` fields (emits `.data()`).
+- **DragDrop payloads**: always `float` — TSX `number` has no int/float distinction.

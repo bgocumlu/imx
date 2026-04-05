@@ -43,13 +43,16 @@ static void render_frame(App& app) {
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
 
-    // Wire per-column onAdd callbacks
+    // Wire per-column callbacks
     for (size_t c = 0; c < app.state.columns.size(); c++) {
         app.state.columns[c].onAdd = [&app, c]() {
             KanbanCard card;
             card.title = "Card " + std::to_string(app.nextId++);
             card.id = app.nextId - 1;
             app.state.columns[c].cards.push_back(card);
+        };
+        app.state.columns[c].onDrop = [&app, c](int cardId) {
+            move_card(app.state, cardId, static_cast<int>(c));
         };
     }
 
@@ -133,18 +136,6 @@ int main() {
             col.cards.clear();
         }
     };
-
-    // Register native widget for drag-drop of cards between columns
-    imx::register_widget("DropZone", [&](imx::WidgetArgs& a) {
-        int colIndex = a.get<int>("column");
-        if (ImGui::BeginDragDropTarget()) {
-            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("card")) {
-                int cardId = *static_cast<const int*>(payload->Data);
-                move_card(app.state, cardId, colIndex);
-            }
-            ImGui::EndDragDropTarget();
-        }
-    });
 
     while (glfwWindowShouldClose(window) == 0) {
         glfwPollEvents();
