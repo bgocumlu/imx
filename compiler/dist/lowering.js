@@ -677,8 +677,12 @@ function lowerCheckbox(attrs, rawAttrs, body, ctx, loc) {
         const onChangeRaw = rawAttrs.get('onChange');
         if (onChangeRaw) {
             onChangeExprStr = exprToCpp(onChangeRaw, ctx);
-            // If it's not already a lambda/call, make it a call
-            if (!onChangeExprStr.startsWith('[') && !onChangeExprStr.endsWith(')')) {
+            if (onChangeExprStr.startsWith('[')) {
+                // Lambda from arrow function — invoke it (IIFE)
+                onChangeExprStr = `(${onChangeExprStr})()`;
+            }
+            else if (!onChangeExprStr.endsWith(')')) {
+                // Plain identifier — make it a call
                 onChangeExprStr = `${onChangeExprStr}()`;
             }
         }
@@ -1137,7 +1141,12 @@ function lowerValueOnChange(rawAttrs, ctx) {
         const onChangeRaw = rawAttrs.get('onChange');
         if (onChangeRaw) {
             onChangeExpr = exprToCpp(onChangeRaw, ctx);
-            if (!onChangeExpr.startsWith('[') && !onChangeExpr.endsWith(')')) {
+            if (onChangeExpr.startsWith('[')) {
+                // Lambda from arrow function — invoke it (IIFE)
+                onChangeExpr = `(${onChangeExpr})()`;
+            }
+            else if (!onChangeExpr.endsWith(')')) {
+                // Plain identifier — make it a call
                 onChangeExpr = `${onChangeExpr}()`;
             }
         }

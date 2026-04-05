@@ -135,4 +135,23 @@ if(IMX_BUILD_EXAMPLES)
         COMMENT "Copying hello public/ assets"
     )
 
+    # --- todo_app: struct binding example ---
+    imx_compile_tsx(TODO_GENERATED
+        SOURCES
+            examples/todo/src/App.tsx
+            examples/todo/src/TodoItem.tsx
+        OUTPUT_DIR ${CMAKE_BINARY_DIR}/generated_todo
+    )
+
+    add_executable(todo_app
+        examples/todo/src/main.cpp
+        ${TODO_GENERATED}
+    )
+    set_target_properties(todo_app PROPERTIES WIN32_EXECUTABLE $<CONFIG:Release>)
+    target_link_libraries(todo_app PRIVATE imx_renderer)
+    target_include_directories(todo_app PRIVATE
+        ${CMAKE_BINARY_DIR}/generated_todo
+        ${CMAKE_CURRENT_SOURCE_DIR}/examples/todo/src
+    )
+
 endif()

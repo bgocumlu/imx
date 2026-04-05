@@ -737,8 +737,11 @@ function lowerCheckbox(attrs: Record<string, string>, rawAttrs: Map<string, ts.E
         const onChangeRaw = rawAttrs.get('onChange');
         if (onChangeRaw) {
             onChangeExprStr = exprToCpp(onChangeRaw, ctx);
-            // If it's not already a lambda/call, make it a call
-            if (!onChangeExprStr.startsWith('[') && !onChangeExprStr.endsWith(')')) {
+            if (onChangeExprStr.startsWith('[')) {
+                // Lambda from arrow function — invoke it (IIFE)
+                onChangeExprStr = `(${onChangeExprStr})()`;
+            } else if (!onChangeExprStr.endsWith(')')) {
+                // Plain identifier — make it a call
                 onChangeExprStr = `${onChangeExprStr}()`;
             }
         } else if (valueExprStr && valueExprStr.startsWith('props.')) {
@@ -1205,7 +1208,11 @@ function lowerValueOnChange(rawAttrs: Map<string, ts.Expression | null>, ctx: Lo
         const onChangeRaw = rawAttrs.get('onChange');
         if (onChangeRaw) {
             onChangeExpr = exprToCpp(onChangeRaw, ctx);
-            if (!onChangeExpr.startsWith('[') && !onChangeExpr.endsWith(')')) {
+            if (onChangeExpr.startsWith('[')) {
+                // Lambda from arrow function — invoke it (IIFE)
+                onChangeExpr = `(${onChangeExpr})()`;
+            } else if (!onChangeExpr.endsWith(')')) {
+                // Plain identifier — make it a call
                 onChangeExpr = `${onChangeExpr}()`;
             }
         } else if (valueRaw && ts.isPropertyAccessExpression(valueRaw)) {
