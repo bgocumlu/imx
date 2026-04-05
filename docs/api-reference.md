@@ -16,6 +16,18 @@ IMX is a React-Native-like framework that lets you write `.tsx` files and compil
 2. Run the compiler: `node compiler/dist/index.js App.tsx [OtherComponent.tsx ...] -o build/generated`
 3. Build with CMake: `cmake --build build`
 
+### Important: Not React
+
+IMX uses JSX syntax but compiles to C++. Key differences from React:
+
+- **No `key` prop** — use `<ID scope={i}>` to scope items in `.map()` loops
+- **No destructuring** — access props via `props.name`, not `{ name }`
+- **No useEffect / lifecycle** — immediate mode, the entire UI rebuilds every frame
+- **No async / promises** — all rendering is synchronous
+- **`===` / `!==`** — supported, compiled to `==` / `!=` in C++
+- **String + number in props** — `props.count + " items"` works (compiled to `std::to_string`)
+- **Text children interpolation** — `<Text>Count: {n}</Text>` uses printf-style formatting
+
 ---
 
 ## Components

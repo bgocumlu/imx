@@ -133,6 +133,18 @@ interface Style {
 }
 ```
 
+## Important: Not React
+
+IMX looks like React but compiles to C++. Key differences:
+
+- **No `key` prop** — use `<ID scope={i}>` to scope items in loops, not `key={i}`
+- **No destructuring** — access props via `props.name`, not `{ name }`
+- **`===` / `!==`** — supported, compiled to `==` / `!=` in C++
+- **String + number** — `props.count + " items"` works (compiled to `std::to_string` + string concat)
+- **Text interpolation** — `<Text>Count: {props.count}</Text>` uses printf-style formatting internally
+- **No useEffect / lifecycle** — immediate mode, every frame rebuilds everything
+- **No async / promises** — all rendering is synchronous
+
 ## Patterns
 
 ```tsx
@@ -148,6 +160,13 @@ interface Style {
 // Setter shorthand (pass setter directly for matching types)
 <TextInput value={name} onChange={setName} label="Name" />
 <SliderFloat label="X" value={x} onChange={setX} min={0} max={100} />
+
+// List iteration — use ID scope, not key
+{items.map((item, i) => (
+  <ID scope={i}>
+    <Text>{item.name}</Text>
+  </ID>
+))}
 ```
 
 ## Custom Components
