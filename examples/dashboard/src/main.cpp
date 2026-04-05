@@ -16,21 +16,24 @@ struct App {
     ImGuiIO*         io      = nullptr;
     imx::Runtime runtime;
     DashboardState state;
-    int frameCount = 0;
+    double lastHistoryTime = 0.0;
+    double lastLogTime = 0.0;
 };
 
 static void simulate_data(App& app) {
-    app.frameCount++;
+    double now = glfwGetTime();
+    float t = static_cast<float>(now);
 
-    // Update metrics with simulated values
-    float t = static_cast<float>(app.frameCount) * 0.02f;
+    // Update metrics with simulated values (every frame, but time-based wave)
     app.state.cpuUsage = 30.0f + 20.0f * sinf(t) + static_cast<float>(rand() % 10);
     app.state.memoryUsage = 55.0f + 10.0f * sinf(t * 0.5f) + static_cast<float>(rand() % 5);
     app.state.activeConnections = 80 + static_cast<int>(30.0f * sinf(t * 0.3f));
     app.state.requestsPerSec = 1200 + rand() % 400;
 
-    // Update history every 10 frames
-    if (app.frameCount % 10 == 0) {
+    // Update history every ~166ms (was every 10 frames at 60fps)
+    if (now - app.lastHistoryTime >= 0.166) {
+        app.lastHistoryTime = now;
+
         auto& cpu = app.state.cpuHistory;
         auto& mem = app.state.memHistory;
         auto& req = app.state.requestHistory;
@@ -44,8 +47,10 @@ static void simulate_data(App& app) {
         if (req.size() > 60) req.erase(req.begin());
     }
 
-    // Add a log entry every 120 frames
-    if (app.frameCount % 120 == 0) {
+    // Add a log entry every ~2s (was every 120 frames at 60fps)
+    if (now - app.lastLogTime >= 2.0) {
+        app.lastLogTime = now;
+
         const char* levels[] = {"INFO", "WARN", "ERROR"};
         const char* messages[] = {
             "Request processed successfully",
@@ -58,8 +63,8 @@ static void simulate_data(App& app) {
         int li = rand() % 3;
         int mi = rand() % 6;
 
+        int sec = static_cast<int>(now);
         char ts[32];
-        int sec = app.frameCount / 60;
         snprintf(ts, sizeof(ts), "%02d:%02d:%02d", sec / 3600, (sec / 60) % 60, sec % 60);
 
         app.state.logs.insert(app.state.logs.begin(), {ts, levels[li], messages[mi]});
