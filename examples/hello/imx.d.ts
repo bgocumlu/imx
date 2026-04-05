@@ -182,6 +182,9 @@ interface ChildProps { id: string; width?: number; height?: number; border?: boo
 declare function Disabled(props: DisabledProps): any;
 declare function Child(props: ChildProps): any;
 
+interface ToggleSwitchProps { value: boolean; onToggle: (v: boolean) => void; }
+declare function ToggleSwitch(props: ToggleSwitchProps): any;
+
 declare function resetLayout(): void;
 
 // JSX runtime shim for react-jsx mode

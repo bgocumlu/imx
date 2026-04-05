@@ -103,6 +103,18 @@ int main() {
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init(glsl_version);
 
+    // --- Custom widget: ToggleSwitch ---
+    imx::register_widget("ToggleSwitch", [](imx::WidgetArgs& a) {
+        bool on = a.get<bool>("value");
+        ImVec4 bg = on ? ImVec4(0.2f, 0.8f, 0.2f, 1.0f) : ImVec4(0.5f, 0.5f, 0.5f, 1.0f);
+        ImGui::PushStyleColor(ImGuiCol_Button, bg);
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, bg);
+        if (ImGui::Button(on ? "  ON " : " OFF ", ImVec2(50, 0))) {
+            a.call<bool>("onToggle", !on);
+        }
+        ImGui::PopStyleColor(2);
+    });
+
     App app;
     app.window = window;
     app.io     = &io;
