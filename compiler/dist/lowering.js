@@ -727,8 +727,15 @@ function lowerTextElement(node, body, ctx, loc) {
                     args.push(cppExpr);
                     break;
                 case 'float':
-                    format += '%.2f';
-                    args.push(cppExpr);
+                    if (cppExpr.startsWith('props.')) {
+                        // Props fields: number could be int or float in C++, cast to double for safe printf
+                        format += '%g';
+                        args.push(`(double)${cppExpr}`);
+                    }
+                    else {
+                        format += '%.2f';
+                        args.push(cppExpr);
+                    }
                     break;
                 case 'bool':
                     format += '%s';
