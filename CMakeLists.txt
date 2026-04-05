@@ -154,4 +154,22 @@ if(IMX_BUILD_EXAMPLES)
         ${CMAKE_CURRENT_SOURCE_DIR}/examples/todo/src
     )
 
+    # --- settings_app: all input widgets with struct binding ---
+    imx_compile_tsx(SETTINGS_GENERATED
+        SOURCES
+            examples/settings/src/App.tsx
+        OUTPUT_DIR ${CMAKE_BINARY_DIR}/generated_settings
+    )
+
+    add_executable(settings_app
+        examples/settings/src/main.cpp
+        ${SETTINGS_GENERATED}
+    )
+    set_target_properties(settings_app PROPERTIES WIN32_EXECUTABLE $<CONFIG:Release>)
+    target_link_libraries(settings_app PRIVATE imx_renderer)
+    target_include_directories(settings_app PRIVATE
+        ${CMAKE_BINARY_DIR}/generated_settings
+        ${CMAKE_CURRENT_SOURCE_DIR}/examples/settings/src
+    )
+
 endif()

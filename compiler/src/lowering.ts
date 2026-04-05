@@ -1119,11 +1119,27 @@ function lowerColorPicker(attrs: Record<string, string>, rawAttrs: Map<string, t
     const label = attrs['label'] ?? '""';
     const style = attrs['style'];
     let stateVar = '';
+    let valueExpr: string | undefined;
+    let onChangeExpr: string | undefined;
+    let directBind: boolean | undefined;
     const valueRaw = rawAttrs.get('value');
     if (valueRaw && ts.isIdentifier(valueRaw) && ctx.stateVars.has(valueRaw.text)) {
         stateVar = valueRaw.text;
+    } else if (valueRaw) {
+        valueExpr = exprToCpp(valueRaw, ctx);
+        const onChangeRaw = rawAttrs.get('onChange');
+        if (onChangeRaw) {
+            onChangeExpr = exprToCpp(onChangeRaw, ctx);
+            if (onChangeExpr.startsWith('[')) {
+                onChangeExpr = `(${onChangeExpr})()`;
+            } else if (!onChangeExpr.endsWith(')')) {
+                onChangeExpr = `${onChangeExpr}()`;
+            }
+        } else if (valueRaw && ts.isPropertyAccessExpression(valueRaw)) {
+            directBind = true;
+        }
     }
-    body.push({ kind: 'color_picker', label, stateVar, style, loc });
+    body.push({ kind: 'color_picker', label, stateVar, valueExpr, onChangeExpr, directBind, style, loc });
 }
 
 function lowerPlotLines(attrs: Record<string, string>, body: IRNode[], ctx: LoweringContext, loc: SourceLoc): void {
@@ -1283,13 +1299,28 @@ function lowerInputFloat(attrs: Record<string, string>, rawAttrs: Map<string, ts
 function lowerColorEdit(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext, loc: SourceLoc): void {
     const label = attrs['label'] ?? '""';
     const style = attrs['style'];
-    // ColorEdit only supports state-bound values
     let stateVar = '';
+    let valueExpr: string | undefined;
+    let onChangeExpr: string | undefined;
+    let directBind: boolean | undefined;
     const valueRaw = rawAttrs.get('value');
     if (valueRaw && ts.isIdentifier(valueRaw) && ctx.stateVars.has(valueRaw.text)) {
         stateVar = valueRaw.text;
+    } else if (valueRaw) {
+        valueExpr = exprToCpp(valueRaw, ctx);
+        const onChangeRaw = rawAttrs.get('onChange');
+        if (onChangeRaw) {
+            onChangeExpr = exprToCpp(onChangeRaw, ctx);
+            if (onChangeExpr.startsWith('[')) {
+                onChangeExpr = `(${onChangeExpr})()`;
+            } else if (!onChangeExpr.endsWith(')')) {
+                onChangeExpr = `${onChangeExpr}()`;
+            }
+        } else if (valueRaw && ts.isPropertyAccessExpression(valueRaw)) {
+            directBind = true;
+        }
     }
-    body.push({ kind: 'color_edit', label, stateVar, style, loc });
+    body.push({ kind: 'color_edit', label, stateVar, valueExpr, onChangeExpr, directBind, style, loc });
 }
 
 function lowerListBox(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext, loc: SourceLoc): void {

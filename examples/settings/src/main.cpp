@@ -1,0 +1,122 @@
+#include <imx/runtime.h>
+#include <imx/renderer.h>
+
+#include <imgui.h>
+#include <imgui_impl_glfw.h>
+#include <imgui_impl_opengl3.h>
+#include <GLFW/glfw3.h>
+
+#include "SettingsState.h"
+
+struct App {
+    GLFWwindow*      window  = nullptr;
+    ImGuiIO*         io      = nullptr;
+    imx::Runtime runtime;
+    SettingsState state;
+};
+
+static void render_frame(App& app) {
+    glfwMakeContextCurrent(app.window);
+    if (glfwGetWindowAttrib(app.window, GLFW_ICONIFIED) != 0) return;
+
+    int fb_w = 0, fb_h = 0;
+    glfwGetFramebufferSize(app.window, &fb_w, &fb_h);
+    if (fb_w <= 0 || fb_h <= 0) return;
+
+    ImGui_ImplOpenGL3_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui::NewFrame();
+
+    imx::render_root(app.runtime, app.state);
+
+    ImGui::Render();
+    glViewport(0, 0, fb_w, fb_h);
+    glClearColor(0.12F, 0.12F, 0.15F, 1.0F);
+    glClear(GL_COLOR_BUFFER_BIT);
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+    if ((app.io->ConfigFlags & ImGuiConfigFlags_ViewportsEnable) != 0) {
+        ImGui::UpdatePlatformWindows();
+        ImGui::RenderPlatformWindowsDefault();
+    }
+
+    glfwMakeContextCurrent(app.window);
+    glfwSwapBuffers(app.window);
+}
+
+static void window_size_callback(GLFWwindow* window, int, int) {
+    auto* app = static_cast<App*>(glfwGetWindowUserPointer(window));
+    if (app) render_frame(*app);
+}
+
+int main() {
+    if (glfwInit() == 0) return 1;
+
+    const char* glsl_version = "#version 150";
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+#ifdef __APPLE__
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+#endif
+
+    GLFWwindow* window = glfwCreateWindow(500, 700, "Settings", nullptr, nullptr);
+    if (!window) { glfwTerminate(); return 1; }
+    glfwMakeContextCurrent(window);
+    glfwSwapInterval(1);
+
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO();
+    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+    io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+
+    ImGui::StyleColorsDark();
+    ImGuiStyle& style = ImGui::GetStyle();
+    if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
+        style.WindowRounding = 0.0F;
+        style.Colors[ImGuiCol_WindowBg].w = 1.0F;
+    }
+
+    ImGui_ImplGlfw_InitForOpenGL(window, true);
+    ImGui_ImplOpenGL3_Init(glsl_version);
+
+    App app;
+    app.window = window;
+    app.io = &io;
+    glfwSetWindowUserPointer(window, &app);
+    glfwSetWindowSizeCallback(window, window_size_callback);
+
+    app.state.onReset = [&]() {
+        app.state.speed = 5.0f;
+        app.state.count = 3;
+        app.state.posX = 0.0f;
+        app.state.dragVal = 50;
+        app.state.level = 1;
+        app.state.weight = 9.8f;
+        app.state.mode = 0;
+        app.state.listChoice = 0;
+        app.state.size = 0;
+        app.state.color = {1.0f, 0.5f, 0.0f, 1.0f};
+        app.state.pickerColor = {0.2f, 0.8f, 0.4f, 1.0f};
+        app.state.enabled = true;
+        app.state.darkMode = false;
+    };
+
+    while (glfwWindowShouldClose(window) == 0) {
+        glfwPollEvents();
+        render_frame(app);
+    }
+
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
+    glfwDestroyWindow(window);
+    glfwTerminate();
+    return 0;
+}
+
+#ifdef _WIN32
+#include <windows.h>
+int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) { return main(); }
+#endif

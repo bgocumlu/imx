@@ -203,6 +203,8 @@ export interface IRColorEdit {
     kind: 'color_edit';
     label: string;
     stateVar: string;
+    valueExpr?: string;
+    onChangeExpr?: string;
     directBind?: boolean;
     style?: string;
     loc?: SourceLoc;
@@ -281,6 +283,8 @@ export interface IRColorPicker {
     kind: 'color_picker';
     label: string;
     stateVar: string;
+    valueExpr?: string;
+    onChangeExpr?: string;
     directBind?: boolean;
     style?: string;
     loc?: SourceLoc;

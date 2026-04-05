@@ -1055,11 +1055,30 @@ function lowerColorPicker(attrs, rawAttrs, body, ctx, loc) {
     const label = attrs['label'] ?? '""';
     const style = attrs['style'];
     let stateVar = '';
+    let valueExpr;
+    let onChangeExpr;
+    let directBind;
     const valueRaw = rawAttrs.get('value');
     if (valueRaw && ts.isIdentifier(valueRaw) && ctx.stateVars.has(valueRaw.text)) {
         stateVar = valueRaw.text;
     }
-    body.push({ kind: 'color_picker', label, stateVar, style, loc });
+    else if (valueRaw) {
+        valueExpr = exprToCpp(valueRaw, ctx);
+        const onChangeRaw = rawAttrs.get('onChange');
+        if (onChangeRaw) {
+            onChangeExpr = exprToCpp(onChangeRaw, ctx);
+            if (onChangeExpr.startsWith('[')) {
+                onChangeExpr = `(${onChangeExpr})()`;
+            }
+            else if (!onChangeExpr.endsWith(')')) {
+                onChangeExpr = `${onChangeExpr}()`;
+            }
+        }
+        else if (valueRaw && ts.isPropertyAccessExpression(valueRaw)) {
+            directBind = true;
+        }
+    }
+    body.push({ kind: 'color_picker', label, stateVar, valueExpr, onChangeExpr, directBind, style, loc });
 }
 function lowerPlotLines(attrs, body, ctx, loc) {
     const label = attrs['label'] ?? '""';
@@ -1210,13 +1229,31 @@ function lowerInputFloat(attrs, rawAttrs, body, ctx, loc) {
 function lowerColorEdit(attrs, rawAttrs, body, ctx, loc) {
     const label = attrs['label'] ?? '""';
     const style = attrs['style'];
-    // ColorEdit only supports state-bound values
     let stateVar = '';
+    let valueExpr;
+    let onChangeExpr;
+    let directBind;
     const valueRaw = rawAttrs.get('value');
     if (valueRaw && ts.isIdentifier(valueRaw) && ctx.stateVars.has(valueRaw.text)) {
         stateVar = valueRaw.text;
     }
-    body.push({ kind: 'color_edit', label, stateVar, style, loc });
+    else if (valueRaw) {
+        valueExpr = exprToCpp(valueRaw, ctx);
+        const onChangeRaw = rawAttrs.get('onChange');
+        if (onChangeRaw) {
+            onChangeExpr = exprToCpp(onChangeRaw, ctx);
+            if (onChangeExpr.startsWith('[')) {
+                onChangeExpr = `(${onChangeExpr})()`;
+            }
+            else if (!onChangeExpr.endsWith(')')) {
+                onChangeExpr = `${onChangeExpr}()`;
+            }
+        }
+        else if (valueRaw && ts.isPropertyAccessExpression(valueRaw)) {
+            directBind = true;
+        }
+    }
+    body.push({ kind: 'color_edit', label, stateVar, valueExpr, onChangeExpr, directBind, style, loc });
 }
 function lowerListBox(attrs, rawAttrs, body, ctx, loc) {
     const label = attrs['label'] ?? '""';

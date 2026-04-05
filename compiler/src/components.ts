@@ -197,7 +197,7 @@ export const HOST_COMPONENTS: Record<string, HostComponentDef> = {
         props: {
             label: { type: 'string', required: true },
             value: { type: 'string', required: true },
-            onChange: { type: 'callback', required: true },
+            onChange: { type: 'callback', required: false },
             style: { type: 'style', required: false },
         },
         hasChildren: false, isContainer: false,

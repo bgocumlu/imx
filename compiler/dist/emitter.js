@@ -1346,6 +1346,19 @@ function emitColorEdit(node, lines, indent) {
         lines.push(`${indent}${INDENT}}`);
         lines.push(`${indent}}`);
     }
+    else if (node.directBind && node.valueExpr) {
+        lines.push(`${indent}imx::renderer::color_edit(${label}, ${node.valueExpr}.data());`);
+    }
+    else if (node.valueExpr !== undefined) {
+        lines.push(`${indent}{`);
+        lines.push(`${indent}${INDENT}auto val = ${node.valueExpr};`);
+        lines.push(`${indent}${INDENT}if (imx::renderer::color_edit(${label}, val.data())) {`);
+        if (node.onChangeExpr) {
+            lines.push(`${indent}${INDENT}${INDENT}${node.onChangeExpr};`);
+        }
+        lines.push(`${indent}${INDENT}}`);
+        lines.push(`${indent}}`);
+    }
 }
 function emitListBox(node, lines, indent) {
     emitLocComment(node.loc, 'ListBox', lines, indent);
@@ -1469,11 +1482,25 @@ function emitInputTextMultiline(node, lines, indent) {
 }
 function emitColorPicker(node, lines, indent) {
     emitLocComment(node.loc, 'ColorPicker', lines, indent);
+    const label = asCharPtr(node.label);
     if (node.stateVar) {
         lines.push(`${indent}{`);
         lines.push(`${indent}${INDENT}auto val = ${node.stateVar}.get();`);
-        lines.push(`${indent}${INDENT}if (imx::renderer::color_picker(${node.label}, val.data())) {`);
+        lines.push(`${indent}${INDENT}if (imx::renderer::color_picker(${label}, val.data())) {`);
         lines.push(`${indent}${INDENT}${INDENT}${node.stateVar}.set(val);`);
+        lines.push(`${indent}${INDENT}}`);
+        lines.push(`${indent}}`);
+    }
+    else if (node.directBind && node.valueExpr) {
+        lines.push(`${indent}imx::renderer::color_picker(${label}, ${node.valueExpr}.data());`);
+    }
+    else if (node.valueExpr !== undefined) {
+        lines.push(`${indent}{`);
+        lines.push(`${indent}${INDENT}auto val = ${node.valueExpr};`);
+        lines.push(`${indent}${INDENT}if (imx::renderer::color_picker(${label}, val.data())) {`);
+        if (node.onChangeExpr) {
+            lines.push(`${indent}${INDENT}${INDENT}${node.onChangeExpr};`);
+        }
         lines.push(`${indent}${INDENT}}`);
         lines.push(`${indent}}`);
     }
