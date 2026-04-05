@@ -1107,16 +1107,9 @@ function lowerRadio(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expr
 function lowerInputTextMultiline(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext, loc: SourceLoc): void {
     const label = attrs['label'] ?? '""';
     const bufferIndex = ctx.bufferIndex++;
-    let stateVar = '';
-    const valueExpr = rawAttrs.get('value');
-    if (valueExpr && ts.isIdentifier(valueExpr)) {
-        const varName = valueExpr.text;
-        if (ctx.stateVars.has(varName)) {
-            stateVar = varName;
-        }
-    }
     const style = attrs['style'];
-    body.push({ kind: 'input_text_multiline', label, bufferIndex, stateVar, style, loc });
+    const { stateVar, valueExpr, onChangeExpr, directBind } = lowerValueOnChange(rawAttrs, ctx);
+    body.push({ kind: 'input_text_multiline', label, bufferIndex, stateVar, valueExpr, onChangeExpr, directBind, style, loc });
 }
 
 function lowerColorPicker(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext, loc: SourceLoc): void {

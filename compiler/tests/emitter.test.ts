@@ -899,4 +899,49 @@ export function StatusItem(props: { active: boolean }) {
         // Checkbox directBind should use &*props.active (identity for pointer)
         expect(todoCpp).toContain('&*props.active');
     });
+
+    it('chains pointer props through 3 levels of components', () => {
+        const files = compileMultiFiles({
+            'App.tsx': `
+import { Panel } from './Panel';
+export default function App(props: { items: { done: boolean }[] }) {
+  return (
+    <Window title="Test">
+      {props.items.map((item, i) => (
+        <Panel done={item.done} />
+      ))}
+    </Window>
+  );
+}`,
+            'Panel.tsx': `
+import { Toggle } from './Toggle';
+export function Panel(props: { done: boolean }) {
+  return (
+    <View>
+      <Toggle done={props.done} />
+    </View>
+  );
+}`,
+            'Toggle.tsx': `
+export function Toggle(props: { done: boolean }) {
+  return <Checkbox value={props.done} />;
+}`
+        });
+
+        const toggleH = files['Toggle.gen.h'] ?? '';
+        const panelH = files['Panel.gen.h'] ?? '';
+        const panelCpp = files['Panel.gen.cpp'] ?? '';
+        const appCpp = files['App.gen.cpp'] ?? '';
+
+        // Toggle has bool* done (leaf component with directBind)
+        expect(toggleH).toContain('bool* done');
+        // Panel also has bool* done (passes through to Toggle which needs pointer)
+        expect(panelH).toContain('bool* done');
+        // App passes &item.done to Panel
+        expect(appCpp).toContain('&item.done');
+        // Panel passes props.done through to Toggle (already a pointer, &* is identity)
+        expect(panelCpp).toContain('p.done = &*props.done');
+        // Should NOT double-address (&props.done would be bool**)
+        expect(panelCpp).not.toContain('= &props.done');
+    });
 });

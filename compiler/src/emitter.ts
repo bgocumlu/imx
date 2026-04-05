@@ -1214,7 +1214,14 @@ function emitCustomComponent(node: IRCustomComponent, lines: string[], indent: s
         lines.push(`${indent}${INDENT}${node.name}Props p;`);
         for (const [k, v] of propsEntries) {
             if (childBound.has(k)) {
-                lines.push(`${indent}${INDENT}p.${k} = &${v};`);
+                // Check if the value is already a pointer (bound prop of current component)
+                const valPropName = v.startsWith('props.') ? v.slice(6).split('.')[0].split('[')[0] : '';
+                if (currentBoundProps.has(valPropName)) {
+                    // Already a pointer — pass through directly. Use &* to block post-processing regex.
+                    lines.push(`${indent}${INDENT}p.${k} = &*${v};`);
+                } else {
+                    lines.push(`${indent}${INDENT}p.${k} = &${v};`);
+                }
             } else {
                 lines.push(`${indent}${INDENT}p.${k} = ${v};`);
             }
@@ -1575,15 +1582,33 @@ function emitInputTextMultiline(node: IRInputTextMultiline, lines: string[], ind
     const innerIndent = indent + INDENT;
     const styleVar = buildStyleVar(node.style, innerIndent, lines);
     lines.push(`${innerIndent}auto& buf = ctx.get_buffer(${node.bufferIndex});`);
+    const styleArg = styleVar ? `, ${styleVar}` : '';
+
     if (node.stateVar) {
         lines.push(`${innerIndent}buf.sync_from(${node.stateVar}.get());`);
-    }
-    const styleArg = styleVar ? `, ${styleVar}` : '';
-    lines.push(`${innerIndent}if (imx::renderer::text_input_multiline(${node.label}, buf${styleArg})) {`);
-    if (node.stateVar) {
+        lines.push(`${innerIndent}if (imx::renderer::text_input_multiline(${node.label}, buf${styleArg})) {`);
         lines.push(`${innerIndent}${INDENT}${node.stateVar}.set(buf.value());`);
+        lines.push(`${innerIndent}}`);
+    } else if (node.directBind && node.valueExpr) {
+        const propName = node.valueExpr.startsWith('props.') ? node.valueExpr.slice(6).split('.')[0].split('[')[0] : '';
+        const isBound = currentBoundProps.has(propName);
+        const readExpr = isBound ? `(*${node.valueExpr})` : node.valueExpr;
+        const writeExpr = isBound ? `(*${node.valueExpr})` : node.valueExpr;
+        lines.push(`${innerIndent}buf.sync_from(${readExpr});`);
+        lines.push(`${innerIndent}if (imx::renderer::text_input_multiline(${node.label}, buf${styleArg})) {`);
+        lines.push(`${innerIndent}${INDENT}${writeExpr} = buf.value();`);
+        lines.push(`${innerIndent}}`);
+    } else if (node.valueExpr !== undefined) {
+        lines.push(`${innerIndent}buf.sync_from(${node.valueExpr});`);
+        lines.push(`${innerIndent}if (imx::renderer::text_input_multiline(${node.label}, buf${styleArg})) {`);
+        if (node.onChangeExpr) {
+            lines.push(`${innerIndent}${INDENT}${node.onChangeExpr};`);
+        }
+        lines.push(`${innerIndent}}`);
+    } else {
+        lines.push(`${innerIndent}imx::renderer::text_input_multiline(${node.label}, buf${styleArg});`);
     }
-    lines.push(`${innerIndent}}`);
+
     lines.push(`${indent}}`);
 }
 

@@ -1044,16 +1044,9 @@ function lowerRadio(attrs, rawAttrs, body, ctx, loc) {
 function lowerInputTextMultiline(attrs, rawAttrs, body, ctx, loc) {
     const label = attrs['label'] ?? '""';
     const bufferIndex = ctx.bufferIndex++;
-    let stateVar = '';
-    const valueExpr = rawAttrs.get('value');
-    if (valueExpr && ts.isIdentifier(valueExpr)) {
-        const varName = valueExpr.text;
-        if (ctx.stateVars.has(varName)) {
-            stateVar = varName;
-        }
-    }
     const style = attrs['style'];
-    body.push({ kind: 'input_text_multiline', label, bufferIndex, stateVar, style, loc });
+    const { stateVar, valueExpr, onChangeExpr, directBind } = lowerValueOnChange(rawAttrs, ctx);
+    body.push({ kind: 'input_text_multiline', label, bufferIndex, stateVar, valueExpr, onChangeExpr, directBind, style, loc });
 }
 function lowerColorPicker(attrs, rawAttrs, body, ctx, loc) {
     const label = attrs['label'] ?? '""';

@@ -281,6 +281,9 @@ export interface IRInputTextMultiline {
     label: string;
     bufferIndex: number;
     stateVar: string;
+    valueExpr?: string;
+    onChangeExpr?: string;
+    directBind?: boolean;
     style?: string;
     loc?: SourceLoc;
 }

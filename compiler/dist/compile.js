@@ -70,6 +70,21 @@ export function compile(files, outputDir) {
             comp.boundProps = detectBoundProps(comp.ir.body);
         }
     }
+    // Propagate bound props through component call chains:
+    // If component X passes props.foo to a bound prop of child component Y,
+    // then foo is also bound in X (needs to be a pointer too).
+    let changed = true;
+    while (changed) {
+        changed = false;
+        for (const comp of compiled) {
+            if (comp.ir.namedPropsType)
+                continue;
+            const before = comp.boundProps.size;
+            propagateBoundProps(comp.ir.body, comp.boundProps, componentMap);
+            if (comp.boundProps.size > before)
+                changed = true;
+        }
+    }
     // Build boundProps map for cross-component emitter use
     const boundPropsMap = new Map();
     for (const comp of compiled) {
@@ -243,6 +258,29 @@ function detectBoundProps(nodes) {
     const bound = new Set();
     walkNodesForBinding(nodes, bound);
     return bound;
+}
+function propagateBoundProps(nodes, bound, componentMap) {
+    for (const node of nodes) {
+        if (node.kind === 'custom_component') {
+            const child = componentMap.get(node.name);
+            if (child) {
+                for (const [propName, valueExpr] of Object.entries(node.props)) {
+                    if (child.boundProps.has(propName) && valueExpr.startsWith('props.')) {
+                        const parentProp = valueExpr.slice(6).split('.')[0].split('[')[0];
+                        bound.add(parentProp);
+                    }
+                }
+            }
+        }
+        else if (node.kind === 'conditional') {
+            propagateBoundProps(node.body, bound, componentMap);
+            if (node.elseBody)
+                propagateBoundProps(node.elseBody, bound, componentMap);
+        }
+        else if (node.kind === 'list_map') {
+            propagateBoundProps(node.body, bound, componentMap);
+        }
+    }
 }
 function walkNodesForBinding(nodes, bound) {
     for (const node of nodes) {
