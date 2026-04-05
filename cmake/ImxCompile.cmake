@@ -47,13 +47,18 @@ function(imx_compile_tsx output_var)
     get_filename_component(_compiler_root "${_compiler_dir}" DIRECTORY)
     if(NOT EXISTS "${_compiler_root}/node_modules")
         message(STATUS "IMX: installing compiler dependencies...")
+        find_program(_npm_exe NAMES npm npm.cmd)
+        if(NOT _npm_exe)
+            message(FATAL_ERROR "IMX: npm not found. Install Node.js to compile .tsx files.")
+        endif()
         execute_process(
-            COMMAND npm install --production --ignore-scripts
+            COMMAND "${_npm_exe}" install --production --ignore-scripts
             WORKING_DIRECTORY "${_compiler_root}"
             RESULT_VARIABLE _npm_result
+            ERROR_VARIABLE _npm_err
         )
         if(NOT _npm_result EQUAL 0)
-            message(FATAL_ERROR "IMX: npm install failed in ${_compiler_root}")
+            message(FATAL_ERROR "IMX: npm install failed in ${_compiler_root}\n${_npm_err}")
         endif()
     endif()
 
