@@ -278,6 +278,7 @@ Deliverables:
 - **InvisibleButton** — invisible hitbox for custom interactions
 - **ImageButton** — clickable image with full UV coordinate support
 - **ColorEdit3 / ColorPicker3** — RGB-only variants (no alpha)
+- **DrawList advanced** — Bezier curves (`DrawBezierCubic`, `DrawBezierQuadratic`), polylines (`DrawPolyline`), filled polygons (`DrawConvexPolyFilled`), ngons (`DrawNgon`, `DrawNgonFilled`), triangles. Extends existing Canvas drawing (DrawLine, DrawRect, DrawCircle, DrawText)
 
 Size impact: ~0 KB (all compile to existing ImGui calls)
 
@@ -326,12 +327,14 @@ Deliverables:
 - **TreeNodeEx** — extended tree node with flags: `defaultOpen`, `openOnArrow`, `openOnDoubleClick`, `leaf`, `bullet`, `noTreePushOnOpen`
 - **SetNextItemOpen** — `defaultOpen` / `forceOpen` prop for programmatic tree control
 - **CollapsingHeader close button** — `closable` prop with `onClose` callback
+- **Child component sub-struct binding** — pass nested struct references to child components (e.g. `<Settings value={props.settings} />` where `settings` is a sub-struct of AppState)
 
 Size impact: ~0 KB (existing ImGui API surface)
 
 Exit criteria:
 
 - sortable tables, advanced tree nodes, and full column control from TSX
+- child components can receive sub-struct references as bound props
 
 ## Phase 16: Interaction & State Queries
 
@@ -371,6 +374,7 @@ Deliverables:
 - **Popup flags** — `mouseButton` prop on context menus (`left`, `right`, `middle`)
 - **Multi-select** — `<MultiSelect>` component wrapping `BeginMultiSelect` / `EndMultiSelect` for list/grid selection patterns
 - **BeginCombo/EndCombo** — manual combo mode for custom combo content (vs simple items list)
+- **Viewport API** — expose ImGui's multi-viewport/multi-window support to TSX. Control window creation, positioning across monitors.
 
 Size impact: ~0 KB
 
@@ -421,14 +425,46 @@ Exit criteria:
 - error messages point to the correct TSX source line
 - at least one real-world example app beyond demos
 
+## Phase 20: Project Templates
+
+Goal:
+
+- provide well-designed starter templates via `imxc init` that scaffold common C++ backend patterns — IMX the library is unchanged, templates are just generated user code
+
+Note: templates are `.js` files in the `imxc` CLI package. They generate `main.cpp`, `AppState.h`, `CMakeLists.txt` with appropriate libraries. The TSX side is identical across all templates. None of this affects IMX as a library — it's purely scaffolding.
+
+Deliverables:
+
+- **Interactive template selector** — `imxc init my_app` shows a CLI menu to pick a template (or `imxc init my_app --template=networking` to skip menu)
+- **`minimal` template** — current default, bare ImGui app. Just IMX + GLFW + OpenGL. (~745 KB)
+- **`networking` template** — adds HTTP client scaffolding. WinHTTP on Windows, libcurl on Linux/macOS. `AppState` has example fetch callback, `main.cpp` shows async request pattern with `std::thread` + `request_frame()` on completion. CMakeLists adds the platform HTTP library.
+- **`persistence` template** — adds JSON save/load scaffolding. FetchContent for nlohmann/json (single-header). `AppState` has `save()` / `load()` methods, `main.cpp` loads state on startup and saves on exit. File path uses platform app data directory (`%APPDATA%`, `~/Library/Application Support`, `~/.config`).
+- **`async` template** — adds background task scaffolding. Simple thread pool in `async.h`, `main.cpp` shows dispatching work and updating `AppState` on completion with `request_frame()`. No external dependency (pure `std::thread` + `std::future`).
+- **`system` template** — adds OS integration scaffolding. Native file dialog (Win32 `IFileDialog` / GTK / Cocoa), system tray icon (Win32 `Shell_NotifyIcon` / NSStatusItem), native notifications, GLFW file drop callback wired to `AppState`. Platform-specific code behind `#ifdef _WIN32` / `__APPLE__` / `__linux__`.
+- **`full` template** — combines networking + persistence + async + system. Complete desktop app starter with all backend patterns wired together.
+- **`custom` template** — interactive picker: choose which backend features to include (checkboxes for networking, persistence, async, system). Generates a combined template with only selected features.
+
+Each template includes:
+
+- Commented `main.cpp` explaining the pattern
+- `AppState.h` with example fields and callbacks for the template's features
+- `CMakeLists.txt` with correct FetchContent / platform libraries
+- `App.tsx` demonstrating the template's features from the TSX side
+- A `README.md` explaining the architecture and how to extend it
+
+Size impact on IMX: 0 KB — templates are JS in the CLI, not compiled into the library
+
+Exit criteria:
+
+- `imxc init` offers template selection with clear descriptions
+- each template builds and runs out of the box on Windows, macOS, and Linux
+- a developer can go from `imxc init my_app --template=full` to a working desktop app with networking, persistence, and system integration in under 5 minutes
+
 ## Future Candidates
 
 Implement only when justified by real need:
 
-- **Child component sub-struct binding** — pass sub-struct references to child components
 - **Plugin/extension API** — third-party component packages
-- **DrawList advanced** — Bezier curves, polylines, custom draw commands beyond current Canvas
-- **Viewport API** — multi-window via ImGui viewports exposed to TSX
 - **Cross-compilation** — build Windows/macOS/Linux from single machine
 
 ## Non-goals
