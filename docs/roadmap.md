@@ -1,6 +1,6 @@
 # IMX Roadmap
 
-## Phase 1: Lock the Model
+## Phase 1: Lock the Model (DONE)
 
 Goal:
 
@@ -20,7 +20,7 @@ Exit criteria:
 - the `.igx` source extension is standardized
 - repository layout and target boundaries are documented
 
-## Phase 2: Native Runtime Skeleton
+## Phase 2: Native Runtime Skeleton (DONE)
 
 Goal:
 
@@ -38,7 +38,7 @@ Exit criteria:
 
 - runtime can support one hand-written component tree without a compiler
 
-## Phase 3: Hand-Written Host Components
+## Phase 3: Hand-Written Host Components (DONE)
 
 Goal:
 
@@ -62,7 +62,7 @@ Exit criteria:
 
 - a hand-authored native test app can render and interact correctly through the runtime
 
-## Phase 4: TSX Frontend
+## Phase 4: TSX Frontend (DONE)
 
 Goal:
 
@@ -80,7 +80,7 @@ Exit criteria:
 
 - a small TSX file can be parsed and validated with clear error messages
 
-## Phase 5: C++ Codegen
+## Phase 5: C++ Codegen (DONE)
 
 Goal:
 
@@ -98,7 +98,7 @@ Exit criteria:
 
 - a TSX app compiles into generated C++ and runs in the existing native shell
 
-## Phase 6: Toolchain Integration
+## Phase 6: Toolchain Integration (DONE)
 
 Goal:
 
@@ -114,7 +114,7 @@ Exit criteria:
 
 - `cmake --build` produces a working native app from TSX input
 
-## Phase 7: API Stabilization
+## Phase 7: API Stabilization (DONE)
 
 Goal:
 
@@ -131,7 +131,7 @@ Exit criteria:
 
 - example prompts produce valid code at acceptable quality
 
-## Phase 8: ImGui-Native Expansion
+## Phase 8: ImGui-Native Expansion (DONE)
 
 Goal:
 
@@ -155,7 +155,7 @@ Exit criteria:
 
 - an editor-like sample app can be built entirely with the public API
 
-## Phase 9: Developer Experience
+## Phase 9: Developer Experience (DONE)
 
 Goal:
 
@@ -172,7 +172,7 @@ Exit criteria:
 
 - debugging and iteration feel reasonable without a JS runtime
 
-## Phase 10: Full ImGui Coverage
+## Phase 10: Full ImGui Coverage (DONE)
 
 Goal:
 
@@ -241,19 +241,200 @@ Exit criteria:
 - TSX can bind to any C++ struct field and the generated code is equivalent to hand-written ImGui
 - Thread safety is the developer's responsibility (documented)
 
-## Phase 12: Future
+## Phase 12: Struct Binding Fixes (DONE)
 
-Candidates (implement only when justified by real need):
+Goal:
 
-- Font loading — `imx::load_font("path.ttf", size)` helper for runtime loading from `public/`, plus `imx::load_font_embedded(data, size)` for compile-time baked fonts (like Image embed). Not a TSX component — fonts are global init, called once before the main loop.
-- `useEffect` — lifecycle hooks for timers, periodic updates
-- GPA calculator example — recreates notort in TSX with struct binding
-- Child component sub-struct binding (Approach 2) — pass sub-struct references to child components
-- Remote image loading — `<Image src="https://..." />` (requires networking dependency)
-- Plugin APIs
+- fix edge cases in struct binding and expand compiler coverage
 
-Non-goals:
+Deliverables:
 
+- TextInput + InputTextMultiline struct binding (directBind syncs buffer to/from struct field)
+- Custom component deep pointer propagation (chains through 3+ levels)
+- DragDrop typed payloads across components
+- Auto-generated map indices (`_map_idx_N` counters)
+
+Exit criteria:
+
+- struct binding works correctly through arbitrary component nesting
+- DragDrop payloads are typed per-component
+
+## Phase 13: Font Loading & Input Expansion
+
+Goal:
+
+- font loading API and expanded input widget coverage — expose what ImGui already has
+
+Deliverables:
+
+- **Font loading** — `imx::load_font("path.ttf", size)` C++ helper for runtime loading from `public/`, plus `imx::load_font_embedded(data, size)` for compile-time baked fonts. Called once before main loop. `<Font>` TSX component wrapping PushFont/PopFont for per-subtree font selection.
+- **Vector inputs** — `InputFloat2/3/4`, `InputInt2/3/4` for multi-component value editing
+- **Vector drags** — `DragFloat2/3/4`, `DragInt2/3/4`
+- **Vector sliders** — `SliderFloat2/3/4`, `SliderInt2/3/4`
+- **Vertical sliders** — `VSliderFloat`, `VSliderInt`
+- **SliderAngle** — specialized angle slider (degrees)
+- **SmallButton** — compact button variant
+- **ArrowButton** — directional arrow button
+- **InvisibleButton** — invisible hitbox for custom interactions
+- **ImageButton** — clickable image with full UV coordinate support
+- **ColorEdit3 / ColorPicker3** — RGB-only variants (no alpha)
+
+Size impact: ~0 KB (all compile to existing ImGui calls)
+
+Exit criteria:
+
+- every ImGui input widget has a TSX equivalent
+- custom fonts can be loaded and applied per-component
+
+## Phase 14: Layout & Positioning
+
+Goal:
+
+- expose ImGui's layout primitives so TSX can achieve any layout ImGui can
+
+Deliverables:
+
+- **Indent / Unindent** — `<Indent width={20}>` for manual indentation control
+- **Spacing** — `<Spacing />` for vertical gaps (ImGui::Dummy with zero width)
+- **Dummy** — `<Dummy width={100} height={50} />` invisible placeholder
+- **SameLine** — `<SameLine offset={0} spacing={10} />` explicit horizontal positioning (complements Row)
+- **NewLine** — `<NewLine />` force line break
+- **SetNextItemWidth** — `width` prop on input components for per-item width
+- **PushTextWrapPos** — `<TextWrap width={200}>` for text wrapping boundaries
+- **SetCursorPos** — `<Cursor x={100} y={50} />` for manual positioning
+- **BeginMainMenuBar** — `<MainMenuBar>` for full-screen menu bar (vs Window-level `<MenuBar>`)
+
+Size impact: ~0 KB (thin wrappers around existing ImGui calls)
+
+Exit criteria:
+
+- any ImGui layout achievable in raw C++ is also achievable in TSX
+
+## Phase 15: Table & Tree Enhancements
+
+Goal:
+
+- expose advanced Table and TreeNode features that ImGui provides
+
+Deliverables:
+
+- **Table sorting** — `sortable` flag + `onSort` callback exposing `ImGuiTableSortSpecs`
+- **Table column flags** — `defaultHide`, `preferSortAscending`, `preferSortDescending`, `noResize`, `fixedWidth` props on table columns
+- **Table row/cell coloring** — `bgColor` prop on `TableRow` and cells via `TableSetBgColor`
+- **Table column jump** — `columnIndex` prop for jumping to specific column
+- **Additional table flags** — `hideable`, `multiSortable`, `noClip`, `padOuterX`, `scrollX`, `scrollY`
+- **TreeNodeEx** — extended tree node with flags: `defaultOpen`, `openOnArrow`, `openOnDoubleClick`, `leaf`, `bullet`, `noTreePushOnOpen`
+- **SetNextItemOpen** — `defaultOpen` / `forceOpen` prop for programmatic tree control
+- **CollapsingHeader close button** — `closable` prop with `onClose` callback
+
+Size impact: ~0 KB (existing ImGui API surface)
+
+Exit criteria:
+
+- sortable tables, advanced tree nodes, and full column control from TSX
+
+## Phase 16: Interaction & State Queries
+
+Goal:
+
+- expose ImGui's item interaction detection so TSX components can respond to hover, focus, click, and other interaction states
+
+Deliverables:
+
+- **Item state callbacks** — `onHover`, `onActive`, `onFocused`, `onClicked`, `onDoubleClicked` props on interactive components. Maps to `IsItemHovered()`, `IsItemActive()`, `IsItemFocused()`, `IsItemClicked()`.
+- **Context menus** — `<ContextMenu>` component wrapping `BeginPopupContextItem` / `BeginPopupContextWindow`. Right-click → menu pattern.
+- **Tooltip on hover** — `tooltip` string prop on any component (calls `SetItemTooltip`)
+- **Keyboard focus** — `autoFocus` prop mapping to `SetKeyboardFocusHere()`
+- **Scroll control** — `scrollToHere` prop mapping to `SetScrollHereY()`
+- **Keyboard input** — `<Shortcut keys="Ctrl+S" onPress={...} />` wrapping ImGui's `IsKeyChordPressed`
+- **Mouse cursor** — `cursor` prop on components mapping to `SetMouseCursor()`
+- **Clipboard** — `imx::clipboard_get()` / `imx::clipboard_set()` C++ API exposing ImGui/GLFW clipboard
+
+Size impact: ~0 KB (all existing ImGui API)
+
+Exit criteria:
+
+- TSX components can detect and respond to all ImGui interaction states
+
+## Phase 17: Window & Popup Control
+
+Goal:
+
+- expose remaining ImGui window and popup features to TSX
+
+Deliverables:
+
+- **Window flags** — expose all `ImGuiWindowFlags` as boolean props: `noCollapse`, `noScrollbar`, `noMove`, `noResize`, `noBackground`, `alwaysAutoResize`, `noNavFocus`, etc.
+- **Window positioning** — `x`, `y`, `width`, `height` props mapping to `SetNextWindowSize` / `SetNextWindowPos`
+- **Window background alpha** — `bgAlpha` prop mapping to `SetNextWindowBgAlpha`
+- **Window size constraints** — `minWidth`, `minHeight`, `maxWidth`, `maxHeight` props
+- **Popup flags** — `mouseButton` prop on context menus (`left`, `right`, `middle`)
+- **Multi-select** — `<MultiSelect>` component wrapping `BeginMultiSelect` / `EndMultiSelect` for list/grid selection patterns
+- **BeginCombo/EndCombo** — manual combo mode for custom combo content (vs simple items list)
+
+Size impact: ~0 KB
+
+Exit criteria:
+
+- full control over window behavior and popup triggers from TSX
+
+## Phase 18: Text & Display Variants
+
+Goal:
+
+- expose ImGui's text rendering variants and display helpers
+
+Deliverables:
+
+- **TextColored** — `<Text color={[1,0,0,1]}>` or `<TextColored color={...}>` for inline colored text
+- **TextDisabled** — `<TextDisabled>` for grayed-out text
+- **TextWrapped** — `<TextWrapped>` for auto-wrapping text
+- **Bullet** — `<Bullet />` standalone bullet point (no text)
+- **Selectable enhancements** — `spanAllColumns`, `allowDoubleClick`, `dontClosePopups` props
+- **ListBox manual mode** — `<ListBox>` with `BeginListBox`/`EndListBox` for custom content (vs simple items)
+
+Size impact: ~0 KB
+
+Exit criteria:
+
+- every ImGui text and display variant has a TSX equivalent
+
+## Phase 19: Developer Experience
+
+Goal:
+
+- improve iteration speed and error quality for developers and LLMs writing IMX code
+
+Deliverables:
+
+- **DLL hot reload (debug only)** — components compile to a shared library, app reloads on change without restart. State survives because struct binding keeps state in the host exe (not the DLL). Works with both `imxc init` and `imxc add` (existing C++ projects). `imxc watch --hot` triggers recompile → DLL swap. **Release builds remain static-linked** — one exe, no DLLs, same ~745 KB as today. Debug builds add ~3-5 KB for the DLL loader. This is a CMake config switch, not a code change.
+- **Better error messages** — source-mapped errors pointing to `.tsx` line numbers instead of generated C++ lines.
+- **Component inspector** — debug overlay showing component tree, state values, instance IDs (debug builds only, stripped in release).
+- **Real-world example apps** — non-trivial apps demonstrating C++ backend + IMX frontend pattern (GPA calculator, settings panel, log viewer).
+- **LLM prompt reference updates** — keep `llm-prompt-reference.md` covering all new components so LLMs generate correct code.
+
+Size impact: 0 KB on Release builds (all dev features are debug-only or compile-time)
+
+Exit criteria:
+
+- changing a TSX file and seeing the result takes under 2 seconds with state preserved
+- error messages point to the correct TSX source line
+- at least one real-world example app beyond demos
+
+## Future Candidates
+
+Implement only when justified by real need:
+
+- **Child component sub-struct binding** — pass sub-struct references to child components
+- **Plugin/extension API** — third-party component packages
+- **DrawList advanced** — Bezier curves, polylines, custom draw commands beyond current Canvas
+- **Viewport API** — multi-window via ImGui viewports exposed to TSX
+- **Cross-compilation** — build Windows/macOS/Linux from single machine
+
+## Non-goals
+
+- **React lifecycle hooks (useEffect, useInit, etc.)** — ImGui is immediate mode; TSX is a pure UI layer. Initialization, cleanup, and side effects belong in C++ where the data lives.
+- **Platform/OS APIs (file dialogs, tray, notifications, networking, persistence)** — IMX is a frontend. The C++ backend handles platform integration. IMX wraps ImGui, not the OS.
 - **Native IR / interpreter** — contradicts "no runtime in shipped binary"
-- **Hot reload** — compile-run cycle is already short enough for native apps
 - **Tauri-like CLI wrapper** — IMX integrates via FetchContent, build stays CMake-native
+- **Embedded JS/Lua runtime** — defeats the purpose, adds 500 KB+ for no benefit
