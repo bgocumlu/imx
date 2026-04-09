@@ -11,6 +11,16 @@ export default function App(props: PhasesState) {
   return (
     <Font name="inter-ui" src="Inter-Regular.ttf" size={16} embed>
     <DockSpace>
+      <DockLayout>
+        <DockSplit direction="horizontal" size={0.22}>
+          <DockPanel>
+            <Window title="Phase Showcase" />
+          </DockPanel>
+          <DockPanel>
+            <Window title="Phase Content" />
+          </DockPanel>
+        </DockSplit>
+      </DockLayout>
       <Window title="Phase Showcase">
         <Column gap={4}>
           <Text>IMX Phase Showcase</Text>
@@ -26,6 +36,9 @@ export default function App(props: PhasesState) {
           <Button title="Phase 17: Window & Popup Control" onPress={() => setShowPhase17(!showPhase17)} />
           <Button title="Phase 18: Text & Display Variants" onPress={() => setShowPhase18(!showPhase18)} />
         </Column>
+      </Window>
+      <Window title="Phase Content">
+        <Text disabled>Select a phase from the left panel.</Text>
       </Window>
     </DockSpace>
     </Font>

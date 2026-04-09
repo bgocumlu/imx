@@ -32,10 +32,20 @@ export default function App(props: DemoState) {
   return (
     <Font name="inter-ui" src="Inter-Regular.ttf" size={16}>
     <DockSpace>
+      <DockLayout>
+        <DockSplit direction="horizontal" size={0.18}>
+          <DockPanel>
+            <Window title="IMX Demo" />
+          </DockPanel>
+          <DockPanel>
+            <Window title="Demo Content" />
+          </DockPanel>
+        </DockSplit>
+      </DockLayout>
       <Window title="IMX Demo">
         <Column gap={4}>
           <Text>Component Demos</Text>
-          <Text disabled>Click a button to open a demo window.</Text>
+          <Text disabled>Click to open a demo window.</Text>
           <Separator />
           <Button title="Layout" onPress={() => setShowLayout(!showLayout)} />
           <Button title="Text" onPress={() => setShowText(!showText)} />
@@ -52,6 +62,9 @@ export default function App(props: DemoState) {
           <Button title="Images" onPress={() => setShowImages(!showImages)} />
           <Button title="Advanced" onPress={() => setShowAdvanced(!showAdvanced)} />
         </Column>
+      </Window>
+      <Window title="Demo Content">
+        <Text disabled>Select a demo from the left panel.</Text>
       </Window>
       {showLayout && <LayoutDemo onClose={() => setShowLayout(false)} />}
       {showText && <TextDemo onClose={() => setShowText(false)} />}
