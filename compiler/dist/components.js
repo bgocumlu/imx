@@ -251,10 +251,28 @@ export const HOST_COMPONENTS = {
         },
         hasChildren: false, isContainer: false,
     },
+    ColorEdit3: {
+        props: {
+            label: { type: 'string', required: true },
+            value: { type: 'string', required: true },
+            onChange: { type: 'callback', required: false },
+            style: { type: 'style', required: false },
+        },
+        hasChildren: false, isContainer: false,
+    },
     ColorPicker: {
         props: {
             label: { type: 'string', required: true },
             value: { type: 'string', required: true },
+            style: { type: 'style', required: false },
+        },
+        hasChildren: false, isContainer: false,
+    },
+    ColorPicker3: {
+        props: {
+            label: { type: 'string', required: true },
+            value: { type: 'string', required: true },
+            onChange: { type: 'callback', required: false },
             style: { type: 'style', required: false },
         },
         hasChildren: false, isContainer: false,
@@ -666,6 +684,43 @@ export const HOST_COMPONENTS = {
             onChange: { type: 'callback', required: false },
             min: { type: 'number', required: true },
             max: { type: 'number', required: true },
+            style: { type: 'style', required: false },
+        },
+        hasChildren: false, isContainer: false,
+    },
+    VSliderFloat: {
+        props: {
+            label: { type: 'string', required: true },
+            value: { type: 'number', required: true },
+            onChange: { type: 'callback', required: false },
+            width: { type: 'number', required: true },
+            height: { type: 'number', required: true },
+            min: { type: 'number', required: true },
+            max: { type: 'number', required: true },
+            style: { type: 'style', required: false },
+        },
+        hasChildren: false, isContainer: false,
+    },
+    VSliderInt: {
+        props: {
+            label: { type: 'string', required: true },
+            value: { type: 'number', required: true },
+            onChange: { type: 'callback', required: false },
+            width: { type: 'number', required: true },
+            height: { type: 'number', required: true },
+            min: { type: 'number', required: true },
+            max: { type: 'number', required: true },
+            style: { type: 'style', required: false },
+        },
+        hasChildren: false, isContainer: false,
+    },
+    SliderAngle: {
+        props: {
+            label: { type: 'string', required: true },
+            value: { type: 'number', required: true },
+            onChange: { type: 'callback', required: false },
+            min: { type: 'number', required: false },
+            max: { type: 'number', required: false },
             style: { type: 'style', required: false },
         },
         hasChildren: false, isContainer: false,

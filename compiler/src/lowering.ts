@@ -599,6 +599,9 @@ function lowerJsxSelfClosing(node: ts.JsxSelfClosingElement, body: IRNode[], ctx
         case 'ColorEdit':
             lowerColorEdit(attrs, rawAttrs, body, ctx, loc);
             break;
+        case 'ColorEdit3':
+            lowerColorEdit3(attrs, rawAttrs, body, ctx, loc);
+            break;
         case 'ListBox':
             lowerListBox(attrs, rawAttrs, body, ctx, loc);
             break;
@@ -633,6 +636,9 @@ function lowerJsxSelfClosing(node: ts.JsxSelfClosingElement, body: IRNode[], ctx
             break;
         case 'ColorPicker':
             lowerColorPicker(attrs, rawAttrs, body, ctx, loc);
+            break;
+        case 'ColorPicker3':
+            lowerColorPicker3(attrs, rawAttrs, body, ctx, loc);
             break;
         case 'PlotLines':
             lowerPlotLines(attrs, body, ctx, loc);
@@ -695,6 +701,9 @@ function lowerJsxSelfClosing(node: ts.JsxSelfClosingElement, body: IRNode[], ctx
         case 'SliderInt2': lowerVectorInput('slider_int_n', 2, attrs, rawAttrs, body, ctx, loc); break;
         case 'SliderInt3': lowerVectorInput('slider_int_n', 3, attrs, rawAttrs, body, ctx, loc); break;
         case 'SliderInt4': lowerVectorInput('slider_int_n', 4, attrs, rawAttrs, body, ctx, loc); break;
+        case 'VSliderFloat': lowerVSliderFloat(attrs, rawAttrs, body, ctx, loc); break;
+        case 'VSliderInt': lowerVSliderInt(attrs, rawAttrs, body, ctx, loc); break;
+        case 'SliderAngle': lowerSliderAngle(attrs, rawAttrs, body, ctx, loc); break;
         case 'SmallButton': lowerSmallButton(attrs, rawAttrs, body, ctx, loc); break;
         case 'ArrowButton': lowerArrowButton(attrs, rawAttrs, body, ctx, loc); break;
         case 'InvisibleButton': lowerInvisibleButton(attrs, rawAttrs, body, ctx, loc); break;
@@ -1209,6 +1218,33 @@ function lowerColorPicker(attrs: Record<string, string>, rawAttrs: Map<string, t
     body.push({ kind: 'color_picker', label, stateVar, valueExpr, onChangeExpr, directBind, style, loc });
 }
 
+function lowerColorPicker3(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext, loc: SourceLoc): void {
+    const label = attrs['label'] ?? '""';
+    const style = attrs['style'];
+    let stateVar = '';
+    let valueExpr: string | undefined;
+    let onChangeExpr: string | undefined;
+    let directBind: boolean | undefined;
+    const valueRaw = rawAttrs.get('value');
+    if (valueRaw && ts.isIdentifier(valueRaw) && ctx.stateVars.has(valueRaw.text)) {
+        stateVar = valueRaw.text;
+    } else if (valueRaw) {
+        valueExpr = exprToCpp(valueRaw, ctx);
+        const onChangeRaw = rawAttrs.get('onChange');
+        if (onChangeRaw) {
+            onChangeExpr = exprToCpp(onChangeRaw, ctx);
+            if (onChangeExpr.startsWith('[')) {
+                onChangeExpr = `(${onChangeExpr})()`;
+            } else if (!onChangeExpr.endsWith(')')) {
+                onChangeExpr = `${onChangeExpr}()`;
+            }
+        } else if (valueRaw && ts.isPropertyAccessExpression(valueRaw)) {
+            directBind = true;
+        }
+    }
+    body.push({ kind: 'color_picker3', label, stateVar, valueExpr, onChangeExpr, directBind, style, loc });
+}
+
 function lowerPlotLines(attrs: Record<string, string>, body: IRNode[], ctx: LoweringContext, loc: SourceLoc): void {
     const label = attrs['label'] ?? '""';
     const values = attrs['values'] ?? '';
@@ -1373,6 +1409,37 @@ function lowerSliderInt(attrs: Record<string, string>, rawAttrs: Map<string, ts.
     body.push({ kind: 'slider_int', label, stateVar, valueExpr, onChangeExpr, directBind, min, max, style, loc });
 }
 
+function lowerVSliderFloat(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext, loc: SourceLoc): void {
+    const label = attrs['label'] ?? '""';
+    const width = attrs['width'] ?? '20';
+    const height = attrs['height'] ?? '100';
+    const min = attrs['min'] ?? '0.0f';
+    const max = attrs['max'] ?? '1.0f';
+    const style = attrs['style'];
+    const { stateVar, valueExpr, onChangeExpr, directBind } = lowerValueOnChange(rawAttrs, ctx);
+    body.push({ kind: 'vslider_float', label, stateVar, valueExpr, onChangeExpr, directBind, width, height, min, max, style, loc });
+}
+
+function lowerVSliderInt(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext, loc: SourceLoc): void {
+    const label = attrs['label'] ?? '""';
+    const width = attrs['width'] ?? '20';
+    const height = attrs['height'] ?? '100';
+    const min = attrs['min'] ?? '0';
+    const max = attrs['max'] ?? '100';
+    const style = attrs['style'];
+    const { stateVar, valueExpr, onChangeExpr, directBind } = lowerValueOnChange(rawAttrs, ctx);
+    body.push({ kind: 'vslider_int', label, stateVar, valueExpr, onChangeExpr, directBind, width, height, min, max, style, loc });
+}
+
+function lowerSliderAngle(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext, loc: SourceLoc): void {
+    const label = attrs['label'] ?? '""';
+    const min = attrs['min'] ?? '-360.0f';
+    const max = attrs['max'] ?? '360.0f';
+    const style = attrs['style'];
+    const { stateVar, valueExpr, onChangeExpr, directBind } = lowerValueOnChange(rawAttrs, ctx);
+    body.push({ kind: 'slider_angle', label, stateVar, valueExpr, onChangeExpr, directBind, min, max, style, loc });
+}
+
 function lowerDragFloat(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext, loc: SourceLoc): void {
     const label = attrs['label'] ?? '""';
     const speed = attrs['speed'] ?? '1.0f';
@@ -1436,6 +1503,33 @@ function lowerColorEdit(attrs: Record<string, string>, rawAttrs: Map<string, ts.
         }
     }
     body.push({ kind: 'color_edit', label, stateVar, valueExpr, onChangeExpr, directBind, style, loc });
+}
+
+function lowerColorEdit3(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext, loc: SourceLoc): void {
+    const label = attrs['label'] ?? '""';
+    const style = attrs['style'];
+    let stateVar = '';
+    let valueExpr: string | undefined;
+    let onChangeExpr: string | undefined;
+    let directBind: boolean | undefined;
+    const valueRaw = rawAttrs.get('value');
+    if (valueRaw && ts.isIdentifier(valueRaw) && ctx.stateVars.has(valueRaw.text)) {
+        stateVar = valueRaw.text;
+    } else if (valueRaw) {
+        valueExpr = exprToCpp(valueRaw, ctx);
+        const onChangeRaw = rawAttrs.get('onChange');
+        if (onChangeRaw) {
+            onChangeExpr = exprToCpp(onChangeRaw, ctx);
+            if (onChangeExpr.startsWith('[')) {
+                onChangeExpr = `(${onChangeExpr})()`;
+            } else if (!onChangeExpr.endsWith(')')) {
+                onChangeExpr = `${onChangeExpr}()`;
+            }
+        } else if (valueRaw && ts.isPropertyAccessExpression(valueRaw)) {
+            directBind = true;
+        }
+    }
+    body.push({ kind: 'color_edit3', label, stateVar, valueExpr, onChangeExpr, directBind, style, loc });
 }
 
 function lowerListBox(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext, loc: SourceLoc): void {

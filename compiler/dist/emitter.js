@@ -408,6 +408,9 @@ function emitNode(node, lines, depth) {
         case 'color_edit':
             emitColorEdit(node, lines, indent);
             break;
+        case 'color_edit3':
+            emitColorEdit3(node, lines, indent);
+            break;
         case 'list_box':
             emitListBox(node, lines, indent);
             break;
@@ -434,6 +437,9 @@ function emitNode(node, lines, depth) {
             break;
         case 'color_picker':
             emitColorPicker(node, lines, indent);
+            break;
+        case 'color_picker3':
+            emitColorPicker3(node, lines, indent);
             break;
         case 'plot_lines':
             emitPlotLines(node, lines, indent);
@@ -482,6 +488,15 @@ function emitNode(node, lines, depth) {
             emitVectorInput(node, 'slider_int_n', 'int', lines, indent, `, ${node.min}, ${node.max}`);
             break;
         }
+        case 'vslider_float':
+            emitVSliderFloat(node, lines, indent);
+            break;
+        case 'vslider_int':
+            emitVSliderInt(node, lines, indent);
+            break;
+        case 'slider_angle':
+            emitSliderAngle(node, lines, indent);
+            break;
         case 'native_widget':
             emitNativeWidget(node, lines, indent);
             break;
@@ -1384,6 +1399,89 @@ function emitSliderInt(node, lines, indent) {
         lines.push(`${indent}}`);
     }
 }
+function emitVSliderFloat(node, lines, indent) {
+    emitLocComment(node.loc, 'VSliderFloat', lines, indent);
+    const label = asCharPtr(node.label);
+    const min = ensureFloatLiteral(node.min);
+    const max = ensureFloatLiteral(node.max);
+    const width = emitFloat(node.width);
+    const height = emitFloat(node.height);
+    if (node.stateVar) {
+        lines.push(`${indent}{`);
+        lines.push(`${indent}${INDENT}float val = ${node.stateVar}.get();`);
+        lines.push(`${indent}${INDENT}if (imx::renderer::vslider_float(${label}, ${width}, ${height}, &val, ${min}, ${max})) {`);
+        lines.push(`${indent}${INDENT}${INDENT}${node.stateVar}.set(val);`);
+        lines.push(`${indent}${INDENT}}`);
+        lines.push(`${indent}}`);
+    }
+    else if (node.directBind && node.valueExpr) {
+        lines.push(`${indent}imx::renderer::vslider_float(${label}, ${width}, ${height}, ${emitDirectBindPtr(node.valueExpr)}, ${min}, ${max});`);
+    }
+    else if (node.valueExpr !== undefined) {
+        lines.push(`${indent}{`);
+        lines.push(`${indent}${INDENT}float val = ${node.valueExpr};`);
+        lines.push(`${indent}${INDENT}if (imx::renderer::vslider_float(${label}, ${width}, ${height}, &val, ${min}, ${max})) {`);
+        if (node.onChangeExpr) {
+            lines.push(`${indent}${INDENT}${INDENT}${node.onChangeExpr};`);
+        }
+        lines.push(`${indent}${INDENT}}`);
+        lines.push(`${indent}}`);
+    }
+}
+function emitVSliderInt(node, lines, indent) {
+    emitLocComment(node.loc, 'VSliderInt', lines, indent);
+    const label = asCharPtr(node.label);
+    const width = emitFloat(node.width);
+    const height = emitFloat(node.height);
+    if (node.stateVar) {
+        lines.push(`${indent}{`);
+        lines.push(`${indent}${INDENT}int val = ${node.stateVar}.get();`);
+        lines.push(`${indent}${INDENT}if (imx::renderer::vslider_int(${label}, ${width}, ${height}, &val, ${node.min}, ${node.max})) {`);
+        lines.push(`${indent}${INDENT}${INDENT}${node.stateVar}.set(val);`);
+        lines.push(`${indent}${INDENT}}`);
+        lines.push(`${indent}}`);
+    }
+    else if (node.directBind && node.valueExpr) {
+        lines.push(`${indent}imx::renderer::vslider_int(${label}, ${width}, ${height}, ${emitDirectBindPtr(node.valueExpr)}, ${node.min}, ${node.max});`);
+    }
+    else if (node.valueExpr !== undefined) {
+        lines.push(`${indent}{`);
+        lines.push(`${indent}${INDENT}int val = ${node.valueExpr};`);
+        lines.push(`${indent}${INDENT}if (imx::renderer::vslider_int(${label}, ${width}, ${height}, &val, ${node.min}, ${node.max})) {`);
+        if (node.onChangeExpr) {
+            lines.push(`${indent}${INDENT}${INDENT}${node.onChangeExpr};`);
+        }
+        lines.push(`${indent}${INDENT}}`);
+        lines.push(`${indent}}`);
+    }
+}
+function emitSliderAngle(node, lines, indent) {
+    emitLocComment(node.loc, 'SliderAngle', lines, indent);
+    const label = asCharPtr(node.label);
+    const min = ensureFloatLiteral(node.min);
+    const max = ensureFloatLiteral(node.max);
+    if (node.stateVar) {
+        lines.push(`${indent}{`);
+        lines.push(`${indent}${INDENT}float val = ${node.stateVar}.get();`);
+        lines.push(`${indent}${INDENT}if (imx::renderer::slider_angle(${label}, &val, ${min}, ${max})) {`);
+        lines.push(`${indent}${INDENT}${INDENT}${node.stateVar}.set(val);`);
+        lines.push(`${indent}${INDENT}}`);
+        lines.push(`${indent}}`);
+    }
+    else if (node.directBind && node.valueExpr) {
+        lines.push(`${indent}imx::renderer::slider_angle(${label}, ${emitDirectBindPtr(node.valueExpr)}, ${min}, ${max});`);
+    }
+    else if (node.valueExpr !== undefined) {
+        lines.push(`${indent}{`);
+        lines.push(`${indent}${INDENT}float val = ${node.valueExpr};`);
+        lines.push(`${indent}${INDENT}if (imx::renderer::slider_angle(${label}, &val, ${min}, ${max})) {`);
+        if (node.onChangeExpr) {
+            lines.push(`${indent}${INDENT}${INDENT}${node.onChangeExpr};`);
+        }
+        lines.push(`${indent}${INDENT}}`);
+        lines.push(`${indent}}`);
+    }
+}
 function emitDragFloat(node, lines, indent) {
     emitLocComment(node.loc, 'DragFloat', lines, indent);
     const label = asCharPtr(node.label);
@@ -1540,6 +1638,34 @@ function emitColorEdit(node, lines, indent) {
         lines.push(`${indent}{`);
         lines.push(`${indent}${INDENT}auto val = ${node.valueExpr};`);
         lines.push(`${indent}${INDENT}if (imx::renderer::color_edit(${label}, val.data())) {`);
+        if (node.onChangeExpr) {
+            lines.push(`${indent}${INDENT}${INDENT}${node.onChangeExpr};`);
+        }
+        lines.push(`${indent}${INDENT}}`);
+        lines.push(`${indent}}`);
+    }
+}
+function emitColorEdit3(node, lines, indent) {
+    emitLocComment(node.loc, 'ColorEdit3', lines, indent);
+    const label = asCharPtr(node.label);
+    if (node.stateVar) {
+        lines.push(`${indent}{`);
+        lines.push(`${indent}${INDENT}auto val = ${node.stateVar}.get();`);
+        lines.push(`${indent}${INDENT}if (imx::renderer::color_edit3(${label}, val.data())) {`);
+        lines.push(`${indent}${INDENT}${INDENT}${node.stateVar}.set(val);`);
+        lines.push(`${indent}${INDENT}}`);
+        lines.push(`${indent}}`);
+    }
+    else if (node.directBind && node.valueExpr) {
+        const propName = node.valueExpr.startsWith('props.') ? node.valueExpr.slice(6).split('.')[0].split('[')[0] : '';
+        const isBound = currentBoundProps.has(propName);
+        const dataExpr = isBound ? `(${node.valueExpr})->data()` : `${node.valueExpr}.data()`;
+        lines.push(`${indent}imx::renderer::color_edit3(${label}, ${dataExpr});`);
+    }
+    else if (node.valueExpr !== undefined) {
+        lines.push(`${indent}{`);
+        lines.push(`${indent}${INDENT}auto val = ${node.valueExpr};`);
+        lines.push(`${indent}${INDENT}if (imx::renderer::color_edit3(${label}, val.data())) {`);
         if (node.onChangeExpr) {
             lines.push(`${indent}${INDENT}${INDENT}${node.onChangeExpr};`);
         }
@@ -1707,6 +1833,34 @@ function emitColorPicker(node, lines, indent) {
         lines.push(`${indent}{`);
         lines.push(`${indent}${INDENT}auto val = ${node.valueExpr};`);
         lines.push(`${indent}${INDENT}if (imx::renderer::color_picker(${label}, val.data())) {`);
+        if (node.onChangeExpr) {
+            lines.push(`${indent}${INDENT}${INDENT}${node.onChangeExpr};`);
+        }
+        lines.push(`${indent}${INDENT}}`);
+        lines.push(`${indent}}`);
+    }
+}
+function emitColorPicker3(node, lines, indent) {
+    emitLocComment(node.loc, 'ColorPicker3', lines, indent);
+    const label = asCharPtr(node.label);
+    if (node.stateVar) {
+        lines.push(`${indent}{`);
+        lines.push(`${indent}${INDENT}auto val = ${node.stateVar}.get();`);
+        lines.push(`${indent}${INDENT}if (imx::renderer::color_picker3(${label}, val.data())) {`);
+        lines.push(`${indent}${INDENT}${INDENT}${node.stateVar}.set(val);`);
+        lines.push(`${indent}${INDENT}}`);
+        lines.push(`${indent}}`);
+    }
+    else if (node.directBind && node.valueExpr) {
+        const propName = node.valueExpr.startsWith('props.') ? node.valueExpr.slice(6).split('.')[0].split('[')[0] : '';
+        const isBound = currentBoundProps.has(propName);
+        const dataExpr = isBound ? `(${node.valueExpr})->data()` : `${node.valueExpr}.data()`;
+        lines.push(`${indent}imx::renderer::color_picker3(${label}, ${dataExpr});`);
+    }
+    else if (node.valueExpr !== undefined) {
+        lines.push(`${indent}{`);
+        lines.push(`${indent}${INDENT}auto val = ${node.valueExpr};`);
+        lines.push(`${indent}${INDENT}if (imx::renderer::color_picker3(${label}, val.data())) {`);
         if (node.onChangeExpr) {
             lines.push(`${indent}${INDENT}${INDENT}${node.onChangeExpr};`);
         }

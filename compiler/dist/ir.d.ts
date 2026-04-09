@@ -26,7 +26,7 @@ export interface IRPropParam {
     name: string;
     type: IRType | 'callback';
 }
-export type IRNode = IRBeginContainer | IREndContainer | IRText | IRButton | IRTextInput | IRCheckbox | IRSeparator | IRBeginPopup | IREndPopup | IROpenPopup | IRConditional | IRListMap | IRCustomComponent | IRMenuItem | IRSliderFloat | IRSliderInt | IRDragFloat | IRDragInt | IRCombo | IRInputInt | IRInputFloat | IRColorEdit | IRListBox | IRProgressBar | IRTooltip | IRDockLayout | IRNativeWidget | IRBulletText | IRLabelText | IRSelectable | IRRadio | IRInputTextMultiline | IRColorPicker | IRPlotLines | IRPlotHistogram | IRImage | IRDrawLine | IRDrawRect | IRDrawCircle | IRDrawText | IRInputFloatN | IRInputIntN | IRDragFloatN | IRDragIntN | IRSliderFloatN | IRSliderIntN | IRSmallButton | IRArrowButton | IRInvisibleButton | IRImageButton;
+export type IRNode = IRBeginContainer | IREndContainer | IRText | IRButton | IRTextInput | IRCheckbox | IRSeparator | IRBeginPopup | IREndPopup | IROpenPopup | IRConditional | IRListMap | IRCustomComponent | IRMenuItem | IRSliderFloat | IRSliderInt | IRDragFloat | IRDragInt | IRCombo | IRInputInt | IRInputFloat | IRColorEdit | IRListBox | IRProgressBar | IRTooltip | IRDockLayout | IRNativeWidget | IRBulletText | IRLabelText | IRSelectable | IRRadio | IRInputTextMultiline | IRColorPicker | IRColorEdit3 | IRColorPicker3 | IRPlotLines | IRPlotHistogram | IRImage | IRDrawLine | IRDrawRect | IRDrawCircle | IRDrawText | IRInputFloatN | IRInputIntN | IRDragFloatN | IRDragIntN | IRSliderFloatN | IRSliderIntN | IRSmallButton | IRArrowButton | IRInvisibleButton | IRImageButton | IRVSliderFloat | IRVSliderInt | IRSliderAngle;
 export interface IRBeginContainer {
     kind: 'begin_container';
     tag: 'Window' | 'View' | 'Row' | 'Column' | 'DockSpace' | 'MenuBar' | 'Menu' | 'Table' | 'TableRow' | 'TabBar' | 'TabItem' | 'TreeNode' | 'CollapsingHeader' | 'Theme' | 'DockLayout' | 'DockSplit' | 'DockPanel' | 'Modal' | 'Group' | 'ID' | 'StyleColor' | 'StyleVar' | 'DragDropSource' | 'DragDropTarget' | 'Canvas' | 'Disabled' | 'Child' | 'Font';
@@ -297,6 +297,26 @@ export interface IRColorPicker {
     style?: string;
     loc?: SourceLoc;
 }
+export interface IRColorEdit3 {
+    kind: 'color_edit3';
+    label: string;
+    stateVar: string;
+    valueExpr?: string;
+    onChangeExpr?: string;
+    directBind?: boolean;
+    style?: string;
+    loc?: SourceLoc;
+}
+export interface IRColorPicker3 {
+    kind: 'color_picker3';
+    label: string;
+    stateVar: string;
+    valueExpr?: string;
+    onChangeExpr?: string;
+    directBind?: boolean;
+    style?: string;
+    loc?: SourceLoc;
+}
 export interface IRPlotLines {
     kind: 'plot_lines';
     label: string;
@@ -417,6 +437,46 @@ export interface IRSliderIntN {
     valueExpr: string;
     directBind?: boolean;
     onChangeExpr?: string;
+    min: string;
+    max: string;
+    style?: string;
+    loc?: SourceLoc;
+}
+export interface IRVSliderFloat {
+    kind: 'vslider_float';
+    label: string;
+    stateVar: string;
+    valueExpr?: string;
+    onChangeExpr?: string;
+    directBind?: boolean;
+    width: string;
+    height: string;
+    min: string;
+    max: string;
+    style?: string;
+    loc?: SourceLoc;
+}
+export interface IRVSliderInt {
+    kind: 'vslider_int';
+    label: string;
+    stateVar: string;
+    valueExpr?: string;
+    onChangeExpr?: string;
+    directBind?: boolean;
+    width: string;
+    height: string;
+    min: string;
+    max: string;
+    style?: string;
+    loc?: SourceLoc;
+}
+export interface IRSliderAngle {
+    kind: 'slider_angle';
+    label: string;
+    stateVar: string;
+    valueExpr?: string;
+    onChangeExpr?: string;
+    directBind?: boolean;
     min: string;
     max: string;
     style?: string;

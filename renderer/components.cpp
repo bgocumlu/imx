@@ -265,6 +265,24 @@ bool slider_int(const char* label, int* value, int min, int max, const Style& st
     return r;
 }
 
+bool vslider_float(const char* label, float width, float height, float* value, float min, float max, const Style& style) {
+    before_child();
+    return ImGui::VSliderFloat(label, ImVec2(width, height), value, min, max);
+}
+
+bool vslider_int(const char* label, float width, float height, int* value, int min, int max, const Style& style) {
+    before_child();
+    return ImGui::VSliderInt(label, ImVec2(width, height), value, min, max);
+}
+
+bool slider_angle(const char* label, float* value, float min, float max, const Style& style) {
+    before_child();
+    if (style.width) ImGui::PushItemWidth(*style.width);
+    bool r = ImGui::SliderAngle(label, value, min, max);
+    if (style.width) ImGui::PopItemWidth();
+    return r;
+}
+
 bool drag_float(const char* label, float* value, float speed, const Style& style) {
     before_child();
     if (style.width) ImGui::PushItemWidth(*style.width);
@@ -391,6 +409,14 @@ bool color_edit(const char* label, float color[4], const Style& style) {
     return r;
 }
 
+bool color_edit3(const char* label, float color[3], const Style& style) {
+    before_child();
+    if (style.width) ImGui::PushItemWidth(*style.width);
+    bool r = ImGui::ColorEdit3(label, color);
+    if (style.width) ImGui::PopItemWidth();
+    return r;
+}
+
 bool list_box(const char* label, int* current_item, const char* const items[], int items_count, const Style& style) {
     before_child();
     if (style.width) ImGui::PushItemWidth(*style.width);
@@ -452,6 +478,14 @@ bool text_input_multiline(const char* label, TextBuffer& buffer, const Style& st
 bool color_picker(const char* label, float color[4], const Style& style) {
     before_child();
     return ImGui::ColorPicker4(label, color);
+}
+
+bool color_picker3(const char* label, float color[3], const Style& style) {
+    before_child();
+    if (style.width) ImGui::PushItemWidth(*style.width);
+    bool r = ImGui::ColorPicker3(label, color);
+    if (style.width) ImGui::PopItemWidth();
+    return r;
 }
 
 void plot_lines(const char* label, const float* values, int count, const char* overlay, const Style& style) {

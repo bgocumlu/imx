@@ -40,12 +40,13 @@ export type IRNode =
     | IRDockLayout | IRNativeWidget
     | IRBulletText | IRLabelText
     | IRSelectable | IRRadio
-    | IRInputTextMultiline | IRColorPicker
+    | IRInputTextMultiline | IRColorPicker | IRColorEdit3 | IRColorPicker3
     | IRPlotLines | IRPlotHistogram
     | IRImage
     | IRDrawLine | IRDrawRect | IRDrawCircle | IRDrawText
     | IRInputFloatN | IRInputIntN | IRDragFloatN | IRDragIntN | IRSliderFloatN | IRSliderIntN
-    | IRSmallButton | IRArrowButton | IRInvisibleButton | IRImageButton;
+    | IRSmallButton | IRArrowButton | IRInvisibleButton | IRImageButton
+    | IRVSliderFloat | IRVSliderInt | IRSliderAngle;
 
 export interface IRBeginContainer {
     kind: 'begin_container';
@@ -103,6 +104,8 @@ export interface IRSelectable { kind: 'selectable'; label: string; selected: str
 export interface IRRadio { kind: 'radio'; label: string; stateVar: string; valueExpr?: string; onChangeExpr?: string; directBind?: boolean; index: string; style?: string; loc?: SourceLoc; }
 export interface IRInputTextMultiline { kind: 'input_text_multiline'; label: string; bufferIndex: number; stateVar: string; valueExpr?: string; onChangeExpr?: string; directBind?: boolean; style?: string; loc?: SourceLoc; }
 export interface IRColorPicker { kind: 'color_picker'; label: string; stateVar: string; valueExpr?: string; onChangeExpr?: string; directBind?: boolean; style?: string; loc?: SourceLoc; }
+export interface IRColorEdit3 { kind: 'color_edit3'; label: string; stateVar: string; valueExpr?: string; onChangeExpr?: string; directBind?: boolean; style?: string; loc?: SourceLoc; }
+export interface IRColorPicker3 { kind: 'color_picker3'; label: string; stateVar: string; valueExpr?: string; onChangeExpr?: string; directBind?: boolean; style?: string; loc?: SourceLoc; }
 export interface IRPlotLines { kind: 'plot_lines'; label: string; values: string; overlay?: string; style?: string; loc?: SourceLoc; }
 export interface IRPlotHistogram { kind: 'plot_histogram'; label: string; values: string; overlay?: string; style?: string; loc?: SourceLoc; }
 
@@ -127,6 +130,10 @@ export interface IRDragFloatN { kind: 'drag_float_n'; label: string; count: numb
 export interface IRDragIntN { kind: 'drag_int_n'; label: string; count: number; valueExpr: string; directBind?: boolean; onChangeExpr?: string; speed: string; style?: string; loc?: SourceLoc; }
 export interface IRSliderFloatN { kind: 'slider_float_n'; label: string; count: number; valueExpr: string; directBind?: boolean; onChangeExpr?: string; min: string; max: string; style?: string; loc?: SourceLoc; }
 export interface IRSliderIntN { kind: 'slider_int_n'; label: string; count: number; valueExpr: string; directBind?: boolean; onChangeExpr?: string; min: string; max: string; style?: string; loc?: SourceLoc; }
+
+export interface IRVSliderFloat { kind: 'vslider_float'; label: string; stateVar: string; valueExpr?: string; onChangeExpr?: string; directBind?: boolean; width: string; height: string; min: string; max: string; style?: string; loc?: SourceLoc; }
+export interface IRVSliderInt { kind: 'vslider_int'; label: string; stateVar: string; valueExpr?: string; onChangeExpr?: string; directBind?: boolean; width: string; height: string; min: string; max: string; style?: string; loc?: SourceLoc; }
+export interface IRSliderAngle { kind: 'slider_angle'; label: string; stateVar: string; valueExpr?: string; onChangeExpr?: string; directBind?: boolean; min: string; max: string; style?: string; loc?: SourceLoc; }
 
 export interface IRSmallButton { kind: 'small_button'; label: string; action: string[]; loc?: SourceLoc; }
 export interface IRArrowButton { kind: 'arrow_button'; id: string; direction: string; action: string[]; loc?: SourceLoc; }

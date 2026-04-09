@@ -196,6 +196,9 @@ void end_collapsing_header();
 
 bool slider_float(const char* label, float* value, float min, float max, const Style& style = {});
 bool slider_int(const char* label, int* value, int min, int max, const Style& style = {});
+bool vslider_float(const char* label, float width, float height, float* value, float min, float max, const Style& style = {});
+bool vslider_int(const char* label, float width, float height, int* value, int min, int max, const Style& style = {});
+bool slider_angle(const char* label, float* value, float min = -360.0f, float max = 360.0f, const Style& style = {});
 bool drag_float(const char* label, float* value, float speed = 1.0f, const Style& style = {});
 bool drag_int(const char* label, int* value, float speed = 1.0f, const Style& style = {});
 
@@ -211,6 +214,7 @@ bool combo(const char* label, int* current_item, const char* const items[], int 
 bool input_int(const char* label, int* value, const Style& style = {});
 bool input_float(const char* label, float* value, const Style& style = {});
 bool color_edit(const char* label, float color[4], const Style& style = {});
+bool color_edit3(const char* label, float color[3], const Style& style = {});
 bool list_box(const char* label, int* current_item, const char* const items[], int items_count, const Style& style = {});
 void progress_bar(float fraction, const char* overlay = nullptr, const Style& style = {});
 void tooltip(const char* text);
@@ -221,6 +225,7 @@ bool selectable(const char* label, bool selected = false, const Style& style = {
 bool radio(const char* label, int* value, int v_button, const Style& style = {});
 bool text_input_multiline(const char* label, TextBuffer& buffer, const Style& style = {});
 bool color_picker(const char* label, float color[4], const Style& style = {});
+bool color_picker3(const char* label, float color[3], const Style& style = {});
 void plot_lines(const char* label, const float* values, int count, const char* overlay = nullptr, const Style& style = {});
 void plot_histogram(const char* label, const float* values, int count, const char* overlay = nullptr, const Style& style = {});
 

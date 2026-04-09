@@ -237,7 +237,11 @@ interface SliderFloat4Props { label: string; value: [number, number, number, num
 interface SliderInt2Props { label: string; value: [number, number]; onChange?: (v: [number, number]) => void; min: number; max: number; style?: Style; }
 interface SliderInt3Props { label: string; value: [number, number, number]; onChange?: (v: [number, number, number]) => void; min: number; max: number; style?: Style; }
 interface SliderInt4Props { label: string; value: [number, number, number, number]; onChange?: (v: [number, number, number, number]) => void; min: number; max: number; style?: Style; }
-interface ColorEditProps { label: string; value: number[]; onChange: (v: number[]) => void; style?: Style; }
+interface VSliderFloatProps { label: string; value: number; onChange?: (v: number) => void; width: number; height: number; min: number; max: number; style?: Style; }
+interface VSliderIntProps { label: string; value: number; onChange?: (v: number) => void; width: number; height: number; min: number; max: number; style?: Style; }
+interface SliderAngleProps { label: string; value: number; onChange?: (v: number) => void; min?: number; max?: number; style?: Style; }
+interface ColorEditProps { label: string; value: number[]; onChange?: (v: number[]) => void; style?: Style; }
+interface ColorEdit3Props { label: string; value: [number, number, number]; onChange?: (v: [number, number, number]) => void; style?: Style; }
 interface ListBoxProps { label: string; value: number; onChange?: (v: number) => void; items: string[]; style?: Style; }
 interface ProgressBarProps { value: number; overlay?: string; style?: Style; }
 interface TooltipProps { text: string; }
@@ -247,6 +251,7 @@ interface SelectableProps { label: string; selected?: boolean; onSelect?: () => 
 interface RadioProps { label: string; value: number; index: number; onChange?: (v: number) => void; style?: Style; }
 interface InputTextMultilineProps { label: string; value: string; style?: Style; }
 interface ColorPickerProps { label: string; value: number[]; style?: Style; }
+interface ColorPicker3Props { label: string; value: [number, number, number]; onChange?: (v: [number, number, number]) => void; style?: Style; }
 interface PlotLinesProps { label: string; values: number[]; overlay?: string; style?: Style; }
 interface PlotHistogramProps { label: string; values: number[]; overlay?: string; style?: Style; }
 interface ModalProps { title: string; open?: boolean; onClose?: () => void; style?: Style; children?: any; }
@@ -337,7 +342,11 @@ declare function SliderFloat4(props: SliderFloat4Props): any;
 declare function SliderInt2(props: SliderInt2Props): any;
 declare function SliderInt3(props: SliderInt3Props): any;
 declare function SliderInt4(props: SliderInt4Props): any;
+declare function VSliderFloat(props: VSliderFloatProps): any;
+declare function VSliderInt(props: VSliderIntProps): any;
+declare function SliderAngle(props: SliderAngleProps): any;
 declare function ColorEdit(props: ColorEditProps): any;
+declare function ColorEdit3(props: ColorEdit3Props): any;
 declare function ListBox(props: ListBoxProps): any;
 declare function ProgressBar(props: ProgressBarProps): any;
 declare function Tooltip(props: TooltipProps): any;
@@ -347,6 +356,7 @@ declare function Selectable(props: SelectableProps): any;
 declare function Radio(props: RadioProps): any;
 declare function InputTextMultiline(props: InputTextMultilineProps): any;
 declare function ColorPicker(props: ColorPickerProps): any;
+declare function ColorPicker3(props: ColorPicker3Props): any;
 declare function PlotLines(props: PlotLinesProps): any;
 declare function PlotHistogram(props: PlotHistogramProps): any;
 declare function Modal(props: ModalProps): any;

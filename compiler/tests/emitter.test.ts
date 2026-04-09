@@ -317,6 +317,32 @@ function App() {
         expect(output).toContain('notes.set(buf.value())');
     });
 
+    it('emits ColorEdit3 with direct binding', () => {
+        const output = compile(`
+export function App(props: AppState) {
+  return (
+    <Window title="Test">
+      <ColorEdit3 label="Tint" value={props.tint} />
+    </Window>
+  );
+}
+        `);
+        expect(output).toContain('color_edit3("Tint"');
+    });
+
+    it('emits ColorPicker3 with direct binding', () => {
+        const output = compile(`
+export function App(props: AppState) {
+  return (
+    <Window title="Test">
+      <ColorPicker3 label="Tint" value={props.tint} />
+    </Window>
+  );
+}
+        `);
+        expect(output).toContain('color_picker3("Tint"');
+    });
+
     it('emits ColorPicker with state binding', () => {
         const output = compile(`
 function App() {
@@ -1056,5 +1082,31 @@ export function App(props: AppState) {
         `);
         expect(output).toContain('drag_int_n("Margins"');
         expect(output).toContain(', 4');
+    });
+
+    it('emits VSliderFloat with direct binding', () => {
+        const output = compile(`
+export function App(props: AppState) {
+  return (
+    <Window title="Test">
+      <VSliderFloat label="Vol" value={props.volume} width={20} height={100} min={0} max={1} />
+    </Window>
+  );
+}
+        `);
+        expect(output).toContain('vslider_float("Vol"');
+    });
+
+    it('emits SliderAngle with direct binding', () => {
+        const output = compile(`
+export function App(props: AppState) {
+  return (
+    <Window title="Test">
+      <SliderAngle label="Rot" value={props.angle} min={-360} max={360} />
+    </Window>
+  );
+}
+        `);
+        expect(output).toContain('slider_angle("Rot"');
     });
 });
