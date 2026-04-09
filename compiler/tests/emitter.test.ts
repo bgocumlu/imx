@@ -944,4 +944,20 @@ export function Toggle(props: { done: boolean }) {
         // Should NOT double-address (&props.done would be bool**)
         expect(panelCpp).not.toContain('= &props.done');
     });
+
+    it('emits Font with PushFont/PopFont', () => {
+        const output = compile(`
+function App() {
+  return (
+    <Window title="Test">
+      <Font name="custom">
+        <Text>Hello</Text>
+      </Font>
+    </Window>
+  );
+}
+        `);
+        expect(output).toContain('begin_font("custom")');
+        expect(output).toContain('end_font()');
+    });
 });

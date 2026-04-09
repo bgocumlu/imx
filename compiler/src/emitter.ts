@@ -912,6 +912,11 @@ function emitBeginContainer(node: IRBeginContainer, lines: string[], indent: str
             }
             break;
         }
+        case 'Font': {
+            const name = asCharPtr(node.props['name'] ?? '""');
+            lines.push(`${indent}imx::renderer::begin_font(${name});`);
+            break;
+        }
         case 'DockLayout':
         case 'DockSplit':
         case 'DockPanel':
@@ -1025,6 +1030,9 @@ function emitEndContainer(node: IREndContainer, lines: string[], indent: string)
             break;
         case 'Canvas':
             lines.push(`${indent}imx::renderer::end_canvas();`);
+            break;
+        case 'Font':
+            lines.push(`${indent}imx::renderer::end_font();`);
             break;
         case 'DragDropTarget': {
             const props = dragDropTargetStack.pop() ?? {};
