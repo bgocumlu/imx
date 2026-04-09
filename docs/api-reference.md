@@ -1118,6 +1118,169 @@ Draws text at a position on the parent Canvas.
 
 ---
 
+#### DrawBezierCubic
+
+Draws a cubic bezier curve on the parent Canvas.
+
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| p1 | [x, y] | Yes | Start point |
+| p2 | [x, y] | Yes | First control point |
+| p3 | [x, y] | Yes | Second control point |
+| p4 | [x, y] | Yes | End point |
+| color | [r,g,b,a] | Yes | Curve color |
+| thickness | number | No | Line thickness (default: 1.0) |
+| segments | number | No | Segment count (default: 0 = auto) |
+
+---
+
+#### DrawBezierQuadratic
+
+Draws a quadratic bezier curve on the parent Canvas.
+
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| p1 | [x, y] | Yes | Start point |
+| p2 | [x, y] | Yes | Control point |
+| p3 | [x, y] | Yes | End point |
+| color | [r,g,b,a] | Yes | Curve color |
+| thickness | number | No | Line thickness (default: 1.0) |
+| segments | number | No | Segment count (default: 0 = auto) |
+
+---
+
+#### DrawPolyline
+
+Draws a multi-segment line on the parent Canvas.
+
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| points | [x,y][] | Yes | Array of points |
+| color | [r,g,b,a] | Yes | Line color |
+| thickness | number | No | Line thickness (default: 1.0) |
+| closed | boolean | No | Close the shape (default: false) |
+
+---
+
+#### DrawConvexPolyFilled
+
+Draws a filled convex polygon on the parent Canvas.
+
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| points | [x,y][] | Yes | Array of polygon vertices |
+| color | [r,g,b,a] | Yes | Fill color |
+
+---
+
+#### DrawNgon / DrawNgonFilled
+
+Draws a regular N-sided polygon (outline or filled) on the parent Canvas.
+
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| center | [x, y] | Yes | Center point |
+| radius | number | Yes | Polygon radius |
+| color | [r,g,b,a] | Yes | Color |
+| numSegments | number | Yes | Number of sides |
+| thickness | number | No | Stroke thickness (DrawNgon only, default: 1.0) |
+
+---
+
+#### DrawTriangle
+
+Draws a triangle (outline or filled) on the parent Canvas.
+
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| p1 | [x, y] | Yes | First vertex |
+| p2 | [x, y] | Yes | Second vertex |
+| p3 | [x, y] | Yes | Third vertex |
+| color | [r,g,b,a] | Yes | Color |
+| filled | boolean | No | Fill vs stroke (default: false) |
+| thickness | number | No | Stroke thickness (default: 1.0) |
+
+---
+
+### Font Loading
+
+#### C++ API
+
+```cpp
+// Call before first frame, after ImGui context created
+imx::load_font("custom", "path/to/font.ttf", 16.0f);
+imx::load_font_embedded("icons", icon_data, icon_size, 14.0f);
+```
+
+#### Font Component (TSX)
+
+Wraps children with the named font. Font must be loaded in C++ first.
+
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| name | string | Yes | Name of a loaded font |
+
+```tsx
+<Font name="custom">
+  <Text>This uses the custom font</Text>
+</Font>
+```
+
+---
+
+### Phase 13 Input Components
+
+#### Vector Inputs
+
+Multi-component value editors. Available for 2, 3, and 4 components in each family:
+
+- **InputFloat2/3/4** — float input fields
+- **InputInt2/3/4** — integer input fields
+- **DragFloat2/3/4** — float drag inputs (+ `speed` prop)
+- **DragInt2/3/4** — integer drag inputs (+ `speed` prop)
+- **SliderFloat2/3/4** — float sliders (+ `min`, `max` props)
+- **SliderInt2/3/4** — integer sliders (+ `min`, `max` props)
+
+All take `label`, `value` (typed tuple), optional `onChange`, optional `style`. Struct binding works directly — arrays decay to pointers.
+
+```tsx
+<InputFloat3 label="Position" value={props.position} />
+<DragFloat2 label="Size" value={props.size} speed={0.1} />
+<SliderInt4 label="Margins" value={props.margins} min={0} max={100} />
+```
+
+---
+
+#### Button Variants
+
+| Component | Props | Description |
+|-----------|-------|-------------|
+| SmallButton | label, onPress | Compact button |
+| ArrowButton | id, direction, onPress | Directional arrow (left/right/up/down) |
+| InvisibleButton | id, width, height, onPress | Invisible hitbox |
+| ImageButton | id, src, width?, height?, onPress | Clickable image |
+
+---
+
+#### Slider Variants
+
+| Component | Props | Description |
+|-----------|-------|-------------|
+| VSliderFloat | label, value, onChange?, width, height, min, max, style? | Vertical float slider |
+| VSliderInt | label, value, onChange?, width, height, min, max, style? | Vertical int slider |
+| SliderAngle | label, value, onChange?, min?, max?, style? | Angle slider (degrees) |
+
+---
+
+#### Color Variants
+
+| Component | Props | Description |
+|-----------|-------|-------------|
+| ColorEdit3 | label, value, onChange?, style? | RGB color editor (no alpha) |
+| ColorPicker3 | label, value, onChange?, style? | RGB color picker (no alpha) |
+
+---
+
 ### Dock Configuration
 
 #### DockLayout

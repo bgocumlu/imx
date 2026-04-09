@@ -90,8 +90,14 @@ React-Native-like authoring model for Dear ImGui. Write .tsx, compile to native 
 - Don't call `before_child()` in modal/popup begin functions — overlays don't participate in layout
 - Don't work around compiler bugs by modifying example code — fix the pipeline
 
-## Current status (Phases 1-12 complete)
-- 54 host components covering all ImGui widgets
+## Current status (Phases 1-13 complete)
+- ~95 host components covering all ImGui widgets + input expansion
+- Font loading (Phase 13): `imx::load_font()` / `imx::load_font_embedded()` C++ API, `<Font name="...">` TSX container
+- Vector inputs (Phase 13): InputFloat2/3/4, InputInt2/3/4, DragFloat2/3/4, DragInt2/3/4, SliderFloat2/3/4, SliderInt2/3/4
+- Button variants (Phase 13): SmallButton, ArrowButton, InvisibleButton, ImageButton
+- Slider variants (Phase 13): VSliderFloat, VSliderInt, SliderAngle
+- Color variants (Phase 13): ColorEdit3, ColorPicker3 (RGB without alpha)
+- Advanced drawing (Phase 13): DrawBezierCubic, DrawBezierQuadratic, DrawPolyline, DrawConvexPolyFilled, DrawNgon, DrawNgonFilled, DrawTriangle
 - C++ struct binding (Phase 11): direct pointer binding for props without onChange, template render_root overload
 - Struct binding fixes (Phase 12): TextInput + InputTextMultiline struct binding, custom component pointer propagation (chains through 3+ levels), DragDrop typed payloads, auto-generated map indices
 - Adaptive frame loop: runtime-driven idle/active rendering (request_frame API)
@@ -99,7 +105,7 @@ React-Native-like authoring model for Dear ImGui. Write .tsx, compile to native 
 - Image component: runtime file loading + compile-time embed (stb_image + OpenGL texture cache)
 - Custom widgets: `imx::register_widget()` + `WidgetArgs` for C++ ImGui widgets from TSX
 - Custom themes: `imx::register_theme()` for user theme presets
-- Canvas drawing: DrawLine, DrawRect, DrawCircle, DrawText with relative coordinates
+- Canvas drawing: DrawLine, DrawRect, DrawCircle, DrawText + 7 advanced primitives with relative coordinates
 - DragDrop: DragDropSource/DragDropTarget with typed payloads
 - Style overrides: StyleColor (20 color props), StyleVar (11 style vars)
 - Multi-component support with imports, props, callbacks
@@ -108,4 +114,4 @@ React-Native-like authoring model for Dear ImGui. Write .tsx, compile to native 
 - API documentation + LLM prompt reference complete
 - Packaging: `imxc@0.5.5` on npm, FetchContent for C++ (compiler/dist/ committed)
 - Release builds hide console on Windows (WIN32_EXECUTABLE), Debug shows it
-- Next: Phase 13 candidates (GPA example, useEffect, more examples)
+- Next: Phase 14 candidates (Layout & Positioning)

@@ -58,9 +58,36 @@ InputFloat: label(string, required) | value(number, required) | onChange((v: num
 Radio: label(string, required) | value(number, required) | index(number, required) | onChange?((v: number) => void) | style?(Style)
 Selectable: label(string, required) | selected?(boolean) | onSelect?(() => void) | style?(Style)
 ColorEdit: label(string, required) | value(number[], required) | onChange((v: number[]) => void, required) | style?(Style)
+ColorEdit3: label(string, required) | value([number,number,number], required) | onChange?((v) => void) | style?(Style) — RGB only
 ColorPicker: label(string, required) | value(number[], required) | onChange((v: number[]) => void, required) | style?(Style)
+ColorPicker3: label(string, required) | value([number,number,number], required) | onChange?((v) => void) | style?(Style) — RGB only
 Combo: label(string, required) | value(number, required) | onChange((v: number) => void, required) | items(string[], required) | style?(Style)
 ListBox: label(string, required) | value(number, required) | onChange((v: number) => void, required) | items(string[], required) | style?(Style)
+SmallButton: label(string, required) | onPress(() => void, required) — compact button
+ArrowButton: id(string, required) | direction("left"|"right"|"up"|"down", required) | onPress(() => void, required)
+InvisibleButton: id(string, required) | width(number, required) | height(number, required) | onPress(() => void, required) — invisible hitbox
+ImageButton: id(string, required) | src(string, required) | width?(number) | height?(number) | onPress(() => void, required) — clickable image
+VSliderFloat: label(string, required) | value(number, required) | onChange?((v: number) => void) | width(number, required) | height(number, required) | min(number, required) | max(number, required) | style?(Style)
+VSliderInt: label(string, required) | value(number, required) | onChange?((v: number) => void) | width(number, required) | height(number, required) | min(number, required) | max(number, required) | style?(Style)
+SliderAngle: label(string, required) | value(number, required) | onChange?((v: number) => void) | min?(number) | max?(number) | style?(Style)
+InputFloat2: label(string, required) | value([number,number], required) | onChange?((v) => void) | style?(Style)
+InputFloat3: label(string, required) | value([number,number,number], required) | onChange?((v) => void) | style?(Style)
+InputFloat4: label(string, required) | value([number,number,number,number], required) | onChange?((v) => void) | style?(Style)
+InputInt2: label(string, required) | value([number,number], required) | onChange?((v) => void) | style?(Style)
+InputInt3: label(string, required) | value([number,number,number], required) | onChange?((v) => void) | style?(Style)
+InputInt4: label(string, required) | value([number,number,number,number], required) | onChange?((v) => void) | style?(Style)
+DragFloat2: label(string, required) | value([number,number], required) | onChange?((v) => void) | speed?(number) | style?(Style)
+DragFloat3: label(string, required) | value([number,number,number], required) | onChange?((v) => void) | speed?(number) | style?(Style)
+DragFloat4: label(string, required) | value([number,number,number,number], required) | onChange?((v) => void) | speed?(number) | style?(Style)
+DragInt2: label(string, required) | value([number,number], required) | onChange?((v) => void) | speed?(number) | style?(Style)
+DragInt3: label(string, required) | value([number,number,number], required) | onChange?((v) => void) | speed?(number) | style?(Style)
+DragInt4: label(string, required) | value([number,number,number,number], required) | onChange?((v) => void) | speed?(number) | style?(Style)
+SliderFloat2: label(string, required) | value([number,number], required) | onChange?((v) => void) | min(number, required) | max(number, required) | style?(Style)
+SliderFloat3: label(string, required) | value([number,number,number], required) | onChange?((v) => void) | min(number, required) | max(number, required) | style?(Style)
+SliderFloat4: label(string, required) | value([number,number,number,number], required) | onChange?((v) => void) | min(number, required) | max(number, required) | style?(Style)
+SliderInt2: label(string, required) | value([number,number], required) | onChange?((v) => void) | min(number, required) | max(number, required) | style?(Style)
+SliderInt3: label(string, required) | value([number,number,number], required) | onChange?((v) => void) | min(number, required) | max(number, required) | style?(Style)
+SliderInt4: label(string, required) | value([number,number,number,number], required) | onChange?((v) => void) | min(number, required) | max(number, required) | style?(Style)
 ```
 
 ### Overlay
@@ -83,6 +110,7 @@ Group: style?(Style) | children — BeginGroup/EndGroup, makes children act as s
 ID: scope(string|number, required) | children — PushID/PopID explicit ID scope
 Disabled: disabled?(boolean) | children — BeginDisabled/EndDisabled, grays out children (default: true)
 Child: id(string, required) | width?(number) | height?(number) | border?(boolean) | style?(Style) | children — scrollable sub-region
+Font: name(string, required) | children — PushFont/PopFont, selects a font loaded via imx::load_font() in C++
 ```
 
 ### Interaction
@@ -98,6 +126,13 @@ DrawLine: p1([x,y], required) | p2([x,y], required) | color([r,g,b,a], required)
 DrawRect: min([x,y], required) | max([x,y], required) | color([r,g,b,a], required) | filled?(boolean) | thickness?(number) | rounding?(number)
 DrawCircle: center([x,y], required) | radius(number, required) | color([r,g,b,a], required) | filled?(boolean) | thickness?(number)
 DrawText: pos([x,y], required) | text(string, required) | color([r,g,b,a], required)
+DrawBezierCubic: p1([x,y], required) | p2([x,y], required) | p3([x,y], required) | p4([x,y], required) | color([r,g,b,a], required) | thickness?(number) | segments?(number)
+DrawBezierQuadratic: p1([x,y], required) | p2([x,y], required) | p3([x,y], required) | color([r,g,b,a], required) | thickness?(number) | segments?(number)
+DrawPolyline: points([x,y][], required) | color([r,g,b,a], required) | thickness?(number) | closed?(boolean)
+DrawConvexPolyFilled: points([x,y][], required) | color([r,g,b,a], required)
+DrawNgon: center([x,y], required) | radius(number, required) | color([r,g,b,a], required) | numSegments(number, required) | thickness?(number)
+DrawNgonFilled: center([x,y], required) | radius(number, required) | color([r,g,b,a], required) | numSegments(number, required)
+DrawTriangle: p1([x,y], required) | p2([x,y], required) | p3([x,y], required) | color([r,g,b,a], required) | filled?(boolean) | thickness?(number)
 ```
 
 ### Dock Configuration

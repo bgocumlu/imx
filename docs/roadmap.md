@@ -259,7 +259,7 @@ Exit criteria:
 - struct binding works correctly through arbitrary component nesting
 - DragDrop payloads are typed per-component
 
-## Phase 13: Font Loading & Input Expansion
+## Phase 13: Font Loading & Input Expansion (DONE)
 
 Goal:
 
