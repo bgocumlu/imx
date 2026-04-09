@@ -465,6 +465,75 @@ export const HOST_COMPONENTS: Record<string, HostComponentDef> = {
         },
         hasChildren: false, isContainer: false,
     },
+    DrawBezierCubic: {
+        props: {
+            p1: { type: 'style', required: true },
+            p2: { type: 'style', required: true },
+            p3: { type: 'style', required: true },
+            p4: { type: 'style', required: true },
+            color: { type: 'style', required: true },
+            thickness: { type: 'number', required: false },
+            segments: { type: 'number', required: false },
+        },
+        hasChildren: false, isContainer: false,
+    },
+    DrawBezierQuadratic: {
+        props: {
+            p1: { type: 'style', required: true },
+            p2: { type: 'style', required: true },
+            p3: { type: 'style', required: true },
+            color: { type: 'style', required: true },
+            thickness: { type: 'number', required: false },
+            segments: { type: 'number', required: false },
+        },
+        hasChildren: false, isContainer: false,
+    },
+    DrawPolyline: {
+        props: {
+            points: { type: 'string', required: true },
+            color: { type: 'style', required: true },
+            thickness: { type: 'number', required: false },
+            closed: { type: 'boolean', required: false },
+        },
+        hasChildren: false, isContainer: false,
+    },
+    DrawConvexPolyFilled: {
+        props: {
+            points: { type: 'string', required: true },
+            color: { type: 'style', required: true },
+        },
+        hasChildren: false, isContainer: false,
+    },
+    DrawNgon: {
+        props: {
+            center: { type: 'style', required: true },
+            radius: { type: 'number', required: true },
+            color: { type: 'style', required: true },
+            numSegments: { type: 'number', required: true },
+            thickness: { type: 'number', required: false },
+        },
+        hasChildren: false, isContainer: false,
+    },
+    DrawNgonFilled: {
+        props: {
+            center: { type: 'style', required: true },
+            radius: { type: 'number', required: true },
+            color: { type: 'style', required: true },
+            numSegments: { type: 'number', required: true },
+        },
+        hasChildren: false, isContainer: false,
+    },
+    DrawTriangle: {
+        props: {
+            p1: { type: 'style', required: true },
+            p2: { type: 'style', required: true },
+            p3: { type: 'style', required: true },
+            color: { type: 'style', required: true },
+            filled: { type: 'boolean', required: false },
+            thickness: { type: 'number', required: false },
+        },
+        hasChildren: false, isContainer: false,
+    },
     Disabled: {
         props: {
             disabled: { type: 'boolean', required: false },

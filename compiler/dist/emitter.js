@@ -462,6 +462,27 @@ function emitNode(node, lines, depth) {
         case 'draw_text':
             emitDrawText(node, lines, indent);
             break;
+        case 'draw_bezier_cubic':
+            emitDrawBezierCubic(node, lines, indent);
+            break;
+        case 'draw_bezier_quadratic':
+            emitDrawBezierQuadratic(node, lines, indent);
+            break;
+        case 'draw_polyline':
+            emitDrawPolyline(node, lines, indent);
+            break;
+        case 'draw_convex_poly_filled':
+            emitDrawConvexPolyFilled(node, lines, indent);
+            break;
+        case 'draw_ngon':
+            emitDrawNgon(node, lines, indent);
+            break;
+        case 'draw_ngon_filled':
+            emitDrawNgonFilled(node, lines, indent);
+            break;
+        case 'draw_triangle':
+            emitDrawTriangle(node, lines, indent);
+            break;
         case 'input_float_n':
             emitVectorInput(node, 'input_float_n', 'float', lines, indent);
             break;
@@ -1961,6 +1982,65 @@ function emitDrawText(node, lines, indent) {
     const color = emitImVec4(node.color);
     const text = asCharPtr(node.text);
     lines.push(`${indent}imx::renderer::draw_text(${posParts.join(', ')}, ${color}, ${text});`);
+}
+function emitDrawBezierCubic(node, lines, indent) {
+    const p1 = node.p1.split(',').map((s) => emitFloat(s.trim()));
+    const p2 = node.p2.split(',').map((s) => emitFloat(s.trim()));
+    const p3 = node.p3.split(',').map((s) => emitFloat(s.trim()));
+    const p4 = node.p4.split(',').map((s) => emitFloat(s.trim()));
+    const color = emitImVec4(node.color);
+    const thickness = emitFloat(node.thickness);
+    const segments = node.segments;
+    lines.push(`${indent}imx::renderer::draw_bezier_cubic(${p1.join(', ')}, ${p2.join(', ')}, ${p3.join(', ')}, ${p4.join(', ')}, ${color}, ${thickness}, ${segments});`);
+}
+function emitDrawBezierQuadratic(node, lines, indent) {
+    const p1 = node.p1.split(',').map((s) => emitFloat(s.trim()));
+    const p2 = node.p2.split(',').map((s) => emitFloat(s.trim()));
+    const p3 = node.p3.split(',').map((s) => emitFloat(s.trim()));
+    const color = emitImVec4(node.color);
+    const thickness = emitFloat(node.thickness);
+    const segments = node.segments;
+    lines.push(`${indent}imx::renderer::draw_bezier_quadratic(${p1.join(', ')}, ${p2.join(', ')}, ${p3.join(', ')}, ${color}, ${thickness}, ${segments});`);
+}
+function emitDrawPolyline(node, lines, indent) {
+    const color = emitImVec4(node.color);
+    const thickness = emitFloat(node.thickness);
+    const closed = node.closed;
+    lines.push(`${indent}{`);
+    lines.push(`${indent}${INDENT}float _poly_pts[] = {${node.points}};`);
+    lines.push(`${indent}${INDENT}imx::renderer::draw_polyline(_poly_pts, sizeof(_poly_pts) / (2 * sizeof(float)), ${color}, ${thickness}, ${closed});`);
+    lines.push(`${indent}}`);
+}
+function emitDrawConvexPolyFilled(node, lines, indent) {
+    const color = emitImVec4(node.color);
+    lines.push(`${indent}{`);
+    lines.push(`${indent}${INDENT}float _poly_pts[] = {${node.points}};`);
+    lines.push(`${indent}${INDENT}imx::renderer::draw_convex_poly_filled(_poly_pts, sizeof(_poly_pts) / (2 * sizeof(float)), ${color});`);
+    lines.push(`${indent}}`);
+}
+function emitDrawNgon(node, lines, indent) {
+    const center = node.center.split(',').map((s) => emitFloat(s.trim()));
+    const radius = emitFloat(node.radius);
+    const color = emitImVec4(node.color);
+    const numSegments = node.numSegments;
+    const thickness = emitFloat(node.thickness);
+    lines.push(`${indent}imx::renderer::draw_ngon(${center.join(', ')}, ${radius}, ${color}, ${numSegments}, ${thickness});`);
+}
+function emitDrawNgonFilled(node, lines, indent) {
+    const center = node.center.split(',').map((s) => emitFloat(s.trim()));
+    const radius = emitFloat(node.radius);
+    const color = emitImVec4(node.color);
+    const numSegments = node.numSegments;
+    lines.push(`${indent}imx::renderer::draw_ngon_filled(${center.join(', ')}, ${radius}, ${color}, ${numSegments});`);
+}
+function emitDrawTriangle(node, lines, indent) {
+    const p1 = node.p1.split(',').map((s) => emitFloat(s.trim()));
+    const p2 = node.p2.split(',').map((s) => emitFloat(s.trim()));
+    const p3 = node.p3.split(',').map((s) => emitFloat(s.trim()));
+    const color = emitImVec4(node.color);
+    const filled = node.filled;
+    const thickness = emitFloat(node.thickness);
+    lines.push(`${indent}imx::renderer::draw_triangle(${p1.join(', ')}, ${p2.join(', ')}, ${p3.join(', ')}, ${color}, ${filled}, ${thickness});`);
 }
 function emitVectorInput(node, rendererFn, cppType, lines, indent, extraArgs = '') {
     const label = asCharPtr(node.label);

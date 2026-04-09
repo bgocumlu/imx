@@ -641,6 +641,51 @@ function App() {
         expect(output).toContain('draw_text(');
     });
 
+    it('emits DrawBezierCubic', () => {
+        const output = compile(`
+function App() {
+  return (
+    <Window title="Test">
+      <Canvas width={200} height={200}>
+        <DrawBezierCubic p1={[0,0]} p2={[50,0]} p3={[50,100]} p4={[100,100]} color={[1,1,1,1]} thickness={2} />
+      </Canvas>
+    </Window>
+  );
+}
+        `);
+        expect(output).toContain('draw_bezier_cubic(');
+    });
+
+    it('emits DrawTriangle', () => {
+        const output = compile(`
+function App() {
+  return (
+    <Window title="Test">
+      <Canvas width={200} height={200}>
+        <DrawTriangle p1={[0,0]} p2={[50,100]} p3={[100,0]} color={[1,0,0,1]} filled={true} />
+      </Canvas>
+    </Window>
+  );
+}
+        `);
+        expect(output).toContain('draw_triangle(');
+    });
+
+    it('emits DrawNgon', () => {
+        const output = compile(`
+function App() {
+  return (
+    <Window title="Test">
+      <Canvas width={200} height={200}>
+        <DrawNgon center={[50,50]} radius={30} color={[1,1,1,1]} numSegments={6} />
+      </Canvas>
+    </Window>
+  );
+}
+        `);
+        expect(output).toContain('draw_ngon(');
+    });
+
     it('emits Disabled with BeginDisabled/EndDisabled', () => {
         const output = compile(`
 function App() {

@@ -233,6 +233,21 @@ declare function DrawLine(props: DrawLineProps): any;
 declare function DrawRect(props: DrawRectProps): any;
 declare function DrawCircle(props: DrawCircleProps): any;
 declare function DrawText(props: DrawTextProps): any;
+
+interface DrawBezierCubicProps { p1: [number, number]; p2: [number, number]; p3: [number, number]; p4: [number, number]; color: [number, number, number, number]; thickness?: number; segments?: number; }
+interface DrawBezierQuadraticProps { p1: [number, number]; p2: [number, number]; p3: [number, number]; color: [number, number, number, number]; thickness?: number; segments?: number; }
+interface DrawPolylineProps { points: [number, number][]; color: [number, number, number, number]; thickness?: number; closed?: boolean; }
+interface DrawConvexPolyFilledProps { points: [number, number][]; color: [number, number, number, number]; }
+interface DrawNgonProps { center: [number, number]; radius: number; color: [number, number, number, number]; numSegments: number; thickness?: number; }
+interface DrawNgonFilledProps { center: [number, number]; radius: number; color: [number, number, number, number]; numSegments: number; }
+interface DrawTriangleProps { p1: [number, number]; p2: [number, number]; p3: [number, number]; color: [number, number, number, number]; filled?: boolean; thickness?: number; }
+declare function DrawBezierCubic(props: DrawBezierCubicProps): any;
+declare function DrawBezierQuadratic(props: DrawBezierQuadraticProps): any;
+declare function DrawPolyline(props: DrawPolylineProps): any;
+declare function DrawConvexPolyFilled(props: DrawConvexPolyFilledProps): any;
+declare function DrawNgon(props: DrawNgonProps): any;
+declare function DrawNgonFilled(props: DrawNgonFilledProps): any;
+declare function DrawTriangle(props: DrawTriangleProps): any;
 interface DisabledProps { disabled?: boolean; children?: any; }
 interface ChildProps { id: string; width?: number; height?: number; border?: boolean; style?: Style; children?: any; }
 declare function Disabled(props: DisabledProps): any;

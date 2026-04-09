@@ -625,6 +625,68 @@ function lowerJsxSelfClosing(node, body, ctx) {
             body.push({ kind: 'draw_text', pos, text, color, loc });
             break;
         }
+        case 'DrawBezierCubic': {
+            const p1 = attrs['p1'] ?? '0, 0';
+            const p2 = attrs['p2'] ?? '0, 0';
+            const p3 = attrs['p3'] ?? '0, 0';
+            const p4 = attrs['p4'] ?? '0, 0';
+            const color = attrs['color'] ?? '1, 1, 1, 1';
+            const thickness = attrs['thickness'] ?? '1.0';
+            const segments = attrs['segments'] ?? '0';
+            body.push({ kind: 'draw_bezier_cubic', p1, p2, p3, p4, color, thickness, segments, loc });
+            break;
+        }
+        case 'DrawBezierQuadratic': {
+            const p1 = attrs['p1'] ?? '0, 0';
+            const p2 = attrs['p2'] ?? '0, 0';
+            const p3 = attrs['p3'] ?? '0, 0';
+            const color = attrs['color'] ?? '1, 1, 1, 1';
+            const thickness = attrs['thickness'] ?? '1.0';
+            const segments = attrs['segments'] ?? '0';
+            body.push({ kind: 'draw_bezier_quadratic', p1, p2, p3, color, thickness, segments, loc });
+            break;
+        }
+        case 'DrawPolyline': {
+            const points = attrs['points'] ?? '';
+            const color = attrs['color'] ?? '1, 1, 1, 1';
+            const thickness = attrs['thickness'] ?? '1.0';
+            const closed = attrs['closed'] ?? 'false';
+            body.push({ kind: 'draw_polyline', points, color, thickness, closed, loc });
+            break;
+        }
+        case 'DrawConvexPolyFilled': {
+            const points = attrs['points'] ?? '';
+            const color = attrs['color'] ?? '1, 1, 1, 1';
+            body.push({ kind: 'draw_convex_poly_filled', points, color, loc });
+            break;
+        }
+        case 'DrawNgon': {
+            const center = attrs['center'] ?? '0, 0';
+            const radius = attrs['radius'] ?? '0';
+            const color = attrs['color'] ?? '1, 1, 1, 1';
+            const numSegments = attrs['numSegments'] ?? '6';
+            const thickness = attrs['thickness'] ?? '1.0';
+            body.push({ kind: 'draw_ngon', center, radius, color, numSegments, thickness, loc });
+            break;
+        }
+        case 'DrawNgonFilled': {
+            const center = attrs['center'] ?? '0, 0';
+            const radius = attrs['radius'] ?? '0';
+            const color = attrs['color'] ?? '1, 1, 1, 1';
+            const numSegments = attrs['numSegments'] ?? '6';
+            body.push({ kind: 'draw_ngon_filled', center, radius, color, numSegments, loc });
+            break;
+        }
+        case 'DrawTriangle': {
+            const p1 = attrs['p1'] ?? '0, 0';
+            const p2 = attrs['p2'] ?? '0, 0';
+            const p3 = attrs['p3'] ?? '0, 0';
+            const color = attrs['color'] ?? '1, 1, 1, 1';
+            const filled = attrs['filled'] ?? 'false';
+            const thickness = attrs['thickness'] ?? '1.0';
+            body.push({ kind: 'draw_triangle', p1, p2, p3, color, filled, thickness, loc });
+            break;
+        }
         case 'InputFloat2':
             lowerVectorInput('input_float_n', 2, attrs, rawAttrs, body, ctx, loc);
             break;

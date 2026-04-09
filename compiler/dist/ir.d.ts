@@ -26,7 +26,7 @@ export interface IRPropParam {
     name: string;
     type: IRType | 'callback';
 }
-export type IRNode = IRBeginContainer | IREndContainer | IRText | IRButton | IRTextInput | IRCheckbox | IRSeparator | IRBeginPopup | IREndPopup | IROpenPopup | IRConditional | IRListMap | IRCustomComponent | IRMenuItem | IRSliderFloat | IRSliderInt | IRDragFloat | IRDragInt | IRCombo | IRInputInt | IRInputFloat | IRColorEdit | IRListBox | IRProgressBar | IRTooltip | IRDockLayout | IRNativeWidget | IRBulletText | IRLabelText | IRSelectable | IRRadio | IRInputTextMultiline | IRColorPicker | IRColorEdit3 | IRColorPicker3 | IRPlotLines | IRPlotHistogram | IRImage | IRDrawLine | IRDrawRect | IRDrawCircle | IRDrawText | IRInputFloatN | IRInputIntN | IRDragFloatN | IRDragIntN | IRSliderFloatN | IRSliderIntN | IRSmallButton | IRArrowButton | IRInvisibleButton | IRImageButton | IRVSliderFloat | IRVSliderInt | IRSliderAngle;
+export type IRNode = IRBeginContainer | IREndContainer | IRText | IRButton | IRTextInput | IRCheckbox | IRSeparator | IRBeginPopup | IREndPopup | IROpenPopup | IRConditional | IRListMap | IRCustomComponent | IRMenuItem | IRSliderFloat | IRSliderInt | IRDragFloat | IRDragInt | IRCombo | IRInputInt | IRInputFloat | IRColorEdit | IRListBox | IRProgressBar | IRTooltip | IRDockLayout | IRNativeWidget | IRBulletText | IRLabelText | IRSelectable | IRRadio | IRInputTextMultiline | IRColorPicker | IRColorEdit3 | IRColorPicker3 | IRPlotLines | IRPlotHistogram | IRImage | IRDrawLine | IRDrawRect | IRDrawCircle | IRDrawText | IRDrawBezierCubic | IRDrawBezierQuadratic | IRDrawPolyline | IRDrawConvexPolyFilled | IRDrawNgon | IRDrawNgonFilled | IRDrawTriangle | IRInputFloatN | IRInputIntN | IRDragFloatN | IRDragIntN | IRSliderFloatN | IRSliderIntN | IRSmallButton | IRArrowButton | IRInvisibleButton | IRImageButton | IRVSliderFloat | IRVSliderInt | IRSliderAngle;
 export interface IRBeginContainer {
     kind: 'begin_container';
     tag: 'Window' | 'View' | 'Row' | 'Column' | 'DockSpace' | 'MenuBar' | 'Menu' | 'Table' | 'TableRow' | 'TabBar' | 'TabItem' | 'TreeNode' | 'CollapsingHeader' | 'Theme' | 'DockLayout' | 'DockSplit' | 'DockPanel' | 'Modal' | 'Group' | 'ID' | 'StyleColor' | 'StyleVar' | 'DragDropSource' | 'DragDropTarget' | 'Canvas' | 'Disabled' | 'Child' | 'Font';
@@ -374,6 +374,68 @@ export interface IRDrawText {
     pos: string;
     text: string;
     color: string;
+    loc?: SourceLoc;
+}
+export interface IRDrawBezierCubic {
+    kind: 'draw_bezier_cubic';
+    p1: string;
+    p2: string;
+    p3: string;
+    p4: string;
+    color: string;
+    thickness: string;
+    segments: string;
+    loc?: SourceLoc;
+}
+export interface IRDrawBezierQuadratic {
+    kind: 'draw_bezier_quadratic';
+    p1: string;
+    p2: string;
+    p3: string;
+    color: string;
+    thickness: string;
+    segments: string;
+    loc?: SourceLoc;
+}
+export interface IRDrawPolyline {
+    kind: 'draw_polyline';
+    points: string;
+    color: string;
+    thickness: string;
+    closed: string;
+    loc?: SourceLoc;
+}
+export interface IRDrawConvexPolyFilled {
+    kind: 'draw_convex_poly_filled';
+    points: string;
+    color: string;
+    loc?: SourceLoc;
+}
+export interface IRDrawNgon {
+    kind: 'draw_ngon';
+    center: string;
+    radius: string;
+    color: string;
+    numSegments: string;
+    thickness: string;
+    loc?: SourceLoc;
+}
+export interface IRDrawNgonFilled {
+    kind: 'draw_ngon_filled';
+    center: string;
+    radius: string;
+    color: string;
+    numSegments: string;
+    loc?: SourceLoc;
+}
+export interface IRDrawTriangle {
+    kind: 'draw_triangle';
+    p1: string;
+    p2: string;
+    p3: string;
+    color: string;
+    filled: string;
+    thickness: string;
     loc?: SourceLoc;
 }
 export interface IRInputFloatN {

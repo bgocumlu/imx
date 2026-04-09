@@ -44,6 +44,8 @@ export type IRNode =
     | IRPlotLines | IRPlotHistogram
     | IRImage
     | IRDrawLine | IRDrawRect | IRDrawCircle | IRDrawText
+    | IRDrawBezierCubic | IRDrawBezierQuadratic | IRDrawPolyline | IRDrawConvexPolyFilled
+    | IRDrawNgon | IRDrawNgonFilled | IRDrawTriangle
     | IRInputFloatN | IRInputIntN | IRDragFloatN | IRDragIntN | IRSliderFloatN | IRSliderIntN
     | IRSmallButton | IRArrowButton | IRInvisibleButton | IRImageButton
     | IRVSliderFloat | IRVSliderInt | IRSliderAngle;
@@ -123,6 +125,13 @@ export interface IRDrawLine { kind: 'draw_line'; p1: string; p2: string; color: 
 export interface IRDrawRect { kind: 'draw_rect'; min: string; max: string; color: string; filled: string; thickness: string; rounding: string; loc?: SourceLoc; }
 export interface IRDrawCircle { kind: 'draw_circle'; center: string; radius: string; color: string; filled: string; thickness: string; loc?: SourceLoc; }
 export interface IRDrawText { kind: 'draw_text'; pos: string; text: string; color: string; loc?: SourceLoc; }
+export interface IRDrawBezierCubic { kind: 'draw_bezier_cubic'; p1: string; p2: string; p3: string; p4: string; color: string; thickness: string; segments: string; loc?: SourceLoc; }
+export interface IRDrawBezierQuadratic { kind: 'draw_bezier_quadratic'; p1: string; p2: string; p3: string; color: string; thickness: string; segments: string; loc?: SourceLoc; }
+export interface IRDrawPolyline { kind: 'draw_polyline'; points: string; color: string; thickness: string; closed: string; loc?: SourceLoc; }
+export interface IRDrawConvexPolyFilled { kind: 'draw_convex_poly_filled'; points: string; color: string; loc?: SourceLoc; }
+export interface IRDrawNgon { kind: 'draw_ngon'; center: string; radius: string; color: string; numSegments: string; thickness: string; loc?: SourceLoc; }
+export interface IRDrawNgonFilled { kind: 'draw_ngon_filled'; center: string; radius: string; color: string; numSegments: string; loc?: SourceLoc; }
+export interface IRDrawTriangle { kind: 'draw_triangle'; p1: string; p2: string; p3: string; color: string; filled: string; thickness: string; loc?: SourceLoc; }
 
 export interface IRInputFloatN { kind: 'input_float_n'; label: string; count: number; valueExpr: string; directBind?: boolean; onChangeExpr?: string; style?: string; loc?: SourceLoc; }
 export interface IRInputIntN { kind: 'input_int_n'; label: string; count: number; valueExpr: string; directBind?: boolean; onChangeExpr?: string; style?: string; loc?: SourceLoc; }
