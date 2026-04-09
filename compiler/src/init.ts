@@ -225,7 +225,7 @@ interface CheckboxProps extends ItemInteractionProps { value: boolean; onChange?
 interface SeparatorProps {}
 interface PopupProps { id: string; style?: Style; children?: any; }
 interface ContextMenuProps { id?: string; target?: "item" | "window"; mouseButton?: "left" | "right" | "middle"; children?: any; }
-interface MultiSelectProps { singleSelect?: boolean; noSelectAll?: boolean; noRangeSelect?: boolean; noAutoSelect?: boolean; noAutoClear?: boolean; selectionSize?: number; itemsCount?: number; onSelectionChange?: (io: any) => void; children?: any; }
+interface MultiSelectProps { singleSelect?: boolean; noSelectAll?: boolean; noRangeSelect?: boolean; noAutoSelect?: boolean; noAutoClear?: boolean; boxSelect?: boolean; boxSelect2d?: boolean; boxSelectNoScroll?: boolean; clearOnClickVoid?: boolean; selectionSize?: number; itemsCount?: number; onSelectionChange?: (io: any) => void; children?: any; }
 interface DockSpaceProps { style?: Style; children?: any; }
 interface DockLayoutProps { children?: any; }
 interface DockSplitProps { direction: "horizontal" | "vertical"; size: number; children?: any; }

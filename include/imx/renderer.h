@@ -213,6 +213,7 @@ void end_context_menu();
 ImGuiMultiSelectIO* begin_multi_select(int flags, int selection_size, int items_count);
 ImGuiMultiSelectIO* end_multi_select();
 void set_next_item_selection_data(int index);
+void apply_multi_select_requests(ImGuiMultiSelectIO* ms_io, bool* selection, int count);
 
 void begin_dockspace(const Style& style = {}, bool has_menu_bar = false);
 void end_dockspace();

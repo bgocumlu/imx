@@ -43,9 +43,7 @@ export default function App() {
   const [phase16ContextMessage, setPhase16ContextMessage] = useState("Right-click the target button or this window.");
   const [phase17ComboIdx, setPhase17ComboIdx] = useState(0);
   const [phase17CtxMsg, setPhase17CtxMsg] = useState("Left-click the button below.");
-  const [phase17Sel0, setPhase17Sel0] = useState(false);
-  const [phase17Sel1, setPhase17Sel1] = useState(false);
-  const [phase17Sel2, setPhase17Sel2] = useState(false);
+  const [phase17ModalShow, setPhase17ModalShow] = useState(false);
 
   return (
     <Theme preset="dark" accentColor={[0.9, 0.2, 0.2, 1.0]} backgroundColor={[0.12, 0.12, 0.15, 1.0]} textColor={[0.95, 0.95, 0.95, 1.0]} borderColor={[0.3, 0.3, 0.35, 1.0]} surfaceColor={[0.18, 0.18, 0.22, 1.0]} rounding={6}>
@@ -499,13 +497,13 @@ export default function App() {
         </Canvas>
       </Window>
       <Window title="Phase 17"
-              x={600} y={100} width={420} height={350}
+              x={600} y={100} width={420} height={400}
               minWidth={250} minHeight={150} maxWidth={800} maxHeight={600}
-              horizontalScrollbar bgAlpha={0.95}>
+              bgAlpha={0.95}>
         <Column gap={4}>
           <Text>Phase 17: Window & Popup Control</Text>
           <Separator />
-          <Text>Positioned at (600,100), sized 420x350 (once).</Text>
+          <Text>Positioned at (600,100), sized 420x400 (once).</Text>
           <Text>Drag/resize freely — min/max constraints active.</Text>
           <Separator />
           <Text>Manual Combo (Begin/End mode):</Text>
@@ -524,10 +522,12 @@ export default function App() {
           </ContextMenu>
           <Text>{phase17CtxMsg}</Text>
           <Separator />
-          <Text>MultiSelect (click, Ctrl+click, Shift+click):</Text>
-          <Selectable label="Item Alpha" selected={phase17Sel0} onSelect={() => setPhase17Sel0(!phase17Sel0)} />
-          <Selectable label="Item Beta" selected={phase17Sel1} onSelect={() => setPhase17Sel1(!phase17Sel1)} />
-          <Selectable label="Item Gamma" selected={phase17Sel2} onSelect={() => setPhase17Sel2(!phase17Sel2)} />
+          <Text>Modal with alwaysAutoResize:</Text>
+          <Button title="Open Modal" onPress={() => setPhase17ModalShow(true)} />
+          <Modal title="Auto-Sized Modal" open={phase17ModalShow} onClose={() => setPhase17ModalShow(false)} alwaysAutoResize>
+            <Text>This modal auto-resizes to fit content.</Text>
+            <Button title="Close" onPress={() => setPhase17ModalShow(false)} />
+          </Modal>
         </Column>
       </Window>
       <Modal title="Confirm Action" open={showConfirm} onClose={() => setShowConfirm(false)}>

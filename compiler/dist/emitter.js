@@ -1350,6 +1350,14 @@ function emitBeginContainer(node, lines, indent) {
                 flagParts.push('ImGuiMultiSelectFlags_NoAutoSelect');
             if (node.props['noAutoClear'] === 'true')
                 flagParts.push('ImGuiMultiSelectFlags_NoAutoClear');
+            if (node.props['boxSelect'] === 'true')
+                flagParts.push('ImGuiMultiSelectFlags_BoxSelect1d');
+            if (node.props['boxSelect2d'] === 'true')
+                flagParts.push('ImGuiMultiSelectFlags_BoxSelect2d');
+            if (node.props['boxSelectNoScroll'] === 'true')
+                flagParts.push('ImGuiMultiSelectFlags_BoxSelectNoScroll');
+            if (node.props['clearOnClickVoid'] === 'true')
+                flagParts.push('ImGuiMultiSelectFlags_ClearOnClickVoid');
             const flags = flagParts.length > 0 ? flagParts.join(' | ') : '0';
             const selSize = node.props['selectionSize'] ?? '-1';
             const itemCount = node.props['itemsCount'] ?? '-1';

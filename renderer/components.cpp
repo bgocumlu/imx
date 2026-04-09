@@ -329,6 +329,22 @@ void set_next_item_selection_data(int index) {
     ImGui::SetNextItemSelectionUserData(static_cast<ImGuiSelectionUserData>(index));
 }
 
+void apply_multi_select_requests(ImGuiMultiSelectIO* ms_io, bool* selection, int count) {
+    if (!ms_io) return;
+    for (auto& req : ms_io->Requests) {
+        if (req.Type == ImGuiSelectionRequestType_SetAll) {
+            for (int i = 0; i < count; i++)
+                selection[i] = req.Selected;
+        } else if (req.Type == ImGuiSelectionRequestType_SetRange) {
+            int first = static_cast<int>(req.RangeFirstItem);
+            int last = static_cast<int>(req.RangeLastItem);
+            if (first > last) { int tmp = first; first = last; last = tmp; }
+            for (int i = first; i <= last && i < count; i++)
+                selection[i] = req.Selected;
+        }
+    }
+}
+
 void begin_dockspace(const Style& style, bool has_menu_bar) {
     g_table_id = 0;
     g_tabbar_id = 0;
