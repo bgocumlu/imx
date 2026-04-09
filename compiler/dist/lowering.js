@@ -94,6 +94,11 @@ function normalizePropTypeText(typeText) {
         return 'bool';
     if (trimmed === 'string')
         return 'string';
+    // Array types: boolean[] -> bool*, number[] -> float*
+    if (trimmed === 'boolean[]')
+        return 'bool*';
+    if (trimmed === 'number[]')
+        return 'float*';
     return trimmed;
 }
 function inferPropType(member) {
@@ -144,6 +149,9 @@ function inferTypeFromExpr(expr) {
         return 'bool';
     if (ts.isArrayLiteralExpression(expr))
         return isIntegerArrayLiteral(expr) ? 'int_array' : 'color';
+    // AsExpression (e.g. [1.0, 0.0] as [number, number]): infer from inner expression
+    if (ts.isAsExpression(expr))
+        return inferTypeFromExpr(expr.expression);
     // Default to int
     return 'int';
 }
@@ -158,6 +166,9 @@ function exprToLiteral(expr) {
         return 'true';
     if (expr.kind === ts.SyntaxKind.FalseKeyword)
         return 'false';
+    // AsExpression (e.g. [1.0, 0.0] as [number, number]): strip the type cast
+    if (ts.isAsExpression(expr))
+        return exprToLiteral(expr.expression);
     if (ts.isArrayLiteralExpression(expr)) {
         const elements = expr.elements.map(e => {
             const text = e.getText();
@@ -296,6 +307,10 @@ export function exprToCpp(node, ctx) {
     // Array literal: ["a", "b"] -> "\"a\", \"b\""
     if (ts.isArrayLiteralExpression(node)) {
         return node.elements.map(e => exprToCpp(e, ctx)).join(', ');
+    }
+    // AsExpression (e.g. expr as Type): strip the type cast, emit inner expression
+    if (ts.isAsExpression(node)) {
+        return exprToCpp(node.expression, ctx);
     }
     // Fallback: use text representation
     return node.getText();

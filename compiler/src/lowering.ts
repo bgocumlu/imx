@@ -140,6 +140,9 @@ function normalizePropTypeText(typeText: string): string {
     if (trimmed === 'number') return 'int';
     if (trimmed === 'boolean') return 'bool';
     if (trimmed === 'string') return 'string';
+    // Array types: boolean[] -> bool*, number[] -> float*
+    if (trimmed === 'boolean[]') return 'bool*';
+    if (trimmed === 'number[]') return 'float*';
     return trimmed;
 }
 
@@ -193,6 +196,8 @@ function inferTypeFromExpr(expr: ts.Expression): IRType {
     if (ts.isStringLiteral(expr) || ts.isNoSubstitutionTemplateLiteral(expr)) return 'string';
     if (expr.kind === ts.SyntaxKind.TrueKeyword || expr.kind === ts.SyntaxKind.FalseKeyword) return 'bool';
     if (ts.isArrayLiteralExpression(expr)) return isIntegerArrayLiteral(expr) ? 'int_array' : 'color';
+    // AsExpression (e.g. [1.0, 0.0] as [number, number]): infer from inner expression
+    if (ts.isAsExpression(expr)) return inferTypeFromExpr(expr.expression);
     // Default to int
     return 'int';
 }
@@ -205,6 +210,8 @@ function exprToLiteral(expr: ts.Expression): string {
     if (ts.isStringLiteral(expr)) return JSON.stringify(expr.text);
     if (expr.kind === ts.SyntaxKind.TrueKeyword) return 'true';
     if (expr.kind === ts.SyntaxKind.FalseKeyword) return 'false';
+    // AsExpression (e.g. [1.0, 0.0] as [number, number]): strip the type cast
+    if (ts.isAsExpression(expr)) return exprToLiteral(expr.expression);
     if (ts.isArrayLiteralExpression(expr)) {
         const elements = expr.elements.map(e => {
             const text = e.getText();
@@ -352,6 +359,11 @@ export function exprToCpp(node: ts.Expression, ctx: LoweringContext): string {
     // Array literal: ["a", "b"] -> "\"a\", \"b\""
     if (ts.isArrayLiteralExpression(node)) {
         return node.elements.map(e => exprToCpp(e as ts.Expression, ctx)).join(', ');
+    }
+
+    // AsExpression (e.g. expr as Type): strip the type cast, emit inner expression
+    if (ts.isAsExpression(node)) {
+        return exprToCpp(node.expression, ctx);
     }
 
     // Fallback: use text representation

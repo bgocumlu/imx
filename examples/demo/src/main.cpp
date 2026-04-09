@@ -83,9 +83,9 @@ int main() {
 
     // Register custom widget for AdvancedDemo
     imx::register_widget("ToggleSwitch", [](imx::WidgetArgs& a) {
-        bool val = a.get_float(0) > 0.5F;
+        bool val = a.get<float>("value") > 0.5F;
         if (ImGui::Checkbox("##toggle", &val)) {
-            a.set_result(val ? 1.0F : 0.0F);
+            a.call("onToggle", val ? 1.0F : 0.0F);
         }
     });
 

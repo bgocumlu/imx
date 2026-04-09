@@ -30,7 +30,7 @@ export default function App(props: DemoState) {
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   return (
-    <Font name="inter-ui" src="Inter-Regular.ttf" size={16} embed>
+    <Font name="inter-ui" src="Inter-Regular.ttf" size={16}>
     <DockSpace>
       <Window title="IMX Demo">
         <Column gap={4}>
@@ -66,7 +66,7 @@ export default function App(props: DemoState) {
       {showCanvas && <CanvasDemo onClose={() => setShowCanvas(false)} />}
       {showTheming && <ThemingDemo onClose={() => setShowTheming(false)} />}
       {showImages && <ImagesDemo onClose={() => setShowImages(false)} />}
-      {showAdvanced && <AdvancedDemo onClose={() => setShowAdvanced(false)} ms_selected={props.ms_selected} ms_selection_count={props.ms_selection_count} apply_selection={props.apply_selection} />}
+      {showAdvanced && <AdvancedDemo onClose={() => setShowAdvanced(false)} />}
     </DockSpace>
     </Font>
   );
