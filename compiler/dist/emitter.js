@@ -991,6 +991,39 @@ function emitBeginContainer(node, lines, indent) {
             if (node.props['alwaysHorizontalScrollbar'] === 'true')
                 flagParts.push('ImGuiWindowFlags_AlwaysHorizontalScrollbar');
             const flags = flagParts.length > 0 ? flagParts.join(' | ') : '0';
+            // Window positioning
+            const xExpr = node.props['x'];
+            const yExpr = node.props['y'];
+            if (xExpr && yExpr) {
+                const posCond = node.props['forcePosition'] === 'true' ? 'ImGuiCond_Always' : 'ImGuiCond_Once';
+                lines.push(`${indent}ImGui::SetNextWindowPos(ImVec2(${xExpr}, ${yExpr}), ${posCond});`);
+            }
+            // Window sizing
+            const wExpr = node.props['width'];
+            const hExpr = node.props['height'];
+            if (wExpr || hExpr) {
+                const sizeCond = node.props['forceSize'] === 'true' ? 'ImGuiCond_Always' : 'ImGuiCond_Once';
+                const sw = wExpr ?? '0.0f';
+                const sh = hExpr ?? '0.0f';
+                lines.push(`${indent}ImGui::SetNextWindowSize(ImVec2(${sw}, ${sh}), ${sizeCond});`);
+            }
+            // Window size constraints
+            const minW = node.props['minWidth'];
+            const minH = node.props['minHeight'];
+            const maxW = node.props['maxWidth'];
+            const maxH = node.props['maxHeight'];
+            if (minW || minH || maxW || maxH) {
+                const cminW = minW ?? '0.0f';
+                const cminH = minH ?? '0.0f';
+                const cmaxW = maxW ?? 'FLT_MAX';
+                const cmaxH = maxH ?? 'FLT_MAX';
+                lines.push(`${indent}ImGui::SetNextWindowSizeConstraints(ImVec2(${cminW}, ${cminH}), ImVec2(${cmaxW}, ${cmaxH}));`);
+            }
+            // Window background alpha
+            const bgAlpha = node.props['bgAlpha'];
+            if (bgAlpha) {
+                lines.push(`${indent}ImGui::SetNextWindowBgAlpha(${bgAlpha});`);
+            }
             const openExpr = node.props['open'];
             const onCloseExpr = node.props['onClose'];
             if (openExpr) {
