@@ -218,4 +218,75 @@ function App(props: { speed: number }) {
             expect(slider.valueExpr).toBe('props.speed');
         }
     });
+
+    it('lowers Phase 14 layout containers', () => {
+        const ir = lower(`
+function App() {
+  return (
+    <MainMenuBar>
+      <Menu label="File">
+        <MenuItem label="Exit" />
+      </Menu>
+    </MainMenuBar>
+  );
+}
+        `);
+
+        expect(ir.body[0]).toMatchObject({ kind: 'begin_container', tag: 'MainMenuBar' });
+        expect(ir.body[1]).toMatchObject({ kind: 'begin_container', tag: 'Menu' });
+        expect(ir.body[3]).toMatchObject({ kind: 'end_container', tag: 'Menu' });
+        expect(ir.body[4]).toMatchObject({ kind: 'end_container', tag: 'MainMenuBar' });
+    });
+
+    it('lowers Phase 14 layout primitives', () => {
+        const ir = lower(`
+function App() {
+  return (
+    <Window title="Layout">
+      <Indent width={20}>
+        <TextWrap width={220}>
+          <Text>Wrapped</Text>
+        </TextWrap>
+      </Indent>
+      <Spacing />
+      <Dummy width={48} height={12} />
+      <SameLine offset={16} spacing={8} />
+      <NewLine />
+      <Cursor x={96} y={44} />
+    </Window>
+  );
+}
+        `);
+
+        expect(ir.body[1]).toMatchObject({ kind: 'begin_container', tag: 'Indent', props: { width: '20' } });
+        expect(ir.body[2]).toMatchObject({ kind: 'begin_container', tag: 'TextWrap', props: { width: '220' } });
+        expect(ir.body[4]).toMatchObject({ kind: 'end_container', tag: 'TextWrap' });
+        expect(ir.body[5]).toMatchObject({ kind: 'end_container', tag: 'Indent' });
+        expect(ir.body[6]).toMatchObject({ kind: 'spacing' });
+        expect(ir.body[7]).toMatchObject({ kind: 'dummy', width: '48', height: '12' });
+        expect(ir.body[8]).toMatchObject({ kind: 'same_line', offset: '16', spacing: '8' });
+        expect(ir.body[9]).toMatchObject({ kind: 'new_line' });
+        expect(ir.body[10]).toMatchObject({ kind: 'cursor', x: '96', y: '44' });
+    });
+
+    it('lowers width props for scalar, buffered, and vector inputs', () => {
+        const ir = lower(`
+function App() {
+  const [name, setName] = useState("");
+  const [speed, setSpeed] = useState(5.0);
+  const [position, setPosition] = useState([1.0, 2.0, 3.0]);
+  return (
+    <Window title="Inputs">
+      <TextInput label="Name" value={name} onChange={setName} width={180} />
+      <SliderFloat label="Speed" value={speed} onChange={setSpeed} min={0} max={10} width={140} />
+      <InputFloat3 label="Position" value={position} width={220} />
+    </Window>
+  );
+}
+        `);
+
+        expect(ir.body[1]).toMatchObject({ kind: 'text_input', width: '180' });
+        expect(ir.body[2]).toMatchObject({ kind: 'slider_float', width: '140' });
+        expect(ir.body[3]).toMatchObject({ kind: 'input_float_n', width: '220' });
+    });
 });

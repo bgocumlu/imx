@@ -3,6 +3,28 @@
 IMX: write .tsx with JSX components and useState hooks. Compiles to native Dear ImGui C++ apps.
 Compile: `node compiler/dist/index.js App.tsx [Other.tsx ...] -o build/generated`
 
+## Font Loading (C++)
+
+```cpp
+imx::FontOptions ui_font{};
+ui_font.pixel_snap_h = true;
+ui_font.oversample_h = 2;
+ui_font.oversample_v = 2;
+ui_font.rasterizer_multiply = 1.1f;
+
+imx::load_font("inter-ui", "Inter-Regular.ttf", 16.0f, ui_font);
+imx::load_font("jetbrains-mono", "JetBrainsMono-Regular.ttf", 15.0f);
+imx::set_default_font("inter-ui");
+```
+
+Utilities:
+`load_font(name, path, size, options?) -> ImFont*`
+`load_font_embedded(name, data, data_size, size, options?) -> ImFont*`
+`find_font(name) -> ImFont*`
+`set_default_font(name) -> bool`
+
+`FontOptions`: `pixel_snap_h`, `oversample_h`, `oversample_v`, `rasterizer_multiply`, `merge_mode`
+
 ## Components
 
 ### Layout
@@ -10,13 +32,21 @@ Compile: `node compiler/dist/index.js App.tsx [Other.tsx ...] -o build/generated
 DockSpace: style?(Style) | children — top-level docking container
 Window: title(string, required) | style?(Style) | children — ImGui window with title bar
 View: style?(Style) | children — generic container
+Indent: width?(number) | children — temporary indentation for child items
+TextWrap: width(number, required) | children — push text wrap boundary relative to current cursor
 Row: gap?(number) | style?(Style) | children — horizontal layout
 Column: gap?(number) | style?(Style) | children — vertical layout
+Spacing: (no props) — insert one standard vertical gap
+Dummy: width(number, required) | height(number, required) — invisible placeholder item
+SameLine: offset?(number) | spacing?(number) — place next item inline with explicit positioning
+NewLine: (no props) — force line break
+Cursor: x(number, required) | y(number, required) — move cursor for next item
 ```
 
 ### Navigation
 ```
-MenuBar: children — top-level menu bar
+MainMenuBar: children — full-screen application menu bar
+MenuBar: children — window-local menu bar
 Menu: label(string, required) | children — dropdown menu
 MenuItem: label(string, required) | onPress?(() => void) | shortcut?(string) — menu action
 TabBar: style?(Style) | children — tab container
@@ -90,6 +120,8 @@ SliderInt3: label(string, required) | value([number,number,number], required) | 
 SliderInt4: label(string, required) | value([number,number,number,number], required) | onChange?((v) => void) | min(number, required) | max(number, required) | style?(Style)
 ```
 
+Phase 14 width note: `TextInput`, `InputTextMultiline`, scalar inputs, vector inputs, sliders, drags, `Combo`, `ListBox`, `ColorEdit3`, and `ColorPicker3` also accept `width?(number)`.
+
 ### Overlay
 ```
 Modal: title(string, required) | open?(boolean) | onClose?(() => void) | style?(Style) | children — blocking modal dialog
@@ -148,6 +180,7 @@ DockPanel: children (string) — assigns window titles to a dock region
 const [value, setValue] = useState(initialValue);
 ```
 Types: `number`, `string`, `boolean`, `number[]` (for ColorEdit RGBA)
+Also supported: fixed tuples for vector widgets, e.g. `[number, number]`, `[number, number, number]`, `[number, number, number, number]`
 Color format: `[r, g, b, a]` with floats 0.0-1.0
 
 ## Style

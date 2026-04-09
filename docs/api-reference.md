@@ -127,11 +127,63 @@ Vertical layout container. Children are stacked top to bottom.
 
 ---
 
+#### Indent
+
+Temporarily indents all child items by the given width. Use this for inspector-style nesting, callouts, and manual alignment that should still participate in normal layout flow.
+
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| width | number | No | Indentation width in pixels. Defaults to ImGui's current indent spacing |
+
+```tsx
+<Indent width={20}>
+  <Text>Indented content</Text>
+</Indent>
+```
+
+---
+
+#### TextWrap
+
+Pushes a text wrap boundary for child text widgets. The width is relative to the current cursor position.
+
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| width | number | Yes | Wrap boundary in pixels from the current cursor position |
+
+```tsx
+<TextWrap width={240}>
+  <Text>This paragraph wraps within a 240px boundary.</Text>
+</TextWrap>
+```
+
+---
+
 ### Navigation
+
+#### MainMenuBar
+
+Application-wide full-screen menu bar. Use this at the top level when you want Dear ImGui's main menu strip rather than a menu bar scoped to a window.
+
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| *(none)* | | | |
+
+```tsx
+<MainMenuBar>
+  <Menu label="File">
+    <MenuItem label="Open" shortcut="Ctrl+O" />
+  </Menu>
+</MainMenuBar>
+```
+
+> **Note:** Prefer `MainMenuBar` for app-level menus. Use `MenuBar` inside a `Window` or `Child` for local chrome.
+
+---
 
 #### MenuBar
 
-Top-level menu bar. Must contain `Menu` children.
+Window-local menu bar. Must contain `Menu` children.
 
 | Prop | Type | Required | Description |
 |------|------|----------|-------------|
@@ -146,7 +198,7 @@ Top-level menu bar. Must contain `Menu` children.
 </MenuBar>
 ```
 
-> **Note:** Place MenuBar as a direct child of DockSpace for an application-level menu bar.
+> **Note:** Use `MenuBar` inside a `Window` or `Child`. For an application-level menu strip, use `MainMenuBar`.
 
 ---
 
@@ -336,6 +388,94 @@ A horizontal line separator. Takes no props.
 
 ---
 
+#### Spacing
+
+Inserts one standard vertical item-spacing gap.
+
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| *(none)* | | | |
+
+```tsx
+<Text>Above</Text>
+<Spacing />
+<Text>Below</Text>
+```
+
+---
+
+#### Dummy
+
+Invisible placeholder item with an explicit size. Useful for reserving space in manual layouts.
+
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| width | number | Yes | Placeholder width in pixels |
+| height | number | Yes | Placeholder height in pixels |
+
+```tsx
+<Text>Left</Text>
+<SameLine spacing={8} />
+<Dummy width={24} height={0} />
+<SameLine spacing={8} />
+<Text>Right</Text>
+```
+
+---
+
+#### SameLine
+
+Places the next item on the same row with optional offset and spacing control. This complements `Row` when you need explicit per-item inline flow.
+
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| offset | number | No | X offset from the start of the line |
+| spacing | number | No | Spacing from the previous item. Defaults to ImGui spacing |
+
+```tsx
+<Button title="Apply" onPress={save} />
+<SameLine spacing={8} />
+<Button title="Cancel" onPress={close} />
+```
+
+---
+
+#### NewLine
+
+Forces a line break in the current layout flow.
+
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| *(none)* | | | |
+
+```tsx
+<Text>Inline</Text>
+<SameLine />
+<Text>content</Text>
+<NewLine />
+<Text>Next row</Text>
+```
+
+---
+
+#### Cursor
+
+Moves the cursor for the next item inside the current window or child region. Coordinates are relative to the current content origin.
+
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| x | number | Yes | Cursor X position in pixels |
+| y | number | Yes | Cursor Y position in pixels |
+
+```tsx
+<Child id="overlay" width={280} height={160} border>
+  <Cursor x={96} y={52} />
+  <Button title="Placed" onPress={() => {}} />
+</Child>
+```
+
+---
+
 #### ProgressBar
 
 A horizontal progress bar.
@@ -370,6 +510,8 @@ Displays a tooltip. Typically shown when the previous item is hovered.
 
 ### Inputs
 
+> **Note:** Phase 14 adds an explicit top-level `width` prop to input-like widgets. This maps to ImGui's per-item width handling and works alongside `style`.
+
 #### Button
 
 A clickable button.
@@ -399,11 +541,12 @@ A single-line text input field.
 | onChange | (v: string) => void | Yes | Called with the new text when the user types |
 | label | string | No | Label displayed next to the input |
 | placeholder | string | No | Placeholder text when empty |
+| width | number | No | Per-item width in pixels |
 | style | Style | No | Layout and appearance styles |
 
 ```tsx
 const [name, setName] = useState("");
-<TextInput value={name} onChange={setName} label="Name" placeholder="Enter name" />
+<TextInput value={name} onChange={setName} label="Name" placeholder="Enter name" width={220} />
 ```
 
 ---
@@ -437,11 +580,12 @@ A floating-point slider with min/max range.
 | onChange | (v: number) => void | Yes | Called with the new value when dragged |
 | min | number | Yes | Minimum slider value |
 | max | number | Yes | Maximum slider value |
+| width | number | No | Per-item width in pixels |
 | style | Style | No | Layout and appearance styles |
 
 ```tsx
 const [speed, setSpeed] = useState(5.0);
-<SliderFloat label="Speed" value={speed} onChange={setSpeed} min={0} max={100} />
+<SliderFloat label="Speed" value={speed} onChange={setSpeed} min={0} max={100} width={180} />
 ```
 
 ---
@@ -647,14 +791,15 @@ A multi-line text editor for editing larger text content.
 |------|------|----------|-------------|
 | label | string | Yes | Label displayed above the text editor |
 | value | string | Yes | Current text value (bound to state) |
-| style | Style | No | Layout and appearance styles (width/height control size) |
+| width | number | No | Per-item width in pixels |
+| style | Style | No | Layout and appearance styles (use `height` to control editor height) |
 
 ```tsx
 const [notes, setNotes] = useState("");
-<InputTextMultiline label="Notes" value={notes} onChange={setNotes} style={{ width: 400, height: 200 }} />
+<InputTextMultiline label="Notes" value={notes} onChange={setNotes} width={400} style={{ height: 200 }} />
 ```
 
-> **Note:** Unlike TextInput, this component renders as a multi-line editor. Use `width` and `height` in styles to control the editor dimensions.
+> **Note:** Unlike TextInput, this component renders as a multi-line editor. Use the `width` prop for per-item width and `style.height` for the editor height.
 
 ---
 
@@ -1208,9 +1353,30 @@ Draws a triangle (outline or filled) on the parent Canvas.
 
 ```cpp
 // Call before first frame, after ImGui context created
-imx::load_font("custom", "path/to/font.ttf", 16.0f);
+imx::FontOptions ui_font{};
+ui_font.pixel_snap_h = true;
+ui_font.oversample_h = 2;
+ui_font.oversample_v = 2;
+ui_font.rasterizer_multiply = 1.1f;
+
+imx::load_font("inter-ui", "path/to/Inter-Regular.ttf", 16.0f, ui_font);
 imx::load_font_embedded("icons", icon_data, icon_size, 14.0f);
+imx::set_default_font("inter-ui");
+
+ImFont* mono = imx::find_font("jetbrains-mono");
 ```
+
+`load_font()` / `load_font_embedded()` return the loaded `ImFont*`. `set_default_font()` makes a previously loaded font the app-wide default, while `<Font>` in TSX is still the scoped per-subtree override.
+
+#### FontOptions
+
+| Field | Type | Default | Description |
+|------|------|---------|-------------|
+| pixel_snap_h | bool | `true` | Snap glyphs horizontally for crisper small text |
+| oversample_h | int | `2` | Horizontal oversampling for atlas rasterization |
+| oversample_v | int | `2` | Vertical oversampling for atlas rasterization |
+| rasterizer_multiply | float | `1.0f` | Brightness/weight multiplier for glyph rasterization |
+| merge_mode | bool | `false` | Merge glyphs into the previously added font |
 
 #### Font Component (TSX)
 
@@ -1225,6 +1391,8 @@ Wraps children with the named font. Font must be loaded in C++ first.
   <Text>This uses the custom font</Text>
 </Font>
 ```
+
+> **Note:** For best results, load a dedicated UI font as the default app font in C++ and use `<Font>` for specialized regions such as code, logs, or diagnostics.
 
 ---
 
@@ -1241,7 +1409,7 @@ Multi-component value editors. Available for 2, 3, and 4 components in each fami
 - **SliderFloat2/3/4** — float sliders (+ `min`, `max` props)
 - **SliderInt2/3/4** — integer sliders (+ `min`, `max` props)
 
-All take `label`, `value` (typed tuple), optional `onChange`, optional `style`. Struct binding works directly — arrays decay to pointers.
+All take `label`, `value` (typed tuple), optional `onChange`, optional `width`, optional `style`. Struct binding works directly — arrays decay to pointers.
 
 ```tsx
 <InputFloat3 label="Position" value={props.position} />
@@ -1268,7 +1436,7 @@ All take `label`, `value` (typed tuple), optional `onChange`, optional `style`. 
 |-----------|-------|-------------|
 | VSliderFloat | label, value, onChange?, width, height, min, max, style? | Vertical float slider |
 | VSliderInt | label, value, onChange?, width, height, min, max, style? | Vertical int slider |
-| SliderAngle | label, value, onChange?, min?, max?, style? | Angle slider (degrees) |
+| SliderAngle | label, value, onChange?, min?, max?, width?, style? | Angle slider (degrees) |
 
 ---
 
@@ -1276,8 +1444,35 @@ All take `label`, `value` (typed tuple), optional `onChange`, optional `style`. 
 
 | Component | Props | Description |
 |-----------|-------|-------------|
-| ColorEdit3 | label, value, onChange?, style? | RGB color editor (no alpha) |
-| ColorPicker3 | label, value, onChange?, style? | RGB color picker (no alpha) |
+| ColorEdit3 | label, value, onChange?, width?, style? | RGB color editor (no alpha) |
+| ColorPicker3 | label, value, onChange?, width?, style? | RGB color picker (no alpha) |
+
+---
+
+### Phase 14 Layout & Positioning
+
+#### Manual Layout Primitives
+
+| Component | Props | Description |
+|-----------|-------|-------------|
+| Indent | width?, children | Temporarily indents child items |
+| TextWrap | width, children | Pushes a text wrap boundary relative to the current cursor |
+| Spacing | *(none)* | Inserts one standard vertical spacing gap |
+| Dummy | width, height | Invisible placeholder item |
+| SameLine | offset?, spacing? | Places the next item inline with explicit positioning |
+| NewLine | *(none)* | Forces a line break |
+| Cursor | x, y | Moves the cursor for the next item |
+| MainMenuBar | children | Application-wide full-screen menu bar |
+
+#### Input Width
+
+`TextInput`, scalar inputs, vector inputs, sliders, drags, combos, list boxes, `InputTextMultiline`, `ColorEdit3`, and `ColorPicker3` all accept a top-level `width` prop.
+
+```tsx
+<TextInput label="Alias" value={alias} onChange={setAlias} width={180} />
+<InputFloat3 label="Position" value={position} width={220} />
+<SliderAngle label="Heading" value={angle} onChange={setAngle} width={180} />
+```
 
 ---
 
@@ -1337,6 +1532,7 @@ const [value, setValue] = useState(initialValue);
 | string | `useState("")` | Text string |
 | boolean | `useState(false)` | True/false |
 | number[] | `useState([1.0, 0.5, 0.0, 1.0])` | Color array (for ColorEdit) |
+| fixed tuples | `useState([0.0, 1.0])`, `useState([1.0, 2.0, 3.0])`, `useState([8, 16, 24, 32])` | Vector input/drag/slider state for 2/3/4-component widgets |
 
 **How state works:**
 
@@ -1763,3 +1959,4 @@ cmake --build build
 # Run
 ./build/hello_app    # or ./build/Debug/hello_app on Windows
 ```
+

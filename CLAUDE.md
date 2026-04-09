@@ -17,7 +17,7 @@ React-Native-like authoring model for Dear ImGui. Write .tsx, compile to native 
 ## Key architecture decisions
 - State identity: compiler-assigned slot indices (not call-order like React)
 - Instance identity: hybrid positional + key-based
-- Layout: BeginGroup + layout stack (not BeginChild) — before_child() handles SameLine for Row, gap for Column, TableNextColumn for TableRow
+- Layout: BeginGroup + layout stack (not BeginChild) — before_child() handles SameLine for Row, gap for Column, TableNextColumn for TableRow; manual placement primitives set skip_next_placement so parent layout doesn't fight SameLine/NewLine/Cursor
 - Callbacks: stored std::function for future-proofing, but MVP inlines into if-blocks for immediate widgets
 - TextInput: runtime-owned persistent buffers, sync each frame. Supports struct binding (directBind syncs buffer to/from struct field)
 - ImGui ID scoping: begin_instance/end_instance calls PushID/PopID (guarded by GetCurrentContext for tests)
@@ -90,8 +90,9 @@ React-Native-like authoring model for Dear ImGui. Write .tsx, compile to native 
 - Don't call `before_child()` in modal/popup begin functions — overlays don't participate in layout
 - Don't work around compiler bugs by modifying example code — fix the pipeline
 
-## Current status (Phases 1-13 complete)
+## Current status (Phases 1-14 complete)
 - ~95 host components covering all ImGui widgets + input expansion
+- Layout & positioning (Phase 14): MainMenuBar, Indent, TextWrap, Spacing, Dummy, SameLine, NewLine, Cursor, explicit `width` prop on input-like widgets
 - Font loading (Phase 13): `imx::load_font()` / `imx::load_font_embedded()` C++ API, `<Font name="...">` TSX container
 - Vector inputs (Phase 13): InputFloat2/3/4, InputInt2/3/4, DragFloat2/3/4, DragInt2/3/4, SliderFloat2/3/4, SliderInt2/3/4
 - Button variants (Phase 13): SmallButton, ArrowButton, InvisibleButton, ImageButton
@@ -114,4 +115,4 @@ React-Native-like authoring model for Dear ImGui. Write .tsx, compile to native 
 - API documentation + LLM prompt reference complete
 - Packaging: `imxc@0.5.5` on npm, FetchContent for C++ (compiler/dist/ committed)
 - Release builds hide console on Windows (WIN32_EXECUTABLE), Debug shows it
-- Next: Phase 14 candidates (Layout & Positioning)
+- Next: Phase 15 candidates (Table & Tree Enhancements)

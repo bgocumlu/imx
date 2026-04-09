@@ -53,19 +53,22 @@ function emitDirectBindPtr(valueExpr) {
 function emitImVec4(arrayStr) {
     const parts = arrayStr.split(',').map(s => {
         const v = s.trim();
-        return v.includes('.') ? `${v}f` : `${v}.0f`;
+        return /^-?\d+(\.\d+)?$/.test(v) ? (v.includes('.') ? `${v}f` : `${v}.0f`) : v;
     });
     return `ImVec4(${parts.join(', ')})`;
 }
 function emitImVec2(arrayStr) {
     const parts = arrayStr.split(',').map(s => {
         const v = s.trim();
-        return v.includes('.') ? `${v}f` : `${v}.0f`;
+        return /^-?\d+(\.\d+)?$/.test(v) ? (v.includes('.') ? `${v}f` : `${v}.0f`) : v;
     });
     return `ImVec2(${parts.join(', ')})`;
 }
 function emitFloat(val) {
-    return val.includes('.') ? `${val}F` : `${val}.0F`;
+    const trimmed = val.trim();
+    if (!/^-?\d+(\.\d+)?$/.test(trimmed))
+        return trimmed;
+    return trimmed.includes('.') ? `${trimmed}F` : `${trimmed}.0F`;
 }
 function findDockLayout(nodes) {
     for (const node of nodes) {
@@ -363,6 +366,21 @@ function emitNode(node, lines, depth) {
         case 'separator':
             lines.push(`${indent}imx::renderer::separator();`);
             break;
+        case 'spacing':
+            emitSpacing(node, lines, indent);
+            break;
+        case 'dummy':
+            emitDummy(node, lines, indent);
+            break;
+        case 'same_line':
+            emitSameLine(node, lines, indent);
+            break;
+        case 'new_line':
+            emitNewLine(node, lines, indent);
+            break;
+        case 'cursor':
+            emitCursor(node, lines, indent);
+            break;
         case 'begin_popup':
             emitLocComment(node.loc, 'Popup', lines, indent);
             lines.push(`${indent}if (imx::renderer::begin_popup(${node.id})) {`);
@@ -584,53 +602,65 @@ function splitStylePairs(inner) {
         pairs.push(last);
     return pairs;
 }
+function assignStyleExpr(varName, styleExpr, indent, lines) {
+    const trimmed = styleExpr.trim();
+    if (!trimmed)
+        return;
+    if (!trimmed.startsWith('{') || !trimmed.endsWith('}')) {
+        lines.push(`${indent}${varName} = ${trimmed};`);
+        return;
+    }
+    const inner = trimmed.slice(1, -1).trim();
+    if (!inner)
+        return;
+    const pairs = splitStylePairs(inner);
+    for (const pair of pairs) {
+        const colonIdx = pair.indexOf(':');
+        if (colonIdx === -1)
+            continue;
+        const key = pair.substring(0, colonIdx).trim();
+        const val = pair.substring(colonIdx + 1).trim();
+        const cppKey = key === 'paddingHorizontal' ? 'padding_horizontal'
+            : key === 'paddingVertical' ? 'padding_vertical'
+                : key === 'minWidth' ? 'min_width'
+                    : key === 'minHeight' ? 'min_height'
+                        : key === 'backgroundColor' ? 'background_color'
+                            : key === 'textColor' ? 'text_color'
+                                : key === 'fontSize' ? 'font_size'
+                                    : key;
+        if (cppKey === 'background_color' || cppKey === 'text_color') {
+            const arrInner = val.trim().replace(/^\[/, '').replace(/\]$/, '');
+            const components = arrInner.split(',').map(c => {
+                const s = c.trim();
+                return /^-?\d+(\.\d+)?$/.test(s) ? (s.includes('.') ? `${s}f` : `${s}.0f`) : s;
+            });
+            lines.push(`${indent}${varName}.${cppKey} = ImVec4(${components.join(', ')});`);
+        }
+        else {
+            lines.push(`${indent}${varName}.${cppKey} = ${emitFloat(val)};`);
+        }
+    }
+}
 function buildStyleVar(styleExpr, indent, lines) {
     if (!styleExpr)
         return null;
-    // Check if it looks like an object literal: { key: value, ... }
-    const trimmed = styleExpr.trim();
-    if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
-        const inner = trimmed.slice(1, -1).trim();
-        if (!inner)
-            return null;
-        const varName = `style_${styleCounter++}`;
-        lines.push(`${indent}imx::Style ${varName};`);
-        // Parse key: value pairs (bracket-aware to handle array values)
-        const pairs = splitStylePairs(inner);
-        for (const pair of pairs) {
-            const colonIdx = pair.indexOf(':');
-            if (colonIdx === -1)
-                continue;
-            const key = pair.substring(0, colonIdx).trim();
-            const val = pair.substring(colonIdx + 1).trim();
-            // Map camelCase to snake_case
-            const cppKey = key === 'paddingHorizontal' ? 'padding_horizontal'
-                : key === 'paddingVertical' ? 'padding_vertical'
-                    : key === 'minWidth' ? 'min_width'
-                        : key === 'minHeight' ? 'min_height'
-                            : key === 'backgroundColor' ? 'background_color'
-                                : key === 'textColor' ? 'text_color'
-                                    : key === 'fontSize' ? 'font_size'
-                                        : key;
-            // ImVec4 fields (color arrays)
-            if (cppKey === 'background_color' || cppKey === 'text_color') {
-                // val is like [r, g, b, a] — convert to ImVec4(r, g, b, a)
-                const arrInner = val.trim().replace(/^\[/, '').replace(/\]$/, '');
-                const components = arrInner.split(',').map(c => {
-                    const s = c.trim();
-                    return s.includes('.') ? `${s}f` : `${s}.0f`;
-                });
-                lines.push(`${indent}${varName}.${cppKey} = ImVec4(${components.join(', ')});`);
-            }
-            else {
-                const floatVal = val.includes('.') ? `${val}F` : `${val}.0F`;
-                lines.push(`${indent}${varName}.${cppKey} = ${floatVal};`);
-            }
-        }
-        return varName;
+    const varName = `style_${styleCounter++}`;
+    lines.push(`${indent}imx::Style ${varName};`);
+    assignStyleExpr(varName, styleExpr, indent, lines);
+    return varName;
+}
+function buildWidgetStyleVar(styleExpr, widthExpr, indent, lines) {
+    if (!styleExpr && !widthExpr)
+        return null;
+    const varName = `style_${styleCounter++}`;
+    lines.push(`${indent}imx::Style ${varName};`);
+    if (styleExpr) {
+        assignStyleExpr(varName, styleExpr, indent, lines);
     }
-    // Already a variable name or expression — return as-is
-    return styleExpr;
+    if (widthExpr) {
+        lines.push(`${indent}${varName}.width = ${emitFloat(widthExpr)};`);
+    }
+    return varName;
 }
 function buildStyleBlock(node, indent, lines) {
     // Check for style-related props (gap, padding, width, height, etc.)
@@ -659,9 +689,7 @@ function buildStyleBlock(node, indent, lines) {
     const varName = `style_${styleCounter++}`;
     lines.push(`${indent}imx::Style ${varName};`);
     for (const [key, val] of Object.entries(styleProps)) {
-        // Ensure the value is a float literal (e.g., 8 -> 8.0F, 8.5 -> 8.5F)
-        const floatVal = val.includes('.') ? `${val}F` : `${val}.0F`;
-        lines.push(`${indent}${varName}.${key} = ${floatVal};`);
+        lines.push(`${indent}${varName}.${key} = ${emitFloat(val)};`);
     }
     return varName;
 }
@@ -731,6 +759,15 @@ function emitBeginContainer(node, lines, indent) {
             }
             break;
         }
+        case 'Indent': {
+            const width = node.props['width'] ? emitFloat(node.props['width']) : '0.0F';
+            lines.push(`${indent}imx::renderer::begin_indent(${width});`);
+            break;
+        }
+        case 'TextWrap': {
+            lines.push(`${indent}imx::renderer::begin_text_wrap(${emitFloat(node.props['width'] ?? '0')});`);
+            break;
+        }
         case 'DockSpace': {
             const style = buildStyleBlock(node, indent, lines);
             const hasMenuBar = node.props['hasMenuBar'] === 'true';
@@ -743,6 +780,10 @@ function emitBeginContainer(node, lines, indent) {
             else {
                 lines.push(`${indent}imx::renderer::begin_dockspace();`);
             }
+            break;
+        }
+        case 'MainMenuBar': {
+            lines.push(`${indent}if (imx::renderer::begin_main_menu_bar()) {`);
             break;
         }
         case 'MenuBar': {
@@ -982,8 +1023,18 @@ function emitEndContainer(node, lines, indent) {
         case 'View':
             lines.push(`${indent}imx::renderer::end_view();`);
             break;
+        case 'Indent':
+            lines.push(`${indent}imx::renderer::end_indent();`);
+            break;
+        case 'TextWrap':
+            lines.push(`${indent}imx::renderer::end_text_wrap();`);
+            break;
         case 'DockSpace':
             lines.push(`${indent}imx::renderer::end_dockspace();`);
+            break;
+        case 'MainMenuBar':
+            lines.push(`${indent}imx::renderer::end_main_menu_bar();`);
+            lines.push(`${indent}}`);
             break;
         case 'MenuBar':
             lines.push(`${indent}imx::renderer::end_menu_bar();`);
@@ -1219,11 +1270,14 @@ function emitTextInput(node, lines, indent) {
     const label = asCharPtr(node.label && node.label !== '""' ? node.label : `"##textinput_${node.bufferIndex}"`);
     if (node.stateVar) {
         lines.push(`${indent}{`);
-        lines.push(`${indent}${INDENT}auto& buf = ctx.get_buffer(${node.bufferIndex});`);
-        lines.push(`${indent}${INDENT}buf.sync_from(${node.stateVar}.get());`);
-        lines.push(`${indent}${INDENT}if (imx::renderer::text_input(${label}, buf)) {`);
-        lines.push(`${indent}${INDENT}${INDENT}${node.stateVar}.set(buf.value());`);
-        lines.push(`${indent}${INDENT}}`);
+        const innerIndent = indent + INDENT;
+        const styleVar = buildWidgetStyleVar(node.style, node.width, innerIndent, lines);
+        const styleArg = styleVar ? `, ${styleVar}` : '';
+        lines.push(`${innerIndent}auto& buf = ctx.get_buffer(${node.bufferIndex});`);
+        lines.push(`${innerIndent}buf.sync_from(${node.stateVar}.get());`);
+        lines.push(`${innerIndent}if (imx::renderer::text_input(${label}, buf${styleArg})) {`);
+        lines.push(`${innerIndent}${INDENT}${node.stateVar}.set(buf.value());`);
+        lines.push(`${innerIndent}}`);
         lines.push(`${indent}}`);
     }
     else if (node.directBind && node.valueExpr) {
@@ -1232,27 +1286,38 @@ function emitTextInput(node, lines, indent) {
         const readExpr = isBound ? `(*${node.valueExpr})` : node.valueExpr;
         const writeExpr = isBound ? `(*${node.valueExpr})` : node.valueExpr;
         lines.push(`${indent}{`);
-        lines.push(`${indent}${INDENT}auto& buf = ctx.get_buffer(${node.bufferIndex});`);
-        lines.push(`${indent}${INDENT}buf.sync_from(${readExpr});`);
-        lines.push(`${indent}${INDENT}if (imx::renderer::text_input(${label}, buf)) {`);
-        lines.push(`${indent}${INDENT}${INDENT}${writeExpr} = buf.value();`);
-        lines.push(`${indent}${INDENT}}`);
+        const innerIndent = indent + INDENT;
+        const styleVar = buildWidgetStyleVar(node.style, node.width, innerIndent, lines);
+        const styleArg = styleVar ? `, ${styleVar}` : '';
+        lines.push(`${innerIndent}auto& buf = ctx.get_buffer(${node.bufferIndex});`);
+        lines.push(`${innerIndent}buf.sync_from(${readExpr});`);
+        lines.push(`${innerIndent}if (imx::renderer::text_input(${label}, buf${styleArg})) {`);
+        lines.push(`${innerIndent}${INDENT}${writeExpr} = buf.value();`);
+        lines.push(`${innerIndent}}`);
         lines.push(`${indent}}`);
     }
     else if (node.valueExpr !== undefined) {
         lines.push(`${indent}{`);
-        lines.push(`${indent}${INDENT}auto& buf = ctx.get_buffer(${node.bufferIndex});`);
-        lines.push(`${indent}${INDENT}buf.sync_from(${node.valueExpr});`);
-        lines.push(`${indent}${INDENT}if (imx::renderer::text_input(${label}, buf)) {`);
+        const innerIndent = indent + INDENT;
+        const styleVar = buildWidgetStyleVar(node.style, node.width, innerIndent, lines);
+        const styleArg = styleVar ? `, ${styleVar}` : '';
+        lines.push(`${innerIndent}auto& buf = ctx.get_buffer(${node.bufferIndex});`);
+        lines.push(`${innerIndent}buf.sync_from(${node.valueExpr});`);
+        lines.push(`${innerIndent}if (imx::renderer::text_input(${label}, buf${styleArg})) {`);
         if (node.onChangeExpr) {
-            lines.push(`${indent}${INDENT}${INDENT}${node.onChangeExpr};`);
+            lines.push(`${innerIndent}${INDENT}${node.onChangeExpr};`);
         }
-        lines.push(`${indent}${INDENT}}`);
+        lines.push(`${innerIndent}}`);
         lines.push(`${indent}}`);
     }
     else {
-        lines.push(`${indent}auto& buf_${node.bufferIndex} = ctx.get_buffer(${node.bufferIndex});`);
-        lines.push(`${indent}imx::renderer::text_input(${label}, buf_${node.bufferIndex});`);
+        lines.push(`${indent}{`);
+        const innerIndent = indent + INDENT;
+        const styleVar = buildWidgetStyleVar(node.style, node.width, innerIndent, lines);
+        const styleArg = styleVar ? `, ${styleVar}` : '';
+        lines.push(`${innerIndent}auto& buf_${node.bufferIndex} = ctx.get_buffer(${node.bufferIndex});`);
+        lines.push(`${innerIndent}imx::renderer::text_input(${label}, buf_${node.bufferIndex}${styleArg});`);
+        lines.push(`${indent}}`);
     }
 }
 function emitCheckbox(node, lines, indent) {
@@ -1286,6 +1351,26 @@ function emitCheckbox(node, lines, indent) {
     else {
         lines.push(`${indent}imx::renderer::checkbox(${label}, nullptr);`);
     }
+}
+function emitSpacing(node, lines, indent) {
+    emitLocComment(node.loc, 'Spacing', lines, indent);
+    lines.push(`${indent}imx::renderer::spacing();`);
+}
+function emitDummy(node, lines, indent) {
+    emitLocComment(node.loc, 'Dummy', lines, indent);
+    lines.push(`${indent}imx::renderer::dummy(${emitFloat(node.width)}, ${emitFloat(node.height)});`);
+}
+function emitSameLine(node, lines, indent) {
+    emitLocComment(node.loc, 'SameLine', lines, indent);
+    lines.push(`${indent}imx::renderer::same_line(${emitFloat(node.offset)}, ${emitFloat(node.spacing)});`);
+}
+function emitNewLine(node, lines, indent) {
+    emitLocComment(node.loc, 'NewLine', lines, indent);
+    lines.push(`${indent}imx::renderer::new_line();`);
+}
+function emitCursor(node, lines, indent) {
+    emitLocComment(node.loc, 'Cursor', lines, indent);
+    lines.push(`${indent}imx::renderer::set_cursor_pos(${emitFloat(node.x)}, ${emitFloat(node.y)});`);
 }
 function emitConditional(node, lines, indent, depth) {
     if (node.loc) {
@@ -1364,11 +1449,10 @@ function emitNativeWidget(node, lines, indent) {
     lines.push(`${indent}}`);
 }
 function ensureFloatLiteral(val) {
-    // If already has 'f' suffix or '.', leave as-is
-    if (val.endsWith('f') || val.endsWith('F') || val.includes('.'))
-        return val;
-    // Append .0f to make it a float literal
-    return `${val}.0f`;
+    const trimmed = val.trim();
+    if (!/^-?\d+(\.\d+)?$/.test(trimmed))
+        return trimmed;
+    return trimmed.includes('.') ? `${trimmed}f` : `${trimmed}.0f`;
 }
 function emitSliderFloat(node, lines, indent) {
     emitLocComment(node.loc, 'SliderFloat', lines, indent);
@@ -1377,24 +1461,31 @@ function emitSliderFloat(node, lines, indent) {
     const max = ensureFloatLiteral(node.max);
     if (node.stateVar) {
         lines.push(`${indent}{`);
-        lines.push(`${indent}${INDENT}float val = ${node.stateVar}.get();`);
-        lines.push(`${indent}${INDENT}if (imx::renderer::slider_float(${label}, &val, ${min}, ${max})) {`);
-        lines.push(`${indent}${INDENT}${INDENT}${node.stateVar}.set(val);`);
-        lines.push(`${indent}${INDENT}}`);
+        const innerIndent = indent + INDENT;
+        const styleVar = buildWidgetStyleVar(node.style, node.width, innerIndent, lines);
+        const styleArg = styleVar ? `, ${styleVar}` : '';
+        lines.push(`${innerIndent}float val = ${node.stateVar}.get();`);
+        lines.push(`${innerIndent}if (imx::renderer::slider_float(${label}, &val, ${min}, ${max}${styleArg})) {`);
+        lines.push(`${innerIndent}${INDENT}${node.stateVar}.set(val);`);
+        lines.push(`${innerIndent}}`);
         lines.push(`${indent}}`);
     }
     else if (node.directBind && node.valueExpr) {
-        // Direct pointer binding
-        lines.push(`${indent}imx::renderer::slider_float(${label}, ${emitDirectBindPtr(node.valueExpr)}, ${min}, ${max});`);
+        const styleVar = buildWidgetStyleVar(node.style, node.width, indent, lines);
+        const styleArg = styleVar ? `, ${styleVar}` : '';
+        lines.push(`${indent}imx::renderer::slider_float(${label}, ${emitDirectBindPtr(node.valueExpr)}, ${min}, ${max}${styleArg});`);
     }
     else if (node.valueExpr !== undefined) {
         lines.push(`${indent}{`);
-        lines.push(`${indent}${INDENT}float val = ${node.valueExpr};`);
-        lines.push(`${indent}${INDENT}if (imx::renderer::slider_float(${label}, &val, ${min}, ${max})) {`);
+        const innerIndent = indent + INDENT;
+        const styleVar = buildWidgetStyleVar(node.style, node.width, innerIndent, lines);
+        const styleArg = styleVar ? `, ${styleVar}` : '';
+        lines.push(`${innerIndent}float val = ${node.valueExpr};`);
+        lines.push(`${innerIndent}if (imx::renderer::slider_float(${label}, &val, ${min}, ${max}${styleArg})) {`);
         if (node.onChangeExpr) {
-            lines.push(`${indent}${INDENT}${INDENT}${node.onChangeExpr};`);
+            lines.push(`${innerIndent}${INDENT}${node.onChangeExpr};`);
         }
-        lines.push(`${indent}${INDENT}}`);
+        lines.push(`${innerIndent}}`);
         lines.push(`${indent}}`);
     }
 }
@@ -1403,23 +1494,31 @@ function emitSliderInt(node, lines, indent) {
     const label = asCharPtr(node.label);
     if (node.stateVar) {
         lines.push(`${indent}{`);
-        lines.push(`${indent}${INDENT}int val = ${node.stateVar}.get();`);
-        lines.push(`${indent}${INDENT}if (imx::renderer::slider_int(${label}, &val, ${node.min}, ${node.max})) {`);
-        lines.push(`${indent}${INDENT}${INDENT}${node.stateVar}.set(val);`);
-        lines.push(`${indent}${INDENT}}`);
+        const innerIndent = indent + INDENT;
+        const styleVar = buildWidgetStyleVar(node.style, node.width, innerIndent, lines);
+        const styleArg = styleVar ? `, ${styleVar}` : '';
+        lines.push(`${innerIndent}int val = ${node.stateVar}.get();`);
+        lines.push(`${innerIndent}if (imx::renderer::slider_int(${label}, &val, ${node.min}, ${node.max}${styleArg})) {`);
+        lines.push(`${innerIndent}${INDENT}${node.stateVar}.set(val);`);
+        lines.push(`${innerIndent}}`);
         lines.push(`${indent}}`);
     }
     else if (node.directBind && node.valueExpr) {
-        lines.push(`${indent}imx::renderer::slider_int(${label}, ${emitDirectBindPtr(node.valueExpr)}, ${node.min}, ${node.max});`);
+        const styleVar = buildWidgetStyleVar(node.style, node.width, indent, lines);
+        const styleArg = styleVar ? `, ${styleVar}` : '';
+        lines.push(`${indent}imx::renderer::slider_int(${label}, ${emitDirectBindPtr(node.valueExpr)}, ${node.min}, ${node.max}${styleArg});`);
     }
     else if (node.valueExpr !== undefined) {
         lines.push(`${indent}{`);
-        lines.push(`${indent}${INDENT}int val = ${node.valueExpr};`);
-        lines.push(`${indent}${INDENT}if (imx::renderer::slider_int(${label}, &val, ${node.min}, ${node.max})) {`);
+        const innerIndent = indent + INDENT;
+        const styleVar = buildWidgetStyleVar(node.style, node.width, innerIndent, lines);
+        const styleArg = styleVar ? `, ${styleVar}` : '';
+        lines.push(`${innerIndent}int val = ${node.valueExpr};`);
+        lines.push(`${innerIndent}if (imx::renderer::slider_int(${label}, &val, ${node.min}, ${node.max}${styleArg})) {`);
         if (node.onChangeExpr) {
-            lines.push(`${indent}${INDENT}${INDENT}${node.onChangeExpr};`);
+            lines.push(`${innerIndent}${INDENT}${node.onChangeExpr};`);
         }
-        lines.push(`${indent}${INDENT}}`);
+        lines.push(`${innerIndent}}`);
         lines.push(`${indent}}`);
     }
 }
@@ -1486,23 +1585,31 @@ function emitSliderAngle(node, lines, indent) {
     const max = ensureFloatLiteral(node.max);
     if (node.stateVar) {
         lines.push(`${indent}{`);
-        lines.push(`${indent}${INDENT}float val = ${node.stateVar}.get();`);
-        lines.push(`${indent}${INDENT}if (imx::renderer::slider_angle(${label}, &val, ${min}, ${max})) {`);
-        lines.push(`${indent}${INDENT}${INDENT}${node.stateVar}.set(val);`);
-        lines.push(`${indent}${INDENT}}`);
+        const innerIndent = indent + INDENT;
+        const styleVar = buildWidgetStyleVar(node.style, node.width, innerIndent, lines);
+        const styleArg = styleVar ? `, ${styleVar}` : '';
+        lines.push(`${innerIndent}float val = ${node.stateVar}.get();`);
+        lines.push(`${innerIndent}if (imx::renderer::slider_angle(${label}, &val, ${min}, ${max}${styleArg})) {`);
+        lines.push(`${innerIndent}${INDENT}${node.stateVar}.set(val);`);
+        lines.push(`${innerIndent}}`);
         lines.push(`${indent}}`);
     }
     else if (node.directBind && node.valueExpr) {
-        lines.push(`${indent}imx::renderer::slider_angle(${label}, ${emitDirectBindPtr(node.valueExpr)}, ${min}, ${max});`);
+        const styleVar = buildWidgetStyleVar(node.style, node.width, indent, lines);
+        const styleArg = styleVar ? `, ${styleVar}` : '';
+        lines.push(`${indent}imx::renderer::slider_angle(${label}, ${emitDirectBindPtr(node.valueExpr)}, ${min}, ${max}${styleArg});`);
     }
     else if (node.valueExpr !== undefined) {
         lines.push(`${indent}{`);
-        lines.push(`${indent}${INDENT}float val = ${node.valueExpr};`);
-        lines.push(`${indent}${INDENT}if (imx::renderer::slider_angle(${label}, &val, ${min}, ${max})) {`);
+        const innerIndent = indent + INDENT;
+        const styleVar = buildWidgetStyleVar(node.style, node.width, innerIndent, lines);
+        const styleArg = styleVar ? `, ${styleVar}` : '';
+        lines.push(`${innerIndent}float val = ${node.valueExpr};`);
+        lines.push(`${innerIndent}if (imx::renderer::slider_angle(${label}, &val, ${min}, ${max}${styleArg})) {`);
         if (node.onChangeExpr) {
-            lines.push(`${indent}${INDENT}${INDENT}${node.onChangeExpr};`);
+            lines.push(`${innerIndent}${INDENT}${node.onChangeExpr};`);
         }
-        lines.push(`${indent}${INDENT}}`);
+        lines.push(`${innerIndent}}`);
         lines.push(`${indent}}`);
     }
 }
@@ -1512,23 +1619,31 @@ function emitDragFloat(node, lines, indent) {
     const speed = ensureFloatLiteral(node.speed);
     if (node.stateVar) {
         lines.push(`${indent}{`);
-        lines.push(`${indent}${INDENT}float val = ${node.stateVar}.get();`);
-        lines.push(`${indent}${INDENT}if (imx::renderer::drag_float(${label}, &val, ${speed})) {`);
-        lines.push(`${indent}${INDENT}${INDENT}${node.stateVar}.set(val);`);
-        lines.push(`${indent}${INDENT}}`);
+        const innerIndent = indent + INDENT;
+        const styleVar = buildWidgetStyleVar(node.style, node.width, innerIndent, lines);
+        const styleArg = styleVar ? `, ${styleVar}` : '';
+        lines.push(`${innerIndent}float val = ${node.stateVar}.get();`);
+        lines.push(`${innerIndent}if (imx::renderer::drag_float(${label}, &val, ${speed}${styleArg})) {`);
+        lines.push(`${innerIndent}${INDENT}${node.stateVar}.set(val);`);
+        lines.push(`${innerIndent}}`);
         lines.push(`${indent}}`);
     }
     else if (node.directBind && node.valueExpr) {
-        lines.push(`${indent}imx::renderer::drag_float(${label}, ${emitDirectBindPtr(node.valueExpr)}, ${speed});`);
+        const styleVar = buildWidgetStyleVar(node.style, node.width, indent, lines);
+        const styleArg = styleVar ? `, ${styleVar}` : '';
+        lines.push(`${indent}imx::renderer::drag_float(${label}, ${emitDirectBindPtr(node.valueExpr)}, ${speed}${styleArg});`);
     }
     else if (node.valueExpr !== undefined) {
         lines.push(`${indent}{`);
-        lines.push(`${indent}${INDENT}float val = ${node.valueExpr};`);
-        lines.push(`${indent}${INDENT}if (imx::renderer::drag_float(${label}, &val, ${speed})) {`);
+        const innerIndent = indent + INDENT;
+        const styleVar = buildWidgetStyleVar(node.style, node.width, innerIndent, lines);
+        const styleArg = styleVar ? `, ${styleVar}` : '';
+        lines.push(`${innerIndent}float val = ${node.valueExpr};`);
+        lines.push(`${innerIndent}if (imx::renderer::drag_float(${label}, &val, ${speed}${styleArg})) {`);
         if (node.onChangeExpr) {
-            lines.push(`${indent}${INDENT}${INDENT}${node.onChangeExpr};`);
+            lines.push(`${innerIndent}${INDENT}${node.onChangeExpr};`);
         }
-        lines.push(`${indent}${INDENT}}`);
+        lines.push(`${innerIndent}}`);
         lines.push(`${indent}}`);
     }
 }
@@ -1538,23 +1653,31 @@ function emitDragInt(node, lines, indent) {
     const speed = ensureFloatLiteral(node.speed);
     if (node.stateVar) {
         lines.push(`${indent}{`);
-        lines.push(`${indent}${INDENT}int val = ${node.stateVar}.get();`);
-        lines.push(`${indent}${INDENT}if (imx::renderer::drag_int(${label}, &val, ${speed})) {`);
-        lines.push(`${indent}${INDENT}${INDENT}${node.stateVar}.set(val);`);
-        lines.push(`${indent}${INDENT}}`);
+        const innerIndent = indent + INDENT;
+        const styleVar = buildWidgetStyleVar(node.style, node.width, innerIndent, lines);
+        const styleArg = styleVar ? `, ${styleVar}` : '';
+        lines.push(`${innerIndent}int val = ${node.stateVar}.get();`);
+        lines.push(`${innerIndent}if (imx::renderer::drag_int(${label}, &val, ${speed}${styleArg})) {`);
+        lines.push(`${innerIndent}${INDENT}${node.stateVar}.set(val);`);
+        lines.push(`${innerIndent}}`);
         lines.push(`${indent}}`);
     }
     else if (node.directBind && node.valueExpr) {
-        lines.push(`${indent}imx::renderer::drag_int(${label}, ${emitDirectBindPtr(node.valueExpr)}, ${speed});`);
+        const styleVar = buildWidgetStyleVar(node.style, node.width, indent, lines);
+        const styleArg = styleVar ? `, ${styleVar}` : '';
+        lines.push(`${indent}imx::renderer::drag_int(${label}, ${emitDirectBindPtr(node.valueExpr)}, ${speed}${styleArg});`);
     }
     else if (node.valueExpr !== undefined) {
         lines.push(`${indent}{`);
-        lines.push(`${indent}${INDENT}int val = ${node.valueExpr};`);
-        lines.push(`${indent}${INDENT}if (imx::renderer::drag_int(${label}, &val, ${speed})) {`);
+        const innerIndent = indent + INDENT;
+        const styleVar = buildWidgetStyleVar(node.style, node.width, innerIndent, lines);
+        const styleArg = styleVar ? `, ${styleVar}` : '';
+        lines.push(`${innerIndent}int val = ${node.valueExpr};`);
+        lines.push(`${innerIndent}if (imx::renderer::drag_int(${label}, &val, ${speed}${styleArg})) {`);
         if (node.onChangeExpr) {
-            lines.push(`${indent}${INDENT}${INDENT}${node.onChangeExpr};`);
+            lines.push(`${innerIndent}${INDENT}${node.onChangeExpr};`);
         }
-        lines.push(`${indent}${INDENT}}`);
+        lines.push(`${innerIndent}}`);
         lines.push(`${indent}}`);
     }
 }
@@ -1566,28 +1689,37 @@ function emitCombo(node, lines, indent) {
     const varName = `combo_items_${comboCounter++}`;
     if (node.stateVar) {
         lines.push(`${indent}{`);
-        lines.push(`${indent}${INDENT}const char* ${varName}[] = {${itemsList.join(', ')}};`);
-        lines.push(`${indent}${INDENT}int val = ${node.stateVar}.get();`);
-        lines.push(`${indent}${INDENT}if (imx::renderer::combo(${label}, &val, ${varName}, ${count})) {`);
-        lines.push(`${indent}${INDENT}${INDENT}${node.stateVar}.set(val);`);
-        lines.push(`${indent}${INDENT}}`);
+        const innerIndent = indent + INDENT;
+        const styleVar = buildWidgetStyleVar(node.style, node.width, innerIndent, lines);
+        const styleArg = styleVar ? `, ${styleVar}` : '';
+        lines.push(`${innerIndent}const char* ${varName}[] = {${itemsList.join(', ')}};`);
+        lines.push(`${innerIndent}int val = ${node.stateVar}.get();`);
+        lines.push(`${innerIndent}if (imx::renderer::combo(${label}, &val, ${varName}, ${count}${styleArg})) {`);
+        lines.push(`${innerIndent}${INDENT}${node.stateVar}.set(val);`);
+        lines.push(`${innerIndent}}`);
         lines.push(`${indent}}`);
     }
     else if (node.directBind && node.valueExpr) {
         lines.push(`${indent}{`);
-        lines.push(`${indent}${INDENT}const char* ${varName}[] = {${itemsList.join(', ')}};`);
-        lines.push(`${indent}${INDENT}imx::renderer::combo(${label}, ${emitDirectBindPtr(node.valueExpr)}, ${varName}, ${count});`);
+        const innerIndent = indent + INDENT;
+        const styleVar = buildWidgetStyleVar(node.style, node.width, innerIndent, lines);
+        const styleArg = styleVar ? `, ${styleVar}` : '';
+        lines.push(`${innerIndent}const char* ${varName}[] = {${itemsList.join(', ')}};`);
+        lines.push(`${innerIndent}imx::renderer::combo(${label}, ${emitDirectBindPtr(node.valueExpr)}, ${varName}, ${count}${styleArg});`);
         lines.push(`${indent}}`);
     }
     else if (node.valueExpr !== undefined) {
         lines.push(`${indent}{`);
-        lines.push(`${indent}${INDENT}const char* ${varName}[] = {${itemsList.join(', ')}};`);
-        lines.push(`${indent}${INDENT}int val = ${node.valueExpr};`);
-        lines.push(`${indent}${INDENT}if (imx::renderer::combo(${label}, &val, ${varName}, ${count})) {`);
+        const innerIndent = indent + INDENT;
+        const styleVar = buildWidgetStyleVar(node.style, node.width, innerIndent, lines);
+        const styleArg = styleVar ? `, ${styleVar}` : '';
+        lines.push(`${innerIndent}const char* ${varName}[] = {${itemsList.join(', ')}};`);
+        lines.push(`${innerIndent}int val = ${node.valueExpr};`);
+        lines.push(`${innerIndent}if (imx::renderer::combo(${label}, &val, ${varName}, ${count}${styleArg})) {`);
         if (node.onChangeExpr) {
-            lines.push(`${indent}${INDENT}${INDENT}${node.onChangeExpr};`);
+            lines.push(`${innerIndent}${INDENT}${node.onChangeExpr};`);
         }
-        lines.push(`${indent}${INDENT}}`);
+        lines.push(`${innerIndent}}`);
         lines.push(`${indent}}`);
     }
 }
@@ -1596,23 +1728,31 @@ function emitInputInt(node, lines, indent) {
     const label = asCharPtr(node.label);
     if (node.stateVar) {
         lines.push(`${indent}{`);
-        lines.push(`${indent}${INDENT}int val = ${node.stateVar}.get();`);
-        lines.push(`${indent}${INDENT}if (imx::renderer::input_int(${label}, &val)) {`);
-        lines.push(`${indent}${INDENT}${INDENT}${node.stateVar}.set(val);`);
-        lines.push(`${indent}${INDENT}}`);
+        const innerIndent = indent + INDENT;
+        const styleVar = buildWidgetStyleVar(node.style, node.width, innerIndent, lines);
+        const styleArg = styleVar ? `, ${styleVar}` : '';
+        lines.push(`${innerIndent}int val = ${node.stateVar}.get();`);
+        lines.push(`${innerIndent}if (imx::renderer::input_int(${label}, &val${styleArg})) {`);
+        lines.push(`${innerIndent}${INDENT}${node.stateVar}.set(val);`);
+        lines.push(`${innerIndent}}`);
         lines.push(`${indent}}`);
     }
     else if (node.directBind && node.valueExpr) {
-        lines.push(`${indent}imx::renderer::input_int(${label}, ${emitDirectBindPtr(node.valueExpr)});`);
+        const styleVar = buildWidgetStyleVar(node.style, node.width, indent, lines);
+        const styleArg = styleVar ? `, ${styleVar}` : '';
+        lines.push(`${indent}imx::renderer::input_int(${label}, ${emitDirectBindPtr(node.valueExpr)}${styleArg});`);
     }
     else if (node.valueExpr !== undefined) {
         lines.push(`${indent}{`);
-        lines.push(`${indent}${INDENT}int val = ${node.valueExpr};`);
-        lines.push(`${indent}${INDENT}if (imx::renderer::input_int(${label}, &val)) {`);
+        const innerIndent = indent + INDENT;
+        const styleVar = buildWidgetStyleVar(node.style, node.width, innerIndent, lines);
+        const styleArg = styleVar ? `, ${styleVar}` : '';
+        lines.push(`${innerIndent}int val = ${node.valueExpr};`);
+        lines.push(`${innerIndent}if (imx::renderer::input_int(${label}, &val${styleArg})) {`);
         if (node.onChangeExpr) {
-            lines.push(`${indent}${INDENT}${INDENT}${node.onChangeExpr};`);
+            lines.push(`${innerIndent}${INDENT}${node.onChangeExpr};`);
         }
-        lines.push(`${indent}${INDENT}}`);
+        lines.push(`${innerIndent}}`);
         lines.push(`${indent}}`);
     }
 }
@@ -1621,23 +1761,31 @@ function emitInputFloat(node, lines, indent) {
     const label = asCharPtr(node.label);
     if (node.stateVar) {
         lines.push(`${indent}{`);
-        lines.push(`${indent}${INDENT}float val = ${node.stateVar}.get();`);
-        lines.push(`${indent}${INDENT}if (imx::renderer::input_float(${label}, &val)) {`);
-        lines.push(`${indent}${INDENT}${INDENT}${node.stateVar}.set(val);`);
-        lines.push(`${indent}${INDENT}}`);
+        const innerIndent = indent + INDENT;
+        const styleVar = buildWidgetStyleVar(node.style, node.width, innerIndent, lines);
+        const styleArg = styleVar ? `, ${styleVar}` : '';
+        lines.push(`${innerIndent}float val = ${node.stateVar}.get();`);
+        lines.push(`${innerIndent}if (imx::renderer::input_float(${label}, &val${styleArg})) {`);
+        lines.push(`${innerIndent}${INDENT}${node.stateVar}.set(val);`);
+        lines.push(`${innerIndent}}`);
         lines.push(`${indent}}`);
     }
     else if (node.directBind && node.valueExpr) {
-        lines.push(`${indent}imx::renderer::input_float(${label}, ${emitDirectBindPtr(node.valueExpr)});`);
+        const styleVar = buildWidgetStyleVar(node.style, node.width, indent, lines);
+        const styleArg = styleVar ? `, ${styleVar}` : '';
+        lines.push(`${indent}imx::renderer::input_float(${label}, ${emitDirectBindPtr(node.valueExpr)}${styleArg});`);
     }
     else if (node.valueExpr !== undefined) {
         lines.push(`${indent}{`);
-        lines.push(`${indent}${INDENT}float val = ${node.valueExpr};`);
-        lines.push(`${indent}${INDENT}if (imx::renderer::input_float(${label}, &val)) {`);
+        const innerIndent = indent + INDENT;
+        const styleVar = buildWidgetStyleVar(node.style, node.width, innerIndent, lines);
+        const styleArg = styleVar ? `, ${styleVar}` : '';
+        lines.push(`${innerIndent}float val = ${node.valueExpr};`);
+        lines.push(`${innerIndent}if (imx::renderer::input_float(${label}, &val${styleArg})) {`);
         if (node.onChangeExpr) {
-            lines.push(`${indent}${INDENT}${INDENT}${node.onChangeExpr};`);
+            lines.push(`${innerIndent}${INDENT}${node.onChangeExpr};`);
         }
-        lines.push(`${indent}${INDENT}}`);
+        lines.push(`${innerIndent}}`);
         lines.push(`${indent}}`);
     }
 }
@@ -1646,26 +1794,34 @@ function emitColorEdit(node, lines, indent) {
     const label = asCharPtr(node.label);
     if (node.stateVar) {
         lines.push(`${indent}{`);
-        lines.push(`${indent}${INDENT}auto val = ${node.stateVar}.get();`);
-        lines.push(`${indent}${INDENT}if (imx::renderer::color_edit(${label}, val.data())) {`);
-        lines.push(`${indent}${INDENT}${INDENT}${node.stateVar}.set(val);`);
-        lines.push(`${indent}${INDENT}}`);
+        const innerIndent = indent + INDENT;
+        const styleVar = buildWidgetStyleVar(node.style, node.width, innerIndent, lines);
+        const styleArg = styleVar ? `, ${styleVar}` : '';
+        lines.push(`${innerIndent}auto val = ${node.stateVar}.get();`);
+        lines.push(`${innerIndent}if (imx::renderer::color_edit(${label}, val.data()${styleArg})) {`);
+        lines.push(`${innerIndent}${INDENT}${node.stateVar}.set(val);`);
+        lines.push(`${innerIndent}}`);
         lines.push(`${indent}}`);
     }
     else if (node.directBind && node.valueExpr) {
         const propName = node.valueExpr.startsWith('props.') ? node.valueExpr.slice(6).split('.')[0].split('[')[0] : '';
         const isBound = currentBoundProps.has(propName);
         const dataExpr = isBound ? `(${node.valueExpr})->data()` : `${node.valueExpr}.data()`;
-        lines.push(`${indent}imx::renderer::color_edit(${label}, ${dataExpr});`);
+        const styleVar = buildWidgetStyleVar(node.style, node.width, indent, lines);
+        const styleArg = styleVar ? `, ${styleVar}` : '';
+        lines.push(`${indent}imx::renderer::color_edit(${label}, ${dataExpr}${styleArg});`);
     }
     else if (node.valueExpr !== undefined) {
         lines.push(`${indent}{`);
-        lines.push(`${indent}${INDENT}auto val = ${node.valueExpr};`);
-        lines.push(`${indent}${INDENT}if (imx::renderer::color_edit(${label}, val.data())) {`);
+        const innerIndent = indent + INDENT;
+        const styleVar = buildWidgetStyleVar(node.style, node.width, innerIndent, lines);
+        const styleArg = styleVar ? `, ${styleVar}` : '';
+        lines.push(`${innerIndent}auto val = ${node.valueExpr};`);
+        lines.push(`${innerIndent}if (imx::renderer::color_edit(${label}, val.data()${styleArg})) {`);
         if (node.onChangeExpr) {
-            lines.push(`${indent}${INDENT}${INDENT}${node.onChangeExpr};`);
+            lines.push(`${innerIndent}${INDENT}${node.onChangeExpr};`);
         }
-        lines.push(`${indent}${INDENT}}`);
+        lines.push(`${innerIndent}}`);
         lines.push(`${indent}}`);
     }
 }
@@ -1674,26 +1830,34 @@ function emitColorEdit3(node, lines, indent) {
     const label = asCharPtr(node.label);
     if (node.stateVar) {
         lines.push(`${indent}{`);
-        lines.push(`${indent}${INDENT}auto val = ${node.stateVar}.get();`);
-        lines.push(`${indent}${INDENT}if (imx::renderer::color_edit3(${label}, val.data())) {`);
-        lines.push(`${indent}${INDENT}${INDENT}${node.stateVar}.set(val);`);
-        lines.push(`${indent}${INDENT}}`);
+        const innerIndent = indent + INDENT;
+        const styleVar = buildWidgetStyleVar(node.style, node.width, innerIndent, lines);
+        const styleArg = styleVar ? `, ${styleVar}` : '';
+        lines.push(`${innerIndent}auto val = ${node.stateVar}.get();`);
+        lines.push(`${innerIndent}if (imx::renderer::color_edit3(${label}, val.data()${styleArg})) {`);
+        lines.push(`${innerIndent}${INDENT}${node.stateVar}.set(val);`);
+        lines.push(`${innerIndent}}`);
         lines.push(`${indent}}`);
     }
     else if (node.directBind && node.valueExpr) {
         const propName = node.valueExpr.startsWith('props.') ? node.valueExpr.slice(6).split('.')[0].split('[')[0] : '';
         const isBound = currentBoundProps.has(propName);
         const dataExpr = isBound ? `(${node.valueExpr})->data()` : `${node.valueExpr}.data()`;
-        lines.push(`${indent}imx::renderer::color_edit3(${label}, ${dataExpr});`);
+        const styleVar = buildWidgetStyleVar(node.style, node.width, indent, lines);
+        const styleArg = styleVar ? `, ${styleVar}` : '';
+        lines.push(`${indent}imx::renderer::color_edit3(${label}, ${dataExpr}${styleArg});`);
     }
     else if (node.valueExpr !== undefined) {
         lines.push(`${indent}{`);
-        lines.push(`${indent}${INDENT}auto val = ${node.valueExpr};`);
-        lines.push(`${indent}${INDENT}if (imx::renderer::color_edit3(${label}, val.data())) {`);
+        const innerIndent = indent + INDENT;
+        const styleVar = buildWidgetStyleVar(node.style, node.width, innerIndent, lines);
+        const styleArg = styleVar ? `, ${styleVar}` : '';
+        lines.push(`${innerIndent}auto val = ${node.valueExpr};`);
+        lines.push(`${innerIndent}if (imx::renderer::color_edit3(${label}, val.data()${styleArg})) {`);
         if (node.onChangeExpr) {
-            lines.push(`${indent}${INDENT}${INDENT}${node.onChangeExpr};`);
+            lines.push(`${innerIndent}${INDENT}${node.onChangeExpr};`);
         }
-        lines.push(`${indent}${INDENT}}`);
+        lines.push(`${innerIndent}}`);
         lines.push(`${indent}}`);
     }
 }
@@ -1705,28 +1869,37 @@ function emitListBox(node, lines, indent) {
     const varName = `listbox_items_${listBoxCounter++}`;
     if (node.stateVar) {
         lines.push(`${indent}{`);
-        lines.push(`${indent}${INDENT}const char* ${varName}[] = {${itemsList.join(', ')}};`);
-        lines.push(`${indent}${INDENT}int val = ${node.stateVar}.get();`);
-        lines.push(`${indent}${INDENT}if (imx::renderer::list_box(${label}, &val, ${varName}, ${count})) {`);
-        lines.push(`${indent}${INDENT}${INDENT}${node.stateVar}.set(val);`);
-        lines.push(`${indent}${INDENT}}`);
+        const innerIndent = indent + INDENT;
+        const styleVar = buildWidgetStyleVar(node.style, node.width, innerIndent, lines);
+        const styleArg = styleVar ? `, ${styleVar}` : '';
+        lines.push(`${innerIndent}const char* ${varName}[] = {${itemsList.join(', ')}};`);
+        lines.push(`${innerIndent}int val = ${node.stateVar}.get();`);
+        lines.push(`${innerIndent}if (imx::renderer::list_box(${label}, &val, ${varName}, ${count}${styleArg})) {`);
+        lines.push(`${innerIndent}${INDENT}${node.stateVar}.set(val);`);
+        lines.push(`${innerIndent}}`);
         lines.push(`${indent}}`);
     }
     else if (node.directBind && node.valueExpr) {
         lines.push(`${indent}{`);
-        lines.push(`${indent}${INDENT}const char* ${varName}[] = {${itemsList.join(', ')}};`);
-        lines.push(`${indent}${INDENT}imx::renderer::list_box(${label}, ${emitDirectBindPtr(node.valueExpr)}, ${varName}, ${count});`);
+        const innerIndent = indent + INDENT;
+        const styleVar = buildWidgetStyleVar(node.style, node.width, innerIndent, lines);
+        const styleArg = styleVar ? `, ${styleVar}` : '';
+        lines.push(`${innerIndent}const char* ${varName}[] = {${itemsList.join(', ')}};`);
+        lines.push(`${innerIndent}imx::renderer::list_box(${label}, ${emitDirectBindPtr(node.valueExpr)}, ${varName}, ${count}${styleArg});`);
         lines.push(`${indent}}`);
     }
     else if (node.valueExpr !== undefined) {
         lines.push(`${indent}{`);
-        lines.push(`${indent}${INDENT}const char* ${varName}[] = {${itemsList.join(', ')}};`);
-        lines.push(`${indent}${INDENT}int val = ${node.valueExpr};`);
-        lines.push(`${indent}${INDENT}if (imx::renderer::list_box(${label}, &val, ${varName}, ${count})) {`);
+        const innerIndent = indent + INDENT;
+        const styleVar = buildWidgetStyleVar(node.style, node.width, innerIndent, lines);
+        const styleArg = styleVar ? `, ${styleVar}` : '';
+        lines.push(`${innerIndent}const char* ${varName}[] = {${itemsList.join(', ')}};`);
+        lines.push(`${innerIndent}int val = ${node.valueExpr};`);
+        lines.push(`${innerIndent}if (imx::renderer::list_box(${label}, &val, ${varName}, ${count}${styleArg})) {`);
         if (node.onChangeExpr) {
-            lines.push(`${indent}${INDENT}${INDENT}${node.onChangeExpr};`);
+            lines.push(`${innerIndent}${INDENT}${node.onChangeExpr};`);
         }
-        lines.push(`${indent}${INDENT}}`);
+        lines.push(`${innerIndent}}`);
         lines.push(`${indent}}`);
     }
 }
@@ -1804,7 +1977,7 @@ function emitInputTextMultiline(node, lines, indent) {
     emitLocComment(node.loc, 'InputTextMultiline', lines, indent);
     lines.push(`${indent}{`);
     const innerIndent = indent + INDENT;
-    const styleVar = buildStyleVar(node.style, innerIndent, lines);
+    const styleVar = buildWidgetStyleVar(node.style, node.width, innerIndent, lines);
     lines.push(`${innerIndent}auto& buf = ctx.get_buffer(${node.bufferIndex});`);
     const styleArg = styleVar ? `, ${styleVar}` : '';
     if (node.stateVar) {
@@ -1869,26 +2042,34 @@ function emitColorPicker3(node, lines, indent) {
     const label = asCharPtr(node.label);
     if (node.stateVar) {
         lines.push(`${indent}{`);
-        lines.push(`${indent}${INDENT}auto val = ${node.stateVar}.get();`);
-        lines.push(`${indent}${INDENT}if (imx::renderer::color_picker3(${label}, val.data())) {`);
-        lines.push(`${indent}${INDENT}${INDENT}${node.stateVar}.set(val);`);
-        lines.push(`${indent}${INDENT}}`);
+        const innerIndent = indent + INDENT;
+        const styleVar = buildWidgetStyleVar(node.style, node.width, innerIndent, lines);
+        const styleArg = styleVar ? `, ${styleVar}` : '';
+        lines.push(`${innerIndent}auto val = ${node.stateVar}.get();`);
+        lines.push(`${innerIndent}if (imx::renderer::color_picker3(${label}, val.data()${styleArg})) {`);
+        lines.push(`${innerIndent}${INDENT}${node.stateVar}.set(val);`);
+        lines.push(`${innerIndent}}`);
         lines.push(`${indent}}`);
     }
     else if (node.directBind && node.valueExpr) {
         const propName = node.valueExpr.startsWith('props.') ? node.valueExpr.slice(6).split('.')[0].split('[')[0] : '';
         const isBound = currentBoundProps.has(propName);
         const dataExpr = isBound ? `(${node.valueExpr})->data()` : `${node.valueExpr}.data()`;
-        lines.push(`${indent}imx::renderer::color_picker3(${label}, ${dataExpr});`);
+        const styleVar = buildWidgetStyleVar(node.style, node.width, indent, lines);
+        const styleArg = styleVar ? `, ${styleVar}` : '';
+        lines.push(`${indent}imx::renderer::color_picker3(${label}, ${dataExpr}${styleArg});`);
     }
     else if (node.valueExpr !== undefined) {
         lines.push(`${indent}{`);
-        lines.push(`${indent}${INDENT}auto val = ${node.valueExpr};`);
-        lines.push(`${indent}${INDENT}if (imx::renderer::color_picker3(${label}, val.data())) {`);
+        const innerIndent = indent + INDENT;
+        const styleVar = buildWidgetStyleVar(node.style, node.width, innerIndent, lines);
+        const styleArg = styleVar ? `, ${styleVar}` : '';
+        lines.push(`${innerIndent}auto val = ${node.valueExpr};`);
+        lines.push(`${innerIndent}if (imx::renderer::color_picker3(${label}, val.data()${styleArg})) {`);
         if (node.onChangeExpr) {
-            lines.push(`${indent}${INDENT}${INDENT}${node.onChangeExpr};`);
+            lines.push(`${innerIndent}${INDENT}${node.onChangeExpr};`);
         }
-        lines.push(`${indent}${INDENT}}`);
+        lines.push(`${innerIndent}}`);
         lines.push(`${indent}}`);
     }
 }
@@ -2048,33 +2229,38 @@ function emitDrawTriangle(node, lines, indent) {
 function emitVectorInput(node, rendererFn, cppType, lines, indent, extraArgs = '') {
     const label = asCharPtr(node.label);
     const count = node.count;
-    const style = node.style ? `, ${node.style}` : '';
     if (node.stateVar) {
         lines.push(`${indent}{`);
-        lines.push(`${indent}${INDENT}auto val = ${node.stateVar}.get();`);
-        lines.push(`${indent}${INDENT}if (imx::renderer::${rendererFn}(${label}, val.data(), ${count}${extraArgs}${style})) {`);
-        lines.push(`${indent}${INDENT}${INDENT}${node.stateVar}.set(val);`);
-        lines.push(`${indent}${INDENT}}`);
+        const innerIndent = indent + INDENT;
+        const styleVar = buildWidgetStyleVar(node.style, node.width, innerIndent, lines);
+        const styleArg = styleVar ? `, ${styleVar}` : '';
+        lines.push(`${innerIndent}auto val = ${node.stateVar}.get();`);
+        lines.push(`${innerIndent}if (imx::renderer::${rendererFn}(${label}, val.data(), ${count}${extraArgs}${styleArg})) {`);
+        lines.push(`${innerIndent}${INDENT}${node.stateVar}.set(val);`);
+        lines.push(`${innerIndent}}`);
         lines.push(`${indent}}`);
     }
     else if (node.directBind && node.valueExpr) {
-        // Direct pointer binding — array decays to pointer naturally
-        lines.push(`${indent}imx::renderer::${rendererFn}(${label}, ${node.valueExpr}, ${count}${extraArgs}${style});`);
+        const styleVar = buildWidgetStyleVar(node.style, node.width, indent, lines);
+        const styleArg = styleVar ? `, ${styleVar}` : '';
+        lines.push(`${indent}imx::renderer::${rendererFn}(${label}, ${node.valueExpr}, ${count}${extraArgs}${styleArg});`);
     }
     else if (node.valueExpr) {
-        // Expression mode with optional onChange
         lines.push(`${indent}{`);
-        lines.push(`${indent}${INDENT}${cppType} _vec_val[${count}];`);
-        lines.push(`${indent}${INDENT}auto& _vec_src = ${node.valueExpr};`);
-        lines.push(`${indent}${INDENT}for (int i = 0; i < ${count}; ++i) _vec_val[i] = _vec_src[i];`);
-        lines.push(`${indent}${INDENT}if (imx::renderer::${rendererFn}(${label}, _vec_val, ${count}${extraArgs}${style})) {`);
+        const innerIndent = indent + INDENT;
+        const styleVar = buildWidgetStyleVar(node.style, node.width, innerIndent, lines);
+        const styleArg = styleVar ? `, ${styleVar}` : '';
+        lines.push(`${innerIndent}${cppType} _vec_val[${count}];`);
+        lines.push(`${innerIndent}auto& _vec_src = ${node.valueExpr};`);
+        lines.push(`${innerIndent}for (int i = 0; i < ${count}; ++i) _vec_val[i] = _vec_src[i];`);
+        lines.push(`${innerIndent}if (imx::renderer::${rendererFn}(${label}, _vec_val, ${count}${extraArgs}${styleArg})) {`);
         if (node.onChangeExpr) {
-            lines.push(`${indent}${INDENT}${INDENT}${node.onChangeExpr};`);
+            lines.push(`${innerIndent}${INDENT}${node.onChangeExpr};`);
         }
         else {
-            lines.push(`${indent}${INDENT}${INDENT}for (int i = 0; i < ${count}; ++i) _vec_src[i] = _vec_val[i];`);
+            lines.push(`${innerIndent}${INDENT}for (int i = 0; i < ${count}; ++i) _vec_src[i] = _vec_val[i];`);
         }
-        lines.push(`${indent}${INDENT}}`);
+        lines.push(`${innerIndent}}`);
         lines.push(`${indent}}`);
     }
 }

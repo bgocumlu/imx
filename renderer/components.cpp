@@ -202,6 +202,14 @@ void end_menu_bar() {
     ImGui::EndMenuBar();
 }
 
+bool begin_main_menu_bar() {
+    return ImGui::BeginMainMenuBar();
+}
+
+void end_main_menu_bar() {
+    ImGui::EndMainMenuBar();
+}
+
 bool begin_menu(const char* label) {
     return ImGui::BeginMenu(label);
 }

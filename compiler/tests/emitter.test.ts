@@ -259,6 +259,25 @@ function App() {
         expect(output).toContain('imx_reset_layout()');
     });
 
+    it('emits MainMenuBar with begin/end wrappers', () => {
+        const output = compile(`
+function App() {
+  return (
+    <MainMenuBar>
+      <Menu label="File">
+        <MenuItem label="Exit" />
+      </Menu>
+    </MainMenuBar>
+  );
+}
+        `);
+
+        expect(output).toContain('if (imx::renderer::begin_main_menu_bar()) {');
+        expect(output).toContain('if (imx::renderer::begin_menu("File")) {');
+        expect(output).toContain('imx::renderer::menu_item("Exit"');
+        expect(output).toContain('imx::renderer::end_main_menu_bar();');
+    });
+
     it('emits BulletText', () => {
         const output = compile(`
 function App() {
@@ -315,6 +334,61 @@ function App() {
         expect(output).toContain('imx::renderer::text_input_multiline("Notes", buf)');
         expect(output).toContain('buf.sync_from(notes.get())');
         expect(output).toContain('notes.set(buf.value())');
+    });
+
+    it('emits Phase 14 layout primitives', () => {
+        const output = compile(`
+function App() {
+  return (
+    <Window title="Layout">
+      <Indent width={20}>
+        <TextWrap width={220}>
+          <Text>Wrapped</Text>
+        </TextWrap>
+      </Indent>
+      <Spacing />
+      <Dummy width={48} height={12} />
+      <SameLine offset={16} spacing={8} />
+      <NewLine />
+      <Cursor x={96} y={44} />
+    </Window>
+  );
+}
+        `);
+
+        expect(output).toContain('imx::renderer::begin_indent(20.0F);');
+        expect(output).toContain('imx::renderer::begin_text_wrap(220.0F);');
+        expect(output).toContain('imx::renderer::end_text_wrap();');
+        expect(output).toContain('imx::renderer::end_indent();');
+        expect(output).toContain('imx::renderer::spacing();');
+        expect(output).toContain('imx::renderer::dummy(48.0F, 12.0F);');
+        expect(output).toContain('imx::renderer::same_line(16.0F, 8.0F);');
+        expect(output).toContain('imx::renderer::new_line();');
+        expect(output).toContain('imx::renderer::set_cursor_pos(96.0F, 44.0F);');
+    });
+
+    it('emits explicit width props through widget style vars', () => {
+        const output = compile(`
+function App() {
+  const [name, setName] = useState("");
+  const [speed, setSpeed] = useState(5.0);
+  const [position, setPosition] = useState([1.0, 2.0, 3.0]);
+  return (
+    <Window title="Inputs">
+      <TextInput label="Name" value={name} onChange={setName} width={180} />
+      <SliderFloat label="Speed" value={speed} onChange={setSpeed} min={0} max={10} width={140} />
+      <InputFloat3 label="Position" value={position} width={220} />
+    </Window>
+  );
+}
+        `);
+
+        expect(output).toContain('.width = 180.0F;');
+        expect(output).toContain('.width = 140.0F;');
+        expect(output).toContain('.width = 220.0F;');
+        expect(output).toMatch(/text_input\("Name", buf, style_\d+\)/);
+        expect(output).toMatch(/slider_float\("Speed", &val, 0\.0[fF], 10\.0[fF], style_\d+\)/);
+        expect(output).toMatch(/input_float_n\("Position", val\.data\(\), 3, style_\d+\)/);
     });
 
     it('emits ColorEdit3 with direct binding', () => {

@@ -289,7 +289,7 @@ Exit criteria:
 - every ImGui input widget has a TSX equivalent
 - custom fonts can be loaded and applied per-component
 
-## Phase 14: Layout & Positioning
+## Phase 14: Layout & Positioning (DONE)
 
 Goal:
 

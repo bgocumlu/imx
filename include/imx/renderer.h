@@ -152,6 +152,12 @@ void end_window();
 void begin_view(const Style& style = {});
 void end_view();
 
+void begin_indent(float width = 0.0f);
+void end_indent(float width = 0.0f);
+
+void begin_text_wrap(float width);
+void end_text_wrap();
+
 void begin_row(const Style& style = {});
 void end_row();
 
@@ -172,6 +178,11 @@ bool text_input(const char* label, TextBuffer& buffer, const Style& style = {});
 bool checkbox(const char* label, bool* value, const Style& style = {});
 
 void separator();
+void spacing();
+void dummy(float width, float height);
+void same_line(float offset = 0.0f, float spacing = -1.0f);
+void new_line();
+void set_cursor_pos(float x, float y);
 
 bool begin_popup(const char* id, const Style& style = {});
 void end_popup();
@@ -182,6 +193,9 @@ void end_dockspace();
 
 bool begin_menu_bar();
 void end_menu_bar();
+
+bool begin_main_menu_bar();
+void end_main_menu_bar();
 
 bool begin_menu(const char* label);
 void end_menu();

@@ -27,9 +27,27 @@ export default function App() {
   const [phaseRgb, setPhaseRgb] = useState([0.3, 0.75, 0.95]);
   const [phaseClicks, setPhaseClicks] = useState(0);
   const [phaseArrow, setPhaseArrow] = useState("Idle");
+  const [phaseAlias, setPhaseAlias] = useState("right dock");
+  const [phaseWrapWidth, setPhaseWrapWidth] = useState(220);
+  const [phaseCursorX, setPhaseCursorX] = useState(92);
+  const [phaseCursorY, setPhaseCursorY] = useState(54);
 
   return (
     <Theme preset="dark" accentColor={[0.9, 0.2, 0.2, 1.0]} backgroundColor={[0.12, 0.12, 0.15, 1.0]} textColor={[0.95, 0.95, 0.95, 1.0]} borderColor={[0.3, 0.3, 0.35, 1.0]} surfaceColor={[0.18, 0.18, 0.22, 1.0]} rounding={6}>
+    <MainMenuBar>
+      <Menu label="File">
+        <MenuItem label="New" shortcut="Ctrl+N" />
+        <MenuItem label="Open" shortcut="Ctrl+O" />
+        <Separator />
+        <MenuItem label="Exit" onPress={() => setShowAbout(false)} />
+      </Menu>
+      <Menu label="View">
+        <MenuItem label="Reset Layout" onPress={resetLayout} />
+      </Menu>
+      <Menu label="Help">
+        <MenuItem label="About" onPress={() => setShowAbout(!showAbout)} />
+      </Menu>
+    </MainMenuBar>
     <DockSpace>
       <DockLayout>
         <DockSplit direction="horizontal" size={0.25}>
@@ -44,32 +62,23 @@ export default function App() {
               <DockPanel>
                 <Window title="Data" />
               </DockPanel>
-              <DockSplit direction="vertical" size={0.52}>
+              <DockSplit direction="vertical" size={0.4}>
                 <DockPanel>
                   <Window title="Widgets" />
                 </DockPanel>
-                <DockPanel>
-                  <Window title="Phase 13" />
-                </DockPanel>
+                <DockSplit direction="horizontal" size={0.5}>
+                  <DockPanel>
+                    <Window title="Phase 13" />
+                  </DockPanel>
+                  <DockPanel>
+                    <Window title="Phase 14" />
+                  </DockPanel>
+                </DockSplit>
               </DockSplit>
             </DockSplit>
           </DockSplit>
         </DockSplit>
       </DockLayout>
-      <MenuBar>
-        <Menu label="File">
-          <MenuItem label="New" shortcut="Ctrl+N" />
-          <MenuItem label="Open" shortcut="Ctrl+O" />
-          <Separator />
-          <MenuItem label="Exit" onPress={() => setShowAbout(false)} />
-        </Menu>
-        <Menu label="View">
-          <MenuItem label="Reset Layout" onPress={resetLayout} />
-        </Menu>
-        <Menu label="Help">
-          <MenuItem label="About" onPress={() => setShowAbout(!showAbout)} />
-        </Menu>
-      </MenuBar>
       <Window title="Todos">
         <Column gap={4}>
           <Text>Todo List</Text>
@@ -198,6 +207,62 @@ export default function App() {
               <DrawNgon center={[274, 132]} radius={34} color={[0.95, 0.3, 0.55, 1.0]} numSegments={7} thickness={2} />
               <DrawText pos={[12, 180]} text="Bezier / Triangle / Ngon" color={[1, 1, 1, 1]} />
             </Canvas>
+          </CollapsingHeader>
+        </Column>
+      </Window>
+      <Window title="Phase 14">
+        <Column gap={8}>
+          <Font name="jetbrains-mono">
+            <Text>Phase 14 showcase: layout primitives and per-item width control.</Text>
+          </Font>
+          <Text>Phase 14 closes the remaining layout gap with raw ImGui: inline flow, indentation, wrapping, cursor placement, and explicit widths.</Text>
+          <CollapsingHeader label="Inline Flow">
+            <Button title="Ping" onPress={() => setPhaseClicks(phaseClicks + 1)} />
+            <SameLine spacing={8} />
+            <SmallButton label="Nudge" onPress={() => setPhaseClicks(phaseClicks + 1)} />
+            <SameLine spacing={12} />
+            <Text>Clicks: {phaseClicks}</Text>
+            <NewLine />
+            <Spacing />
+            <Text>Dummy reserves space without drawing anything:</Text>
+            <Text>Left</Text>
+            <SameLine spacing={6} />
+            <Dummy width={28} height={0} />
+            <SameLine spacing={6} />
+            <Text>Right</Text>
+          </CollapsingHeader>
+          <CollapsingHeader label="Indent + Wrap">
+            <SliderInt label="Wrap Width" value={phaseWrapWidth} onChange={setPhaseWrapWidth} min={140} max={320} width={180} />
+            <Spacing />
+            <Indent width={20}>
+              <TextWrap width={phaseWrapWidth}>
+                <Text>Indented notes wrap against an explicit boundary, which is useful for log panes, callouts, help text, and inspector sidebars.</Text>
+              </TextWrap>
+            </Indent>
+          </CollapsingHeader>
+          <CollapsingHeader label="Input Width">
+            <TextInput label="Alias" value={phaseAlias} onChange={setPhaseAlias} width={180} />
+            <InputFloat label="Weight" value={weight} onChange={setWeight} width={110} />
+            <InputFloat3 label="Position" value={phaseVector} width={220} />
+            <DragFloat2 label="Bezier Handle" value={phaseDrag} speed={0.1} width={170} />
+            <SliderInt4 label="Padding" value={phaseSlider} min={0} max={64} width={220} />
+            <SliderFloat label="Blend" value={phaseBlend} onChange={setPhaseBlend} min={0} max={1} width={180} />
+            <SliderAngle label="Angle" value={phaseAngle} onChange={setPhaseAngle} min={-180} max={180} width={180} />
+            <ColorEdit3 label="Tint" value={phaseRgb} width={160} />
+          </CollapsingHeader>
+          <CollapsingHeader label="Cursor Placement">
+            <Row gap={12}>
+              <SliderInt label="X" value={phaseCursorX} onChange={setPhaseCursorX} min={0} max={220} width={140} />
+              <SliderInt label="Y" value={phaseCursorY} onChange={setPhaseCursorY} min={0} max={100} width={140} />
+            </Row>
+            <Child id="phase14-cursor" width={300} height={160} border>
+              <Text>Cursor repositions the next item inside this child region.</Text>
+              <Cursor x={phaseCursorX} y={phaseCursorY} />
+              <ArrowButton id="phase14-arrow" direction="right" onPress={() => setPhaseArrow("Cursor button")} />
+              <Cursor x={phaseCursorX + 30} y={phaseCursorY - 2} />
+              <Text>{phaseAlias}</Text>
+            </Child>
+            <Text>Last placement action: {phaseArrow}</Text>
           </CollapsingHeader>
         </Column>
       </Window>

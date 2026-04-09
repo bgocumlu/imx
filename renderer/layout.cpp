@@ -8,6 +8,7 @@ struct LayoutState {
     Direction direction = Direction::Vertical;
     float gap = 0.0f;
     int child_count = 0;
+    bool skip_next_placement = false;
 };
 
 static std::vector<LayoutState> g_layout_stack;
@@ -15,6 +16,11 @@ static std::vector<LayoutState> g_layout_stack;
 void before_child() {
     if (g_layout_stack.empty()) return;
     auto& ls = g_layout_stack.back();
+    if (ls.skip_next_placement) {
+        ls.skip_next_placement = false;
+        ls.child_count++;
+        return;
+    }
     if (ls.direction == LayoutState::Direction::TableRow) {
         ImGui::TableNextColumn();
         ls.child_count++;
@@ -70,6 +76,54 @@ void begin_view(const Style& style) {
 
 void end_view() {
     end_column();
+}
+
+void begin_indent(float width) {
+    ImGui::Indent(width);
+}
+
+void end_indent(float width) {
+    ImGui::Unindent(width);
+}
+
+void begin_text_wrap(float width) {
+    float wrap_pos = width > 0.0f ? ImGui::GetCursorPosX() + width : 0.0f;
+    ImGui::PushTextWrapPos(wrap_pos);
+}
+
+void end_text_wrap() {
+    ImGui::PopTextWrapPos();
+}
+
+void spacing() {
+    before_child();
+    ImGui::Dummy(ImVec2(0.0f, ImGui::GetStyle().ItemSpacing.y));
+}
+
+void dummy(float width, float height) {
+    before_child();
+    ImGui::Dummy(ImVec2(width, height));
+}
+
+void same_line(float offset, float spacing_value) {
+    ImGui::SameLine(offset, spacing_value);
+    if (!g_layout_stack.empty()) {
+        g_layout_stack.back().skip_next_placement = true;
+    }
+}
+
+void new_line() {
+    ImGui::NewLine();
+    if (!g_layout_stack.empty()) {
+        g_layout_stack.back().skip_next_placement = true;
+    }
+}
+
+void set_cursor_pos(float x, float y) {
+    ImGui::SetCursorPos(ImVec2(x, y));
+    if (!g_layout_stack.empty()) {
+        g_layout_stack.back().skip_next_placement = true;
+    }
 }
 
 void begin_table_row() {

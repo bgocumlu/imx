@@ -26,17 +26,17 @@ export interface IRPropParam {
     name: string;
     type: IRType | 'callback';
 }
-export type IRNode = IRBeginContainer | IREndContainer | IRText | IRButton | IRTextInput | IRCheckbox | IRSeparator | IRBeginPopup | IREndPopup | IROpenPopup | IRConditional | IRListMap | IRCustomComponent | IRMenuItem | IRSliderFloat | IRSliderInt | IRDragFloat | IRDragInt | IRCombo | IRInputInt | IRInputFloat | IRColorEdit | IRListBox | IRProgressBar | IRTooltip | IRDockLayout | IRNativeWidget | IRBulletText | IRLabelText | IRSelectable | IRRadio | IRInputTextMultiline | IRColorPicker | IRColorEdit3 | IRColorPicker3 | IRPlotLines | IRPlotHistogram | IRImage | IRDrawLine | IRDrawRect | IRDrawCircle | IRDrawText | IRDrawBezierCubic | IRDrawBezierQuadratic | IRDrawPolyline | IRDrawConvexPolyFilled | IRDrawNgon | IRDrawNgonFilled | IRDrawTriangle | IRInputFloatN | IRInputIntN | IRDragFloatN | IRDragIntN | IRSliderFloatN | IRSliderIntN | IRSmallButton | IRArrowButton | IRInvisibleButton | IRImageButton | IRVSliderFloat | IRVSliderInt | IRSliderAngle;
+export type IRNode = IRBeginContainer | IREndContainer | IRText | IRButton | IRTextInput | IRCheckbox | IRSeparator | IRSpacing | IRDummy | IRSameLine | IRNewLine | IRCursor | IRBeginPopup | IREndPopup | IROpenPopup | IRConditional | IRListMap | IRCustomComponent | IRMenuItem | IRSliderFloat | IRSliderInt | IRDragFloat | IRDragInt | IRCombo | IRInputInt | IRInputFloat | IRColorEdit | IRListBox | IRProgressBar | IRTooltip | IRDockLayout | IRNativeWidget | IRBulletText | IRLabelText | IRSelectable | IRRadio | IRInputTextMultiline | IRColorPicker | IRColorEdit3 | IRColorPicker3 | IRPlotLines | IRPlotHistogram | IRImage | IRDrawLine | IRDrawRect | IRDrawCircle | IRDrawText | IRDrawBezierCubic | IRDrawBezierQuadratic | IRDrawPolyline | IRDrawConvexPolyFilled | IRDrawNgon | IRDrawNgonFilled | IRDrawTriangle | IRInputFloatN | IRInputIntN | IRDragFloatN | IRDragIntN | IRSliderFloatN | IRSliderIntN | IRSmallButton | IRArrowButton | IRInvisibleButton | IRImageButton | IRVSliderFloat | IRVSliderInt | IRSliderAngle;
 export interface IRBeginContainer {
     kind: 'begin_container';
-    tag: 'Window' | 'View' | 'Row' | 'Column' | 'DockSpace' | 'MenuBar' | 'Menu' | 'Table' | 'TableRow' | 'TabBar' | 'TabItem' | 'TreeNode' | 'CollapsingHeader' | 'Theme' | 'DockLayout' | 'DockSplit' | 'DockPanel' | 'Modal' | 'Group' | 'ID' | 'StyleColor' | 'StyleVar' | 'DragDropSource' | 'DragDropTarget' | 'Canvas' | 'Disabled' | 'Child' | 'Font';
+    tag: 'Window' | 'View' | 'Indent' | 'TextWrap' | 'Row' | 'Column' | 'DockSpace' | 'MainMenuBar' | 'MenuBar' | 'Menu' | 'Table' | 'TableRow' | 'TabBar' | 'TabItem' | 'TreeNode' | 'CollapsingHeader' | 'Theme' | 'DockLayout' | 'DockSplit' | 'DockPanel' | 'Modal' | 'Group' | 'ID' | 'StyleColor' | 'StyleVar' | 'DragDropSource' | 'DragDropTarget' | 'Canvas' | 'Disabled' | 'Child' | 'Font';
     props: Record<string, string>;
     style?: string;
     loc?: SourceLoc;
 }
 export interface IREndContainer {
     kind: 'end_container';
-    tag: 'Window' | 'View' | 'Row' | 'Column' | 'DockSpace' | 'MenuBar' | 'Menu' | 'Table' | 'TableRow' | 'TabBar' | 'TabItem' | 'TreeNode' | 'CollapsingHeader' | 'Theme' | 'DockLayout' | 'DockSplit' | 'DockPanel' | 'Modal' | 'Group' | 'ID' | 'StyleColor' | 'StyleVar' | 'DragDropSource' | 'DragDropTarget' | 'Canvas' | 'Disabled' | 'Child' | 'Font';
+    tag: 'Window' | 'View' | 'Indent' | 'TextWrap' | 'Row' | 'Column' | 'DockSpace' | 'MainMenuBar' | 'MenuBar' | 'Menu' | 'Table' | 'TableRow' | 'TabBar' | 'TabItem' | 'TreeNode' | 'CollapsingHeader' | 'Theme' | 'DockLayout' | 'DockSplit' | 'DockPanel' | 'Modal' | 'Group' | 'ID' | 'StyleColor' | 'StyleVar' | 'DragDropSource' | 'DragDropTarget' | 'Canvas' | 'Disabled' | 'Child' | 'Font';
 }
 export interface IRText {
     kind: 'text';
@@ -60,6 +60,7 @@ export interface IRTextInput {
     valueExpr?: string;
     onChangeExpr?: string;
     directBind?: boolean;
+    width?: string;
     style?: string;
     loc?: SourceLoc;
 }
@@ -75,6 +76,32 @@ export interface IRCheckbox {
 }
 export interface IRSeparator {
     kind: 'separator';
+    loc?: SourceLoc;
+}
+export interface IRSpacing {
+    kind: 'spacing';
+    loc?: SourceLoc;
+}
+export interface IRDummy {
+    kind: 'dummy';
+    width: string;
+    height: string;
+    loc?: SourceLoc;
+}
+export interface IRSameLine {
+    kind: 'same_line';
+    offset: string;
+    spacing: string;
+    loc?: SourceLoc;
+}
+export interface IRNewLine {
+    kind: 'new_line';
+    loc?: SourceLoc;
+}
+export interface IRCursor {
+    kind: 'cursor';
+    x: string;
+    y: string;
     loc?: SourceLoc;
 }
 export interface IRBeginPopup {
@@ -136,6 +163,7 @@ export interface IRSliderFloat {
     directBind?: boolean;
     min: string;
     max: string;
+    width?: string;
     style?: string;
     loc?: SourceLoc;
 }
@@ -148,6 +176,7 @@ export interface IRSliderInt {
     directBind?: boolean;
     min: string;
     max: string;
+    width?: string;
     style?: string;
     loc?: SourceLoc;
 }
@@ -159,6 +188,7 @@ export interface IRDragFloat {
     onChangeExpr?: string;
     directBind?: boolean;
     speed: string;
+    width?: string;
     style?: string;
     loc?: SourceLoc;
 }
@@ -170,6 +200,7 @@ export interface IRDragInt {
     onChangeExpr?: string;
     directBind?: boolean;
     speed: string;
+    width?: string;
     style?: string;
     loc?: SourceLoc;
 }
@@ -181,6 +212,7 @@ export interface IRCombo {
     onChangeExpr?: string;
     directBind?: boolean;
     items: string;
+    width?: string;
     style?: string;
     loc?: SourceLoc;
 }
@@ -191,6 +223,7 @@ export interface IRInputInt {
     valueExpr?: string;
     onChangeExpr?: string;
     directBind?: boolean;
+    width?: string;
     style?: string;
     loc?: SourceLoc;
 }
@@ -201,6 +234,7 @@ export interface IRInputFloat {
     valueExpr?: string;
     onChangeExpr?: string;
     directBind?: boolean;
+    width?: string;
     style?: string;
     loc?: SourceLoc;
 }
@@ -211,6 +245,7 @@ export interface IRColorEdit {
     valueExpr?: string;
     onChangeExpr?: string;
     directBind?: boolean;
+    width?: string;
     style?: string;
     loc?: SourceLoc;
 }
@@ -222,6 +257,7 @@ export interface IRListBox {
     onChangeExpr?: string;
     directBind?: boolean;
     items: string;
+    width?: string;
     style?: string;
     loc?: SourceLoc;
 }
@@ -284,6 +320,7 @@ export interface IRInputTextMultiline {
     valueExpr?: string;
     onChangeExpr?: string;
     directBind?: boolean;
+    width?: string;
     style?: string;
     loc?: SourceLoc;
 }
@@ -304,6 +341,7 @@ export interface IRColorEdit3 {
     valueExpr?: string;
     onChangeExpr?: string;
     directBind?: boolean;
+    width?: string;
     style?: string;
     loc?: SourceLoc;
 }
@@ -314,6 +352,7 @@ export interface IRColorPicker3 {
     valueExpr?: string;
     onChangeExpr?: string;
     directBind?: boolean;
+    width?: string;
     style?: string;
     loc?: SourceLoc;
 }
@@ -446,6 +485,7 @@ export interface IRInputFloatN {
     valueExpr?: string;
     directBind?: boolean;
     onChangeExpr?: string;
+    width?: string;
     style?: string;
     loc?: SourceLoc;
 }
@@ -457,6 +497,7 @@ export interface IRInputIntN {
     valueExpr?: string;
     directBind?: boolean;
     onChangeExpr?: string;
+    width?: string;
     style?: string;
     loc?: SourceLoc;
 }
@@ -469,6 +510,7 @@ export interface IRDragFloatN {
     directBind?: boolean;
     onChangeExpr?: string;
     speed: string;
+    width?: string;
     style?: string;
     loc?: SourceLoc;
 }
@@ -481,6 +523,7 @@ export interface IRDragIntN {
     directBind?: boolean;
     onChangeExpr?: string;
     speed: string;
+    width?: string;
     style?: string;
     loc?: SourceLoc;
 }
@@ -494,6 +537,7 @@ export interface IRSliderFloatN {
     onChangeExpr?: string;
     min: string;
     max: string;
+    width?: string;
     style?: string;
     loc?: SourceLoc;
 }
@@ -507,6 +551,7 @@ export interface IRSliderIntN {
     onChangeExpr?: string;
     min: string;
     max: string;
+    width?: string;
     style?: string;
     loc?: SourceLoc;
 }
@@ -547,6 +592,7 @@ export interface IRSliderAngle {
     directBind?: boolean;
     min: string;
     max: string;
+    width?: string;
     style?: string;
     loc?: SourceLoc;
 }
