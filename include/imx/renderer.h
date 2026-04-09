@@ -193,6 +193,14 @@ bool slider_float(const char* label, float* value, float min, float max, const S
 bool slider_int(const char* label, int* value, int min, int max, const Style& style = {});
 bool drag_float(const char* label, float* value, float speed = 1.0f, const Style& style = {});
 bool drag_int(const char* label, int* value, float speed = 1.0f, const Style& style = {});
+
+bool input_float_n(const char* label, float* values, int count, const Style& style = {});
+bool input_int_n(const char* label, int* values, int count, const Style& style = {});
+bool drag_float_n(const char* label, float* values, int count, float speed = 1.0f, const Style& style = {});
+bool drag_int_n(const char* label, int* values, int count, float speed = 1.0f, const Style& style = {});
+bool slider_float_n(const char* label, float* values, int count, float min, float max, const Style& style = {});
+bool slider_int_n(const char* label, int* values, int count, int min, int max, const Style& style = {});
+
 bool combo(const char* label, int* current_item, const char* const items[], int items_count, const Style& style = {});
 
 bool input_int(const char* label, int* value, const Style& style = {});

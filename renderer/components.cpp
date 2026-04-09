@@ -266,6 +266,84 @@ bool drag_int(const char* label, int* value, float speed, const Style& style) {
     return r;
 }
 
+bool input_float_n(const char* label, float* values, int count, const Style& style) {
+    before_child();
+    if (style.width) ImGui::PushItemWidth(*style.width);
+    bool r = false;
+    switch (count) {
+        case 2: r = ImGui::InputFloat2(label, values); break;
+        case 3: r = ImGui::InputFloat3(label, values); break;
+        case 4: r = ImGui::InputFloat4(label, values); break;
+    }
+    if (style.width) ImGui::PopItemWidth();
+    return r;
+}
+
+bool input_int_n(const char* label, int* values, int count, const Style& style) {
+    before_child();
+    if (style.width) ImGui::PushItemWidth(*style.width);
+    bool r = false;
+    switch (count) {
+        case 2: r = ImGui::InputInt2(label, values); break;
+        case 3: r = ImGui::InputInt3(label, values); break;
+        case 4: r = ImGui::InputInt4(label, values); break;
+    }
+    if (style.width) ImGui::PopItemWidth();
+    return r;
+}
+
+bool drag_float_n(const char* label, float* values, int count, float speed, const Style& style) {
+    before_child();
+    if (style.width) ImGui::PushItemWidth(*style.width);
+    bool r = false;
+    switch (count) {
+        case 2: r = ImGui::DragFloat2(label, values, speed); break;
+        case 3: r = ImGui::DragFloat3(label, values, speed); break;
+        case 4: r = ImGui::DragFloat4(label, values, speed); break;
+    }
+    if (style.width) ImGui::PopItemWidth();
+    return r;
+}
+
+bool drag_int_n(const char* label, int* values, int count, float speed, const Style& style) {
+    before_child();
+    if (style.width) ImGui::PushItemWidth(*style.width);
+    bool r = false;
+    switch (count) {
+        case 2: r = ImGui::DragInt2(label, values, speed); break;
+        case 3: r = ImGui::DragInt3(label, values, speed); break;
+        case 4: r = ImGui::DragInt4(label, values, speed); break;
+    }
+    if (style.width) ImGui::PopItemWidth();
+    return r;
+}
+
+bool slider_float_n(const char* label, float* values, int count, float min, float max, const Style& style) {
+    before_child();
+    if (style.width) ImGui::PushItemWidth(*style.width);
+    bool r = false;
+    switch (count) {
+        case 2: r = ImGui::SliderFloat2(label, values, min, max); break;
+        case 3: r = ImGui::SliderFloat3(label, values, min, max); break;
+        case 4: r = ImGui::SliderFloat4(label, values, min, max); break;
+    }
+    if (style.width) ImGui::PopItemWidth();
+    return r;
+}
+
+bool slider_int_n(const char* label, int* values, int count, int min, int max, const Style& style) {
+    before_child();
+    if (style.width) ImGui::PushItemWidth(*style.width);
+    bool r = false;
+    switch (count) {
+        case 2: r = ImGui::SliderInt2(label, values, min, max); break;
+        case 3: r = ImGui::SliderInt3(label, values, min, max); break;
+        case 4: r = ImGui::SliderInt4(label, values, min, max); break;
+    }
+    if (style.width) ImGui::PopItemWidth();
+    return r;
+}
+
 bool combo(const char* label, int* current_item, const char* const items[], int items_count, const Style& style) {
     before_child();
     if (style.width) ImGui::PushItemWidth(*style.width);
