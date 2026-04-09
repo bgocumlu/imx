@@ -41,6 +41,7 @@ export default function App() {
   const [phase16Notes, setPhase16Notes] = useState("Use Ctrl+F or the jump button to focus this field.");
   const [phase16JumpToNotes, setPhase16JumpToNotes] = useState(false);
   const [phase16ContextMessage, setPhase16ContextMessage] = useState("Right-click the target button or this window.");
+  const [phase17ComboIdx, setPhase17ComboIdx] = useState(0);
 
   return (
     <Theme preset="dark" accentColor={[0.9, 0.2, 0.2, 1.0]} backgroundColor={[0.12, 0.12, 0.15, 1.0]} textColor={[0.95, 0.95, 0.95, 1.0]} borderColor={[0.3, 0.3, 0.35, 1.0]} surfaceColor={[0.18, 0.18, 0.22, 1.0]} rounding={6}>
@@ -494,15 +495,30 @@ export default function App() {
         </Canvas>
       </Window>
       <Window title="Phase 17"
-              x={600} y={100} width={420} height={250}
-              minWidth={250} minHeight={150} maxWidth={800} maxHeight={500}
+              x={600} y={100} width={420} height={350}
+              minWidth={250} minHeight={150} maxWidth={800} maxHeight={600}
               horizontalScrollbar bgAlpha={0.95}>
         <Column gap={4}>
           <Text>Phase 17: Window & Popup Control</Text>
           <Separator />
-          <Text>Positioned at (600,100), sized 420x250 (once).</Text>
-          <Text>Drag/resize freely — min 250x150, max 800x500.</Text>
-          <Text>bgAlpha=0.95, horizontalScrollbar enabled.</Text>
+          <Text>Positioned at (600,100), sized 420x350 (once).</Text>
+          <Text>Drag/resize freely — min/max constraints active.</Text>
+          <Separator />
+          <Text>Manual Combo (Begin/End mode):</Text>
+          <Combo label="Pick fruit" preview="Select a fruit">
+            <Selectable label="Apple" selected={phase17ComboIdx === 0} onSelect={() => setPhase17ComboIdx(0)} />
+            <Selectable label="Banana" selected={phase17ComboIdx === 1} onSelect={() => setPhase17ComboIdx(1)} />
+            <Selectable label="Cherry" selected={phase17ComboIdx === 2} onSelect={() => setPhase17ComboIdx(2)} />
+            <Selectable label="Date" selected={phase17ComboIdx === 3} onSelect={() => setPhase17ComboIdx(3)} />
+          </Combo>
+          <Separator />
+          <Text>Left-click context menu:</Text>
+          <Button title="Left-click for menu" onPress={() => {}}>
+            <ContextMenu mouseButton="left">
+              <MenuItem label="Option A" />
+              <MenuItem label="Option B" />
+            </ContextMenu>
+          </Button>
         </Column>
       </Window>
       <Modal title="Confirm Action" open={showConfirm} onClose={() => setShowConfirm(false)}>
