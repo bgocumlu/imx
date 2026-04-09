@@ -361,7 +361,7 @@ Exit criteria:
 
 - TSX components can detect and respond to all ImGui interaction states
 
-## Phase 17: Window & Popup Control
+## Phase 17: Window & Popup Control (DONE)
 
 Goal:
 
@@ -369,14 +369,17 @@ Goal:
 
 Deliverables:
 
-- **Window flags** — expose all `ImGuiWindowFlags` as boolean props: `noCollapse`, `noScrollbar`, `noMove`, `noResize`, `noBackground`, `alwaysAutoResize`, `noNavFocus`, etc.
-- **Window positioning** — `x`, `y`, `width`, `height` props mapping to `SetNextWindowSize` / `SetNextWindowPos`
+- **Window flags** — all `ImGuiWindowFlags` as boolean props: `noTitleBar`, `noResize`, `noMove`, `noCollapse`, `noDocking`, `noScrollbar`, `noBackground`, `alwaysAutoResize`, `noNavFocus`, `noNav`, `noDecoration`, `noInputs`, `noScrollWithMouse`, `horizontalScrollbar`, `alwaysVerticalScrollbar`, `alwaysHorizontalScrollbar`
+- **Window positioning** — `x`, `y` props with `forcePosition` boolean (default `ImGuiCond_Once`, `true` for `ImGuiCond_Always`)
+- **Window sizing** — `width`, `height` props with `forceSize` boolean
+- **Window size constraints** — `minWidth`, `minHeight`, `maxWidth`, `maxHeight` props mapping to `SetNextWindowSizeConstraints`
 - **Window background alpha** — `bgAlpha` prop mapping to `SetNextWindowBgAlpha`
-- **Window size constraints** — `minWidth`, `minHeight`, `maxWidth`, `maxHeight` props
-- **Popup flags** — `mouseButton` prop on context menus (`left`, `right`, `middle`)
-- **Multi-select** — `<MultiSelect>` component wrapping `BeginMultiSelect` / `EndMultiSelect` for list/grid selection patterns
-- **BeginCombo/EndCombo** — manual combo mode for custom combo content (vs simple items list)
-- **Viewport API** — expose ImGui's multi-viewport/multi-window support to TSX. Control window creation, positioning across monitors.
+- **Modal flags** — window flag boolean props on `<Modal>`: `noTitleBar`, `noResize`, `noMove`, `noScrollbar`, `noCollapse`, `alwaysAutoResize`, `noBackground`, `horizontalScrollbar`
+- **Popup flags** — `mouseButton` prop on `<ContextMenu>` (`"left"`, `"right"`, `"middle"`)
+- **Manual Combo** — `<Combo>` overloaded: `items` prop → simple mode, children → `BeginCombo`/`EndCombo` mode with `preview`, `noArrowButton`, `noPreview`, `heightSmall`/`heightLarge`/`heightRegular` props
+- **MultiSelect** — `<MultiSelect>` wrapping `BeginMultiSelect`/`EndMultiSelect` with `boxSelect`, `boxSelect2d`, `boxSelectNoScroll`, `clearOnClickVoid`, `singleSelect`, `noSelectAll`, `noRangeSelect`, `noAutoSelect`, `noAutoClear` flags. `onSelectionChange` callback for processing `ImGuiMultiSelectIO*`. `selectionIndex` prop on `<Selectable>`. `apply_multi_select_requests()` C++ helper for bool array selection.
+- **Viewport hints** — `noViewport` prop (pins window to main viewport), `viewportAlwaysOnTop` prop. C++ helpers: `get_main_viewport_pos()`, `get_main_viewport_size()`, `get_main_viewport_work_pos()`, `get_main_viewport_work_size()`
+- **Hello example** — struct binding with `AppState.h` for MultiSelect demo with drag select, left-click context menu, manual combo, positioned/constrained window
 
 Size impact: ~0 KB
 

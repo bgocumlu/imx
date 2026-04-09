@@ -46,6 +46,8 @@ React-Native-like authoring model for Dear ImGui. Write .tsx, compile to native 
 - Docking chrome (resize handles, tab bars) reads from `ImGui::GetStyle().Colors[]` directly, not the PushStyleColor stack — set accent colors on both
 - Bound prop detection (`detectBoundProps`) only runs on custom components, NOT root components with `namedPropsType` — root receives `T&` directly, no pointer wrapping needed
 - DragDrop type matching is per-component — if source and target are in different .tsx files, payload defaults to `float`
+- MultiSelect `onSelectionChange` uses `() => props.fn(0)` pattern — emitter extracts the function call and replaces `0` with `ms_io_end` pointer. Called on both BeginMultiSelect and EndMultiSelect results. Requires struct binding (not useState).
+- Manual Combo mode is detected statically in lowering.ts — children present → begin_combo/end_combo IR, items prop → existing combo IR
 
 ## File structure
 - `include/imx/` — public C++ headers (runtime.h, renderer.h)
@@ -56,7 +58,8 @@ React-Native-like authoring model for Dear ImGui. Write .tsx, compile to native 
 - `compiler/src/` — TypeScript compiler (parser, validator, ir, lowering, emitter, compile, init)
 - `compiler/dist/` — compiled JS (committed to git so FetchContent works without npm)
 - `cmake/ImxCompile.cmake` — CMake helper for compiling .tsx files
-- `examples/hello/` — main example app with TodoItem, all Batch 1-5 components, Canvas, DragDrop, Image
+- `examples/hello/` — main example app with TodoItem, all Batch 1-5 components, Canvas, DragDrop, Image. Uses `render_root<AppState>` for struct binding (MultiSelect demo)
+- `examples/hello/AppState.h` — C++ struct with MultiSelect selection state and `apply_selection()` helper
 - `examples/hello/public/` — static assets copied to exe directory at build time
 - `docs/` — spec, mvp, roadmap, api-reference, quick-start, llm-prompt-reference
 - `docs/superpowers/` — design specs and implementation plans for each phase
@@ -92,7 +95,7 @@ React-Native-like authoring model for Dear ImGui. Write .tsx, compile to native 
 
 ## Current status (Phases 1-17 complete)
 - ~97 host components covering all ImGui widgets + input expansion
-- Window & Popup Control (Phase 17): all `ImGuiWindowFlags` as boolean props, `x`/`y`/`width`/`height` positioning with `forcePosition`/`forceSize`, `minWidth`/`minHeight`/`maxWidth`/`maxHeight` size constraints, `bgAlpha`, `mouseButton` on `<ContextMenu>`, window flags on `<Modal>`, manual `<Combo>` Begin/End mode with children, `<MultiSelect>` with `onSelectionChange` callback, `selectionIndex` on `<Selectable>`, `noViewport`/`viewportAlwaysOnTop` viewport hints, `get_main_viewport_*()` C++ helpers
+- Window & Popup Control (Phase 17): all `ImGuiWindowFlags` as boolean props, `x`/`y`/`width`/`height` positioning with `forcePosition`/`forceSize`, `minWidth`/`minHeight`/`maxWidth`/`maxHeight` size constraints, `bgAlpha`, `mouseButton` on `<ContextMenu>`, window flags on `<Modal>`, manual `<Combo>` Begin/End mode with children, `<MultiSelect>` with `boxSelect`/`boxSelect2d` drag selection + `onSelectionChange` callback + `apply_multi_select_requests()` C++ helper (requires struct binding), `selectionIndex` on `<Selectable>`, `noViewport`/`viewportAlwaysOnTop` viewport hints, `get_main_viewport_*()` C++ helpers. Hello example now uses `render_root<AppState>` for MultiSelect demo.
 - Interaction & item queries (Phase 16): `onHover`, `onActive`, `onFocused`, `onClicked`, `onDoubleClicked`, `tooltip`, `autoFocus`, `scrollToHere`, `cursor`, `<ContextMenu>`, `<Shortcut>`, plus `imx::clipboard_get()` / `imx::clipboard_set()`
 - Layout & positioning (Phase 14): MainMenuBar, Indent, TextWrap, Spacing, Dummy, SameLine, NewLine, Cursor, explicit `width` prop on input-like widgets
 - Table & tree enhancements (Phase 15): sortable tables, column metadata flags, `TableRow`/`TableCell` background colors, explicit `columnIndex` cell jumps, advanced TreeNode flags, programmatic open control, closable `CollapsingHeader`

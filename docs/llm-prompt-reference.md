@@ -132,7 +132,7 @@ Phase 16 interaction note: interactive widgets also accept `tooltip?(string)`, `
 Modal: title(string, required) | open?(boolean) | onClose?(() => void) | noTitleBar? | noResize? | noMove? | noScrollbar? | noCollapse? | alwaysAutoResize? | noBackground? | horizontalScrollbar? | style?(Style) | children — blocking modal dialog with optional window flags
 Popup: id(string, required) | style?(Style) | children
 ContextMenu: id?(string) | target?("item"|"window") | mouseButton?("left"|"right"|"middle") | children — context popup, default right-click
-MultiSelect: singleSelect? | noSelectAll? | noRangeSelect? | noAutoSelect? | noAutoClear? | selectionSize?(number) | itemsCount?(number) | onSelectionChange?(callback) | children — multi-selection container
+MultiSelect: singleSelect? | noSelectAll? | noRangeSelect? | noAutoSelect? | noAutoClear? | boxSelect? | boxSelect2d? | boxSelectNoScroll? | clearOnClickVoid? | selectionSize?(number) | itemsCount?(number) | onSelectionChange?(callback) | children — multi-selection container (requires struct binding, use apply_multi_select_requests helper)
 Image: src(string, required) | embed?(boolean) | width?(number) | height?(number) — texture display (embed bakes into exe)
 ```
 

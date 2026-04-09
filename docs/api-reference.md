@@ -928,20 +928,45 @@ A container for multi-selection patterns. Wraps `BeginMultiSelect`/`EndMultiSele
 | noRangeSelect | boolean | No | Disable Shift+click range select |
 | noAutoSelect | boolean | No | Disable auto-select on focus |
 | noAutoClear | boolean | No | Disable auto-clear on click |
+| boxSelect | boolean | No | Enable 1D box/drag selection (click and drag to select) |
+| boxSelect2d | boolean | No | Enable 2D box selection (for grid layouts) |
+| boxSelectNoScroll | boolean | No | Disable scrolling during box selection |
+| clearOnClickVoid | boolean | No | Clear selection when clicking empty space |
 | selectionSize | number | No | Current number of selected items |
 | itemsCount | number | No | Total item count |
-| onSelectionChange | callback | No | Receives `ImGuiMultiSelectIO*` for processing selection requests |
+| onSelectionChange | callback | No | C++ function receiving `ImGuiMultiSelectIO*` — called on both begin and end |
+
+**Requires struct binding.** MultiSelect needs a C++ function to process ImGui's selection requests (SetAll, SetRange). Use `apply_multi_select_requests()` helper or `ImGuiSelectionBasicStorage`.
 
 ```tsx
-<MultiSelect selectionSize={selectedCount} itemsCount={items.length}
-             onSelectionChange={(io) => applySelection(io)}>
-  {items.map((item, i) => (
-    <Selectable label={item.name} selected={item.selected} selectionIndex={i} />
-  ))}
+// AppState.h
+struct AppState {
+    static constexpr int COUNT = 6;
+    bool selected[COUNT] = {};
+    int selection_count = 0;
+    void apply_selection(ImGuiMultiSelectIO* io) {
+        imx::renderer::apply_multi_select_requests(io, selected, COUNT);
+        selection_count = 0;
+        for (int i = 0; i < COUNT; i++) if (selected[i]) selection_count++;
+    }
+};
+
+// App.tsx
+<MultiSelect boxSelect selectionSize={props.selection_count} itemsCount={6}
+             onSelectionChange={() => props.apply_selection(0)}>
+  <Selectable label="Item A" selected={props.selected[0]} selectionIndex={0} />
+  <Selectable label="Item B" selected={props.selected[1]} selectionIndex={1} />
 </MultiSelect>
 ```
 
-> **Note:** The `onSelectionChange` callback receives the ImGui multi-select IO pointer. The C++ struct is responsible for processing selection requests (clear all, select range, etc.).
+> **Note:** The `onSelectionChange` callback uses `() => props.fn(0)` pattern — the emitter replaces the `0` placeholder with the actual `ImGuiMultiSelectIO*` pointer. The callback is called on both `BeginMultiSelect` and `EndMultiSelect` results.
+
+##### C++ Helper
+
+```cpp
+// Apply selection requests from ImGuiMultiSelectIO to a bool array
+imx::renderer::apply_multi_select_requests(ImGuiMultiSelectIO* io, bool* selection, int count);
+```
 
 ---
 
