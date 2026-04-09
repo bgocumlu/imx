@@ -152,6 +152,11 @@ void text(const char* fmt, ...) IM_FMTARGS(1);
 
 bool button(const char* title, const Style& style = {}, bool disabled = false);
 
+bool small_button(const char* label);
+bool arrow_button(const char* id, int direction);
+bool invisible_button(const char* id, float width, float height);
+bool image_button(const char* id, const char* src, float width, float height);
+
 bool text_input(const char* label, TextBuffer& buffer, const Style& style = {});
 
 bool checkbox(const char* label, bool* value, const Style& style = {});

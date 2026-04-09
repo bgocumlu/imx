@@ -69,6 +69,15 @@ void image(const char* path, float width, float height) {
     ImGui::Image(ImTextureRef(static_cast<ImTextureID>(static_cast<ImU64>(tex))), ImVec2(w, h));
 }
 
+bool image_button(const char* id, const char* src, float width, float height) {
+    before_child();
+    GLuint tex = ensure_texture_from_file(src);
+    if (tex == 0) return false;
+    float w = width > 0 ? width : static_cast<float>(g_texture_widths[src]);
+    float h = height > 0 ? height : static_cast<float>(g_texture_heights[src]);
+    return ImGui::ImageButton(id, ImTextureRef(static_cast<ImTextureID>(static_cast<ImU64>(tex))), ImVec2(w, h));
+}
+
 void image_embedded(const char* key, const unsigned char* data, unsigned int size, float width, float height) {
     before_child();
     GLuint tex = ensure_texture_from_memory(key, data, size);

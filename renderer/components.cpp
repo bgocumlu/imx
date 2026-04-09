@@ -93,6 +93,21 @@ bool button(const char* title, const Style& style, bool disabled) {
     return pressed;
 }
 
+bool small_button(const char* label) {
+    before_child();
+    return ImGui::SmallButton(label);
+}
+
+bool arrow_button(const char* id, int direction) {
+    before_child();
+    return ImGui::ArrowButton(id, static_cast<ImGuiDir>(direction));
+}
+
+bool invisible_button(const char* id, float width, float height) {
+    before_child();
+    return ImGui::InvisibleButton(id, ImVec2(width, height));
+}
+
 void separator() {
     before_child();
     ImGui::Separator();
