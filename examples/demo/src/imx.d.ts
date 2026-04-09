@@ -1,6 +1,6 @@
 // imx.d.ts — Type definitions for IMX components
 
-interface AppState {
+interface DemoState {
   ms_selected: boolean[];
   ms_selection_count: number;
   apply_selection: (io: any) => void;
