@@ -690,6 +690,15 @@ bool list_box(const char* label, int* current_item, const char* const items[], i
     return r;
 }
 
+bool begin_list_box(const char* label, float width, float height) {
+    before_child();
+    return ImGui::BeginListBox(label, ImVec2(width, height));
+}
+
+void end_list_box() {
+    ImGui::EndListBox();
+}
+
 void progress_bar(float fraction, const char* overlay, const Style& style) {
     before_child();
     ImVec2 size(-FLT_MIN, 0);

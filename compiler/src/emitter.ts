@@ -16,6 +16,7 @@ import type {
     IRSmallButton, IRArrowButton, IRInvisibleButton, IRImageButton,
     IRVSliderFloat, IRVSliderInt, IRSliderAngle, IRItemInteraction, IRShortcut,
     IRBeginCombo, IREndCombo,
+    IRBeginListBox, IREndListBox,
     IRBullet,
 } from './ir.js';
 
@@ -539,6 +540,19 @@ function emitNode(node: IRNode, lines: string[], depth: number): void {
         }
         case 'end_combo':
             lines.push(`${indent}imx::renderer::end_combo();`);
+            lines.push(`${indent}}`);
+            break;
+        case 'begin_list_box': {
+            const n = node as IRBeginListBox;
+            emitLocComment(n.loc, 'ListBox (manual)', lines, indent);
+            const label = asCharPtr(n.label);
+            const w = n.width ?? '0.0f';
+            const h = n.height ?? '0.0f';
+            lines.push(`${indent}if (imx::renderer::begin_list_box(${label}, ${w}, ${h})) {`);
+            break;
+        }
+        case 'end_list_box':
+            lines.push(`${indent}imx::renderer::end_list_box();`);
             lines.push(`${indent}}`);
             break;
         case 'combo':

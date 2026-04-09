@@ -311,13 +311,14 @@ export const HOST_COMPONENTS: Record<string, HostComponentDef> = {
     ListBox: {
         props: withItemInteractionProps({
             label: { type: 'string', required: true },
-            value: { type: 'number', required: true },
+            value: { type: 'number', required: false },
             onChange: { type: 'callback', required: false },
-            items: { type: 'string', required: true },
+            items: { type: 'string', required: false },
             width: { type: 'number', required: false },
+            height: { type: 'number', required: false },
             style: { type: 'style', required: false },
         }),
-        hasChildren: false, isContainer: false,
+        hasChildren: true, isContainer: true,
     },
     ProgressBar: {
         props: {

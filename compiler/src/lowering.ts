@@ -24,6 +24,7 @@ import type {
     IRSmallButton, IRArrowButton, IRInvisibleButton, IRImageButton, IRVSliderFloat, IRVSliderInt, IRSliderAngle,
     IRItemInteraction, IRShortcut,
     IRBeginCombo, IREndCombo,
+    IRBeginListBox, IREndListBox,
     IRBullet,
 } from './ir.js';
 
@@ -588,6 +589,18 @@ function lowerJsxElement(node: ts.JsxElement, body: IRNode[], ctx: LoweringConte
                 lowerJsxChild(child, body, ctx);
             }
             body.push({ kind: 'end_combo' } as IREndCombo);
+            return;
+        }
+
+        if (name === 'ListBox') {
+            // Manual ListBox mode — has children, no items prop
+            const label = attrs['label'] ?? '""';
+            const item = lowerItemInteraction(attrs, rawAttrs, ctx);
+            body.push({ kind: 'begin_list_box', label, width: attrs['width'], height: attrs['height'], style: attrs['style'], item, loc: getLoc(node, ctx) } as IRBeginListBox);
+            for (const child of node.children) {
+                lowerJsxChild(child, body, ctx);
+            }
+            body.push({ kind: 'end_list_box' } as IREndListBox);
             return;
         }
 

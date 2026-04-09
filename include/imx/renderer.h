@@ -272,6 +272,8 @@ bool input_float(const char* label, float* value, const Style& style = {});
 bool color_edit(const char* label, float color[4], const Style& style = {});
 bool color_edit3(const char* label, float color[3], const Style& style = {});
 bool list_box(const char* label, int* current_item, const char* const items[], int items_count, const Style& style = {});
+bool begin_list_box(const char* label, float width = 0.0f, float height = 0.0f);
+void end_list_box();
 void progress_bar(float fraction, const char* overlay = nullptr, const Style& style = {});
 void tooltip(const char* text);
 void request_keyboard_focus();
