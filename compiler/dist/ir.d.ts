@@ -26,7 +26,7 @@ export interface IRPropParam {
     name: string;
     type: IRType | 'callback';
 }
-export type IRNode = IRBeginContainer | IREndContainer | IRText | IRButton | IRTextInput | IRCheckbox | IRSeparator | IRBeginPopup | IREndPopup | IROpenPopup | IRConditional | IRListMap | IRCustomComponent | IRMenuItem | IRSliderFloat | IRSliderInt | IRDragFloat | IRDragInt | IRCombo | IRInputInt | IRInputFloat | IRColorEdit | IRListBox | IRProgressBar | IRTooltip | IRDockLayout | IRNativeWidget | IRBulletText | IRLabelText | IRSelectable | IRRadio | IRInputTextMultiline | IRColorPicker | IRPlotLines | IRPlotHistogram | IRImage | IRDrawLine | IRDrawRect | IRDrawCircle | IRDrawText;
+export type IRNode = IRBeginContainer | IREndContainer | IRText | IRButton | IRTextInput | IRCheckbox | IRSeparator | IRBeginPopup | IREndPopup | IROpenPopup | IRConditional | IRListMap | IRCustomComponent | IRMenuItem | IRSliderFloat | IRSliderInt | IRDragFloat | IRDragInt | IRCombo | IRInputInt | IRInputFloat | IRColorEdit | IRListBox | IRProgressBar | IRTooltip | IRDockLayout | IRNativeWidget | IRBulletText | IRLabelText | IRSelectable | IRRadio | IRInputTextMultiline | IRColorPicker | IRPlotLines | IRPlotHistogram | IRImage | IRDrawLine | IRDrawRect | IRDrawCircle | IRDrawText | IRInputFloatN | IRInputIntN | IRDragFloatN | IRDragIntN | IRSliderFloatN | IRSliderIntN;
 export interface IRBeginContainer {
     kind: 'begin_container';
     tag: 'Window' | 'View' | 'Row' | 'Column' | 'DockSpace' | 'MenuBar' | 'Menu' | 'Table' | 'TableRow' | 'TabBar' | 'TabItem' | 'TreeNode' | 'CollapsingHeader' | 'Theme' | 'DockLayout' | 'DockSplit' | 'DockPanel' | 'Modal' | 'Group' | 'ID' | 'StyleColor' | 'StyleVar' | 'DragDropSource' | 'DragDropTarget' | 'Canvas' | 'Disabled' | 'Child' | 'Font';
@@ -354,6 +354,72 @@ export interface IRDrawText {
     pos: string;
     text: string;
     color: string;
+    loc?: SourceLoc;
+}
+export interface IRInputFloatN {
+    kind: 'input_float_n';
+    label: string;
+    count: number;
+    valueExpr: string;
+    directBind?: boolean;
+    onChangeExpr?: string;
+    style?: string;
+    loc?: SourceLoc;
+}
+export interface IRInputIntN {
+    kind: 'input_int_n';
+    label: string;
+    count: number;
+    valueExpr: string;
+    directBind?: boolean;
+    onChangeExpr?: string;
+    style?: string;
+    loc?: SourceLoc;
+}
+export interface IRDragFloatN {
+    kind: 'drag_float_n';
+    label: string;
+    count: number;
+    valueExpr: string;
+    directBind?: boolean;
+    onChangeExpr?: string;
+    speed: string;
+    style?: string;
+    loc?: SourceLoc;
+}
+export interface IRDragIntN {
+    kind: 'drag_int_n';
+    label: string;
+    count: number;
+    valueExpr: string;
+    directBind?: boolean;
+    onChangeExpr?: string;
+    speed: string;
+    style?: string;
+    loc?: SourceLoc;
+}
+export interface IRSliderFloatN {
+    kind: 'slider_float_n';
+    label: string;
+    count: number;
+    valueExpr: string;
+    directBind?: boolean;
+    onChangeExpr?: string;
+    min: string;
+    max: string;
+    style?: string;
+    loc?: SourceLoc;
+}
+export interface IRSliderIntN {
+    kind: 'slider_int_n';
+    label: string;
+    count: number;
+    valueExpr: string;
+    directBind?: boolean;
+    onChangeExpr?: string;
+    min: string;
+    max: string;
+    style?: string;
     loc?: SourceLoc;
 }
 export interface IRDockLayout {

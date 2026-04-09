@@ -469,6 +469,186 @@ export const HOST_COMPONENTS: Record<string, HostComponentDef> = {
         },
         hasChildren: true, isContainer: true,
     },
+    InputFloat2: {
+        props: {
+            label: { type: 'string', required: true },
+            value: { type: 'string', required: true },
+            onChange: { type: 'callback', required: false },
+            style: { type: 'style', required: false },
+        },
+        hasChildren: false, isContainer: false,
+    },
+    InputFloat3: {
+        props: {
+            label: { type: 'string', required: true },
+            value: { type: 'string', required: true },
+            onChange: { type: 'callback', required: false },
+            style: { type: 'style', required: false },
+        },
+        hasChildren: false, isContainer: false,
+    },
+    InputFloat4: {
+        props: {
+            label: { type: 'string', required: true },
+            value: { type: 'string', required: true },
+            onChange: { type: 'callback', required: false },
+            style: { type: 'style', required: false },
+        },
+        hasChildren: false, isContainer: false,
+    },
+    InputInt2: {
+        props: {
+            label: { type: 'string', required: true },
+            value: { type: 'string', required: true },
+            onChange: { type: 'callback', required: false },
+            style: { type: 'style', required: false },
+        },
+        hasChildren: false, isContainer: false,
+    },
+    InputInt3: {
+        props: {
+            label: { type: 'string', required: true },
+            value: { type: 'string', required: true },
+            onChange: { type: 'callback', required: false },
+            style: { type: 'style', required: false },
+        },
+        hasChildren: false, isContainer: false,
+    },
+    InputInt4: {
+        props: {
+            label: { type: 'string', required: true },
+            value: { type: 'string', required: true },
+            onChange: { type: 'callback', required: false },
+            style: { type: 'style', required: false },
+        },
+        hasChildren: false, isContainer: false,
+    },
+    DragFloat2: {
+        props: {
+            label: { type: 'string', required: true },
+            value: { type: 'string', required: true },
+            onChange: { type: 'callback', required: false },
+            speed: { type: 'number', required: false },
+            style: { type: 'style', required: false },
+        },
+        hasChildren: false, isContainer: false,
+    },
+    DragFloat3: {
+        props: {
+            label: { type: 'string', required: true },
+            value: { type: 'string', required: true },
+            onChange: { type: 'callback', required: false },
+            speed: { type: 'number', required: false },
+            style: { type: 'style', required: false },
+        },
+        hasChildren: false, isContainer: false,
+    },
+    DragFloat4: {
+        props: {
+            label: { type: 'string', required: true },
+            value: { type: 'string', required: true },
+            onChange: { type: 'callback', required: false },
+            speed: { type: 'number', required: false },
+            style: { type: 'style', required: false },
+        },
+        hasChildren: false, isContainer: false,
+    },
+    DragInt2: {
+        props: {
+            label: { type: 'string', required: true },
+            value: { type: 'string', required: true },
+            onChange: { type: 'callback', required: false },
+            speed: { type: 'number', required: false },
+            style: { type: 'style', required: false },
+        },
+        hasChildren: false, isContainer: false,
+    },
+    DragInt3: {
+        props: {
+            label: { type: 'string', required: true },
+            value: { type: 'string', required: true },
+            onChange: { type: 'callback', required: false },
+            speed: { type: 'number', required: false },
+            style: { type: 'style', required: false },
+        },
+        hasChildren: false, isContainer: false,
+    },
+    DragInt4: {
+        props: {
+            label: { type: 'string', required: true },
+            value: { type: 'string', required: true },
+            onChange: { type: 'callback', required: false },
+            speed: { type: 'number', required: false },
+            style: { type: 'style', required: false },
+        },
+        hasChildren: false, isContainer: false,
+    },
+    SliderFloat2: {
+        props: {
+            label: { type: 'string', required: true },
+            value: { type: 'string', required: true },
+            onChange: { type: 'callback', required: false },
+            min: { type: 'number', required: true },
+            max: { type: 'number', required: true },
+            style: { type: 'style', required: false },
+        },
+        hasChildren: false, isContainer: false,
+    },
+    SliderFloat3: {
+        props: {
+            label: { type: 'string', required: true },
+            value: { type: 'string', required: true },
+            onChange: { type: 'callback', required: false },
+            min: { type: 'number', required: true },
+            max: { type: 'number', required: true },
+            style: { type: 'style', required: false },
+        },
+        hasChildren: false, isContainer: false,
+    },
+    SliderFloat4: {
+        props: {
+            label: { type: 'string', required: true },
+            value: { type: 'string', required: true },
+            onChange: { type: 'callback', required: false },
+            min: { type: 'number', required: true },
+            max: { type: 'number', required: true },
+            style: { type: 'style', required: false },
+        },
+        hasChildren: false, isContainer: false,
+    },
+    SliderInt2: {
+        props: {
+            label: { type: 'string', required: true },
+            value: { type: 'string', required: true },
+            onChange: { type: 'callback', required: false },
+            min: { type: 'number', required: true },
+            max: { type: 'number', required: true },
+            style: { type: 'style', required: false },
+        },
+        hasChildren: false, isContainer: false,
+    },
+    SliderInt3: {
+        props: {
+            label: { type: 'string', required: true },
+            value: { type: 'string', required: true },
+            onChange: { type: 'callback', required: false },
+            min: { type: 'number', required: true },
+            max: { type: 'number', required: true },
+            style: { type: 'style', required: false },
+        },
+        hasChildren: false, isContainer: false,
+    },
+    SliderInt4: {
+        props: {
+            label: { type: 'string', required: true },
+            value: { type: 'string', required: true },
+            onChange: { type: 'callback', required: false },
+            min: { type: 'number', required: true },
+            max: { type: 'number', required: true },
+            style: { type: 'style', required: false },
+        },
+        hasChildren: false, isContainer: false,
+    },
 };
 
 export function isHostComponent(name: string): boolean {

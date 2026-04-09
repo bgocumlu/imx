@@ -43,7 +43,8 @@ export type IRNode =
     | IRInputTextMultiline | IRColorPicker
     | IRPlotLines | IRPlotHistogram
     | IRImage
-    | IRDrawLine | IRDrawRect | IRDrawCircle | IRDrawText;
+    | IRDrawLine | IRDrawRect | IRDrawCircle | IRDrawText
+    | IRInputFloatN | IRInputIntN | IRDragFloatN | IRDragIntN | IRSliderFloatN | IRSliderIntN;
 
 export interface IRBeginContainer {
     kind: 'begin_container';
@@ -118,6 +119,13 @@ export interface IRDrawLine { kind: 'draw_line'; p1: string; p2: string; color: 
 export interface IRDrawRect { kind: 'draw_rect'; min: string; max: string; color: string; filled: string; thickness: string; rounding: string; loc?: SourceLoc; }
 export interface IRDrawCircle { kind: 'draw_circle'; center: string; radius: string; color: string; filled: string; thickness: string; loc?: SourceLoc; }
 export interface IRDrawText { kind: 'draw_text'; pos: string; text: string; color: string; loc?: SourceLoc; }
+
+export interface IRInputFloatN { kind: 'input_float_n'; label: string; count: number; valueExpr: string; directBind?: boolean; onChangeExpr?: string; style?: string; loc?: SourceLoc; }
+export interface IRInputIntN { kind: 'input_int_n'; label: string; count: number; valueExpr: string; directBind?: boolean; onChangeExpr?: string; style?: string; loc?: SourceLoc; }
+export interface IRDragFloatN { kind: 'drag_float_n'; label: string; count: number; valueExpr: string; directBind?: boolean; onChangeExpr?: string; speed: string; style?: string; loc?: SourceLoc; }
+export interface IRDragIntN { kind: 'drag_int_n'; label: string; count: number; valueExpr: string; directBind?: boolean; onChangeExpr?: string; speed: string; style?: string; loc?: SourceLoc; }
+export interface IRSliderFloatN { kind: 'slider_float_n'; label: string; count: number; valueExpr: string; directBind?: boolean; onChangeExpr?: string; min: string; max: string; style?: string; loc?: SourceLoc; }
+export interface IRSliderIntN { kind: 'slider_int_n'; label: string; count: number; valueExpr: string; directBind?: boolean; onChangeExpr?: string; min: string; max: string; style?: string; loc?: SourceLoc; }
 
 export interface IRDockLayout {
     kind: 'dock_layout';

@@ -619,6 +619,60 @@ function lowerJsxSelfClosing(node, body, ctx) {
             body.push({ kind: 'draw_text', pos, text, color, loc });
             break;
         }
+        case 'InputFloat2':
+            lowerVectorInput('input_float_n', 2, attrs, rawAttrs, body, ctx, loc);
+            break;
+        case 'InputFloat3':
+            lowerVectorInput('input_float_n', 3, attrs, rawAttrs, body, ctx, loc);
+            break;
+        case 'InputFloat4':
+            lowerVectorInput('input_float_n', 4, attrs, rawAttrs, body, ctx, loc);
+            break;
+        case 'InputInt2':
+            lowerVectorInput('input_int_n', 2, attrs, rawAttrs, body, ctx, loc);
+            break;
+        case 'InputInt3':
+            lowerVectorInput('input_int_n', 3, attrs, rawAttrs, body, ctx, loc);
+            break;
+        case 'InputInt4':
+            lowerVectorInput('input_int_n', 4, attrs, rawAttrs, body, ctx, loc);
+            break;
+        case 'DragFloat2':
+            lowerVectorInput('drag_float_n', 2, attrs, rawAttrs, body, ctx, loc);
+            break;
+        case 'DragFloat3':
+            lowerVectorInput('drag_float_n', 3, attrs, rawAttrs, body, ctx, loc);
+            break;
+        case 'DragFloat4':
+            lowerVectorInput('drag_float_n', 4, attrs, rawAttrs, body, ctx, loc);
+            break;
+        case 'DragInt2':
+            lowerVectorInput('drag_int_n', 2, attrs, rawAttrs, body, ctx, loc);
+            break;
+        case 'DragInt3':
+            lowerVectorInput('drag_int_n', 3, attrs, rawAttrs, body, ctx, loc);
+            break;
+        case 'DragInt4':
+            lowerVectorInput('drag_int_n', 4, attrs, rawAttrs, body, ctx, loc);
+            break;
+        case 'SliderFloat2':
+            lowerVectorInput('slider_float_n', 2, attrs, rawAttrs, body, ctx, loc);
+            break;
+        case 'SliderFloat3':
+            lowerVectorInput('slider_float_n', 3, attrs, rawAttrs, body, ctx, loc);
+            break;
+        case 'SliderFloat4':
+            lowerVectorInput('slider_float_n', 4, attrs, rawAttrs, body, ctx, loc);
+            break;
+        case 'SliderInt2':
+            lowerVectorInput('slider_int_n', 2, attrs, rawAttrs, body, ctx, loc);
+            break;
+        case 'SliderInt3':
+            lowerVectorInput('slider_int_n', 3, attrs, rawAttrs, body, ctx, loc);
+            break;
+        case 'SliderInt4':
+            lowerVectorInput('slider_int_n', 4, attrs, rawAttrs, body, ctx, loc);
+            break;
         default:
             // Container self-closing (e.g., <Window title="X"/>)
             if (HOST_COMPONENTS[name]?.isContainer) {
@@ -1142,6 +1196,43 @@ function getRawAttributes(attributes) {
         }
     }
     return result;
+}
+function lowerVectorInput(family, count, attrs, rawAttrs, body, ctx, loc) {
+    const label = attrs['label'] ?? '""';
+    const style = attrs['style'];
+    const valueRaw = rawAttrs.get('value');
+    let valueExpr = '';
+    let directBind;
+    let onChangeExpr;
+    if (valueRaw) {
+        valueExpr = exprToCpp(valueRaw, ctx);
+        const onChangeRaw = rawAttrs.get('onChange');
+        if (onChangeRaw) {
+            onChangeExpr = exprToCpp(onChangeRaw, ctx);
+            if (onChangeExpr.startsWith('[')) {
+                onChangeExpr = `(${onChangeExpr})()`;
+            }
+            else if (!onChangeExpr.endsWith(')')) {
+                onChangeExpr = `${onChangeExpr}()`;
+            }
+        }
+        else if (ts.isPropertyAccessExpression(valueRaw)) {
+            directBind = true;
+        }
+    }
+    const base = { kind: family, label, count, valueExpr, directBind, onChangeExpr, style, loc };
+    if (family === 'drag_float_n' || family === 'drag_int_n') {
+        base.speed = attrs['speed'] ?? '1.0f';
+    }
+    if (family === 'slider_float_n') {
+        base.min = attrs['min'] ?? '0.0f';
+        base.max = attrs['max'] ?? '1.0f';
+    }
+    if (family === 'slider_int_n') {
+        base.min = attrs['min'] ?? '0';
+        base.max = attrs['max'] ?? '100';
+    }
+    body.push(base);
 }
 function lowerValueOnChange(rawAttrs, ctx) {
     let stateVar = '';

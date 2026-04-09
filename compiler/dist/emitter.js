@@ -444,6 +444,32 @@ function emitNode(node, lines, depth) {
         case 'draw_text':
             emitDrawText(node, lines, indent);
             break;
+        case 'input_float_n':
+            emitVectorInput(node, 'input_float_n', 'float', lines, indent);
+            break;
+        case 'input_int_n':
+            emitVectorInput(node, 'input_int_n', 'int', lines, indent);
+            break;
+        case 'drag_float_n': {
+            const speed = ensureFloatLiteral(node.speed);
+            emitVectorInput(node, 'drag_float_n', 'float', lines, indent, `, ${speed}`);
+            break;
+        }
+        case 'drag_int_n': {
+            const speed = ensureFloatLiteral(node.speed);
+            emitVectorInput(node, 'drag_int_n', 'int', lines, indent, `, ${speed}`);
+            break;
+        }
+        case 'slider_float_n': {
+            const min = ensureFloatLiteral(node.min);
+            const max = ensureFloatLiteral(node.max);
+            emitVectorInput(node, 'slider_float_n', 'float', lines, indent, `, ${min}, ${max}`);
+            break;
+        }
+        case 'slider_int_n': {
+            emitVectorInput(node, 'slider_int_n', 'int', lines, indent, `, ${node.min}, ${node.max}`);
+            break;
+        }
         case 'native_widget':
             emitNativeWidget(node, lines, indent);
             break;
@@ -1706,6 +1732,31 @@ function emitDrawText(node, lines, indent) {
     const color = emitImVec4(node.color);
     const text = asCharPtr(node.text);
     lines.push(`${indent}imx::renderer::draw_text(${posParts.join(', ')}, ${color}, ${text});`);
+}
+function emitVectorInput(node, rendererFn, cppType, lines, indent, extraArgs = '') {
+    const label = asCharPtr(node.label);
+    const count = node.count;
+    const style = node.style ? `, ${node.style}` : '';
+    if (node.directBind && node.valueExpr) {
+        // Direct pointer binding — array decays to pointer naturally
+        lines.push(`${indent}imx::renderer::${rendererFn}(${label}, ${node.valueExpr}, ${count}${extraArgs}${style});`);
+    }
+    else if (node.valueExpr) {
+        // Expression mode with optional onChange
+        lines.push(`${indent}{`);
+        lines.push(`${indent}${INDENT}${cppType} _vec_val[${count}];`);
+        lines.push(`${indent}${INDENT}auto& _vec_src = ${node.valueExpr};`);
+        lines.push(`${indent}${INDENT}for (int i = 0; i < ${count}; ++i) _vec_val[i] = _vec_src[i];`);
+        lines.push(`${indent}${INDENT}if (imx::renderer::${rendererFn}(${label}, _vec_val, ${count}${extraArgs}${style})) {`);
+        if (node.onChangeExpr) {
+            lines.push(`${indent}${INDENT}${INDENT}${node.onChangeExpr};`);
+        }
+        else {
+            lines.push(`${indent}${INDENT}${INDENT}for (int i = 0; i < ${count}; ++i) _vec_src[i] = _vec_val[i];`);
+        }
+        lines.push(`${indent}${INDENT}}`);
+        lines.push(`${indent}}`);
+    }
 }
 function collectEmbedKeys(nodes) {
     const keys = [];

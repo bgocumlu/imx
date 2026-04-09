@@ -960,4 +960,46 @@ function App() {
         expect(output).toContain('begin_font("custom")');
         expect(output).toContain('end_font()');
     });
+
+    it('emits InputFloat3 with direct binding', () => {
+        const output = compile(`
+export function App(props: AppState) {
+  return (
+    <Window title="Test">
+      <InputFloat3 label="Position" value={props.position} />
+    </Window>
+  );
+}
+        `);
+        expect(output).toContain('input_float_n("Position"');
+        expect(output).toContain(', 3');
+    });
+
+    it('emits SliderFloat2 with direct binding', () => {
+        const output = compile(`
+export function App(props: AppState) {
+  return (
+    <Window title="Test">
+      <SliderFloat2 label="Range" value={props.range} min={0} max={1} />
+    </Window>
+  );
+}
+        `);
+        expect(output).toContain('slider_float_n("Range"');
+        expect(output).toContain(', 2');
+    });
+
+    it('emits DragInt4 with direct binding', () => {
+        const output = compile(`
+export function App(props: AppState) {
+  return (
+    <Window title="Test">
+      <DragInt4 label="Margins" value={props.margins} speed={1} />
+    </Window>
+  );
+}
+        `);
+        expect(output).toContain('drag_int_n("Margins"');
+        expect(output).toContain(', 4');
+    });
 });
