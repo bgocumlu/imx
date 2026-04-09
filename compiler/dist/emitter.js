@@ -970,6 +970,26 @@ function emitBeginContainer(node, lines, indent) {
                 flagParts.push('ImGuiWindowFlags_NoDocking');
             if (node.props['noScrollbar'] === 'true')
                 flagParts.push('ImGuiWindowFlags_NoScrollbar');
+            if (node.props['noBackground'] === 'true')
+                flagParts.push('ImGuiWindowFlags_NoBackground');
+            if (node.props['alwaysAutoResize'] === 'true')
+                flagParts.push('ImGuiWindowFlags_AlwaysAutoResize');
+            if (node.props['noNavFocus'] === 'true')
+                flagParts.push('ImGuiWindowFlags_NoNavFocus');
+            if (node.props['noNav'] === 'true')
+                flagParts.push('ImGuiWindowFlags_NoNav');
+            if (node.props['noDecoration'] === 'true')
+                flagParts.push('ImGuiWindowFlags_NoDecoration');
+            if (node.props['noInputs'] === 'true')
+                flagParts.push('ImGuiWindowFlags_NoInputs');
+            if (node.props['noScrollWithMouse'] === 'true')
+                flagParts.push('ImGuiWindowFlags_NoScrollWithMouse');
+            if (node.props['horizontalScrollbar'] === 'true')
+                flagParts.push('ImGuiWindowFlags_HorizontalScrollbar');
+            if (node.props['alwaysVerticalScrollbar'] === 'true')
+                flagParts.push('ImGuiWindowFlags_AlwaysVerticalScrollbar');
+            if (node.props['alwaysHorizontalScrollbar'] === 'true')
+                flagParts.push('ImGuiWindowFlags_AlwaysHorizontalScrollbar');
             const flags = flagParts.length > 0 ? flagParts.join(' | ') : '0';
             const openExpr = node.props['open'];
             const onCloseExpr = node.props['onClose'];
