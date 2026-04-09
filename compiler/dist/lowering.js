@@ -673,6 +673,18 @@ function lowerJsxSelfClosing(node, body, ctx) {
         case 'SliderInt4':
             lowerVectorInput('slider_int_n', 4, attrs, rawAttrs, body, ctx, loc);
             break;
+        case 'SmallButton':
+            lowerSmallButton(attrs, rawAttrs, body, ctx, loc);
+            break;
+        case 'ArrowButton':
+            lowerArrowButton(attrs, rawAttrs, body, ctx, loc);
+            break;
+        case 'InvisibleButton':
+            lowerInvisibleButton(attrs, rawAttrs, body, ctx, loc);
+            break;
+        case 'ImageButton':
+            lowerImageButton(attrs, rawAttrs, body, ctx, loc);
+            break;
         default:
             // Container self-closing (e.g., <Window title="X"/>)
             if (HOST_COMPONENTS[name]?.isContainer) {
@@ -693,6 +705,48 @@ function lowerButton(attrs, rawAttrs, body, ctx, loc) {
     const disabled = attrs['disabled'] === 'true' ? true : undefined;
     const style = attrs['style'];
     body.push({ kind: 'button', title, action, disabled, style, loc });
+}
+function lowerSmallButton(attrs, rawAttrs, body, ctx, loc) {
+    const label = attrs['label'] ?? '""';
+    const onPressExpr = rawAttrs.get('onPress');
+    let action = [];
+    if (onPressExpr) {
+        action = extractActionStatements(onPressExpr, ctx);
+    }
+    body.push({ kind: 'small_button', label, action, loc });
+}
+function lowerArrowButton(attrs, rawAttrs, body, ctx, loc) {
+    const id = attrs['id'] ?? '""';
+    const direction = attrs['direction'] ?? '"left"';
+    const onPressExpr = rawAttrs.get('onPress');
+    let action = [];
+    if (onPressExpr) {
+        action = extractActionStatements(onPressExpr, ctx);
+    }
+    body.push({ kind: 'arrow_button', id, direction, action, loc });
+}
+function lowerInvisibleButton(attrs, rawAttrs, body, ctx, loc) {
+    const id = attrs['id'] ?? '""';
+    const width = attrs['width'] ?? '0';
+    const height = attrs['height'] ?? '0';
+    const onPressExpr = rawAttrs.get('onPress');
+    let action = [];
+    if (onPressExpr) {
+        action = extractActionStatements(onPressExpr, ctx);
+    }
+    body.push({ kind: 'invisible_button', id, width, height, action, loc });
+}
+function lowerImageButton(attrs, rawAttrs, body, ctx, loc) {
+    const id = attrs['id'] ?? '""';
+    const src = attrs['src'] ?? '""';
+    const width = attrs['width'];
+    const height = attrs['height'];
+    const onPressExpr = rawAttrs.get('onPress');
+    let action = [];
+    if (onPressExpr) {
+        action = extractActionStatements(onPressExpr, ctx);
+    }
+    body.push({ kind: 'image_button', id, src, width, height, action, loc });
 }
 function lowerTextInput(attrs, rawAttrs, body, ctx, loc) {
     const label = attrs['label'] ?? '""';

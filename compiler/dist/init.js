@@ -179,6 +179,10 @@ interface RowProps { gap?: number; style?: Style; children?: any; }
 interface ColumnProps { gap?: number; style?: Style; children?: any; }
 interface TextProps { style?: Style; children?: any; }
 interface ButtonProps { title: string; onPress: () => void; disabled?: boolean; style?: Style; }
+interface SmallButtonProps { label: string; onPress: () => void; }
+interface ArrowButtonProps { id: string; direction: "left" | "right" | "up" | "down"; onPress: () => void; }
+interface InvisibleButtonProps { id: string; width: number; height: number; onPress: () => void; }
+interface ImageButtonProps { id: string; src: string; width?: number; height?: number; onPress: () => void; }
 interface TextInputProps { value: string; onChange?: (v: string) => void; label?: string; placeholder?: string; style?: Style; }
 interface CheckboxProps { value: boolean; onChange?: (v: boolean) => void; label?: string; style?: Style; }
 interface SeparatorProps {}
@@ -215,6 +219,24 @@ interface DragIntProps { label: string; value: number; onChange?: (v: number) =>
 interface ComboProps { label: string; value: number; onChange?: (v: number) => void; items: string[]; style?: Style; }
 interface InputIntProps { label: string; value: number; onChange?: (v: number) => void; style?: Style; }
 interface InputFloatProps { label: string; value: number; onChange?: (v: number) => void; style?: Style; }
+interface InputFloat2Props { label: string; value: [number, number]; onChange?: (v: [number, number]) => void; style?: Style; }
+interface InputFloat3Props { label: string; value: [number, number, number]; onChange?: (v: [number, number, number]) => void; style?: Style; }
+interface InputFloat4Props { label: string; value: [number, number, number, number]; onChange?: (v: [number, number, number, number]) => void; style?: Style; }
+interface InputInt2Props { label: string; value: [number, number]; onChange?: (v: [number, number]) => void; style?: Style; }
+interface InputInt3Props { label: string; value: [number, number, number]; onChange?: (v: [number, number, number]) => void; style?: Style; }
+interface InputInt4Props { label: string; value: [number, number, number, number]; onChange?: (v: [number, number, number, number]) => void; style?: Style; }
+interface DragFloat2Props { label: string; value: [number, number]; onChange?: (v: [number, number]) => void; speed?: number; style?: Style; }
+interface DragFloat3Props { label: string; value: [number, number, number]; onChange?: (v: [number, number, number]) => void; speed?: number; style?: Style; }
+interface DragFloat4Props { label: string; value: [number, number, number, number]; onChange?: (v: [number, number, number, number]) => void; speed?: number; style?: Style; }
+interface DragInt2Props { label: string; value: [number, number]; onChange?: (v: [number, number]) => void; speed?: number; style?: Style; }
+interface DragInt3Props { label: string; value: [number, number, number]; onChange?: (v: [number, number, number]) => void; speed?: number; style?: Style; }
+interface DragInt4Props { label: string; value: [number, number, number, number]; onChange?: (v: [number, number, number, number]) => void; speed?: number; style?: Style; }
+interface SliderFloat2Props { label: string; value: [number, number]; onChange?: (v: [number, number]) => void; min: number; max: number; style?: Style; }
+interface SliderFloat3Props { label: string; value: [number, number, number]; onChange?: (v: [number, number, number]) => void; min: number; max: number; style?: Style; }
+interface SliderFloat4Props { label: string; value: [number, number, number, number]; onChange?: (v: [number, number, number, number]) => void; min: number; max: number; style?: Style; }
+interface SliderInt2Props { label: string; value: [number, number]; onChange?: (v: [number, number]) => void; min: number; max: number; style?: Style; }
+interface SliderInt3Props { label: string; value: [number, number, number]; onChange?: (v: [number, number, number]) => void; min: number; max: number; style?: Style; }
+interface SliderInt4Props { label: string; value: [number, number, number, number]; onChange?: (v: [number, number, number, number]) => void; min: number; max: number; style?: Style; }
 interface ColorEditProps { label: string; value: number[]; onChange: (v: number[]) => void; style?: Style; }
 interface ListBoxProps { label: string; value: number; onChange?: (v: number) => void; items: string[]; style?: Style; }
 interface ProgressBarProps { value: number; overlay?: string; style?: Style; }
@@ -268,6 +290,10 @@ declare function Row(props: RowProps): any;
 declare function Column(props: ColumnProps): any;
 declare function Text(props: TextProps): any;
 declare function Button(props: ButtonProps): any;
+declare function SmallButton(props: SmallButtonProps): any;
+declare function ArrowButton(props: ArrowButtonProps): any;
+declare function InvisibleButton(props: InvisibleButtonProps): any;
+declare function ImageButton(props: ImageButtonProps): any;
 declare function TextInput(props: TextInputProps): any;
 declare function Checkbox(props: CheckboxProps): any;
 declare function Separator(props: SeparatorProps): any;
@@ -293,6 +319,24 @@ declare function DragInt(props: DragIntProps): any;
 declare function Combo(props: ComboProps): any;
 declare function InputInt(props: InputIntProps): any;
 declare function InputFloat(props: InputFloatProps): any;
+declare function InputFloat2(props: InputFloat2Props): any;
+declare function InputFloat3(props: InputFloat3Props): any;
+declare function InputFloat4(props: InputFloat4Props): any;
+declare function InputInt2(props: InputInt2Props): any;
+declare function InputInt3(props: InputInt3Props): any;
+declare function InputInt4(props: InputInt4Props): any;
+declare function DragFloat2(props: DragFloat2Props): any;
+declare function DragFloat3(props: DragFloat3Props): any;
+declare function DragFloat4(props: DragFloat4Props): any;
+declare function DragInt2(props: DragInt2Props): any;
+declare function DragInt3(props: DragInt3Props): any;
+declare function DragInt4(props: DragInt4Props): any;
+declare function SliderFloat2(props: SliderFloat2Props): any;
+declare function SliderFloat3(props: SliderFloat3Props): any;
+declare function SliderFloat4(props: SliderFloat4Props): any;
+declare function SliderInt2(props: SliderInt2Props): any;
+declare function SliderInt3(props: SliderInt3Props): any;
+declare function SliderInt4(props: SliderInt4Props): any;
 declare function ColorEdit(props: ColorEditProps): any;
 declare function ListBox(props: ListBoxProps): any;
 declare function ProgressBar(props: ProgressBarProps): any;

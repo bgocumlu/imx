@@ -184,6 +184,10 @@ interface RowProps { gap?: number; style?: Style; children?: any; }
 interface ColumnProps { gap?: number; style?: Style; children?: any; }
 interface TextProps { style?: Style; children?: any; }
 interface ButtonProps { title: string; onPress: () => void; disabled?: boolean; style?: Style; }
+interface SmallButtonProps { label: string; onPress: () => void; }
+interface ArrowButtonProps { id: string; direction: "left" | "right" | "up" | "down"; onPress: () => void; }
+interface InvisibleButtonProps { id: string; width: number; height: number; onPress: () => void; }
+interface ImageButtonProps { id: string; src: string; width?: number; height?: number; onPress: () => void; }
 interface TextInputProps { value: string; onChange?: (v: string) => void; label?: string; placeholder?: string; style?: Style; }
 interface CheckboxProps { value: boolean; onChange?: (v: boolean) => void; label?: string; style?: Style; }
 interface SeparatorProps {}
@@ -291,6 +295,10 @@ declare function Row(props: RowProps): any;
 declare function Column(props: ColumnProps): any;
 declare function Text(props: TextProps): any;
 declare function Button(props: ButtonProps): any;
+declare function SmallButton(props: SmallButtonProps): any;
+declare function ArrowButton(props: ArrowButtonProps): any;
+declare function InvisibleButton(props: InvisibleButtonProps): any;
+declare function ImageButton(props: ImageButtonProps): any;
 declare function TextInput(props: TextInputProps): any;
 declare function Checkbox(props: CheckboxProps): any;
 declare function Separator(props: SeparatorProps): any;

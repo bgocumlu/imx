@@ -17,6 +17,7 @@ import type {
     IRImage,
     IRDrawLine, IRDrawRect, IRDrawCircle, IRDrawText,
     IRInputFloatN, IRInputIntN, IRDragFloatN, IRDragIntN, IRSliderFloatN, IRSliderIntN,
+    IRSmallButton, IRArrowButton, IRInvisibleButton, IRImageButton,
 } from './ir.js';
 
 interface LoweringContext {
@@ -694,6 +695,10 @@ function lowerJsxSelfClosing(node: ts.JsxSelfClosingElement, body: IRNode[], ctx
         case 'SliderInt2': lowerVectorInput('slider_int_n', 2, attrs, rawAttrs, body, ctx, loc); break;
         case 'SliderInt3': lowerVectorInput('slider_int_n', 3, attrs, rawAttrs, body, ctx, loc); break;
         case 'SliderInt4': lowerVectorInput('slider_int_n', 4, attrs, rawAttrs, body, ctx, loc); break;
+        case 'SmallButton': lowerSmallButton(attrs, rawAttrs, body, ctx, loc); break;
+        case 'ArrowButton': lowerArrowButton(attrs, rawAttrs, body, ctx, loc); break;
+        case 'InvisibleButton': lowerInvisibleButton(attrs, rawAttrs, body, ctx, loc); break;
+        case 'ImageButton': lowerImageButton(attrs, rawAttrs, body, ctx, loc); break;
         default:
             // Container self-closing (e.g., <Window title="X"/>)
             if (HOST_COMPONENTS[name]?.isContainer) {
@@ -715,6 +720,52 @@ function lowerButton(attrs: Record<string, string>, rawAttrs: Map<string, ts.Exp
     const disabled = attrs['disabled'] === 'true' ? true : undefined;
     const style = attrs['style'];
     body.push({ kind: 'button', title, action, disabled, style, loc });
+}
+
+function lowerSmallButton(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext, loc: SourceLoc): void {
+    const label = attrs['label'] ?? '""';
+    const onPressExpr = rawAttrs.get('onPress');
+    let action: string[] = [];
+    if (onPressExpr) {
+        action = extractActionStatements(onPressExpr, ctx);
+    }
+    body.push({ kind: 'small_button', label, action, loc });
+}
+
+function lowerArrowButton(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext, loc: SourceLoc): void {
+    const id = attrs['id'] ?? '""';
+    const direction = attrs['direction'] ?? '"left"';
+    const onPressExpr = rawAttrs.get('onPress');
+    let action: string[] = [];
+    if (onPressExpr) {
+        action = extractActionStatements(onPressExpr, ctx);
+    }
+    body.push({ kind: 'arrow_button', id, direction, action, loc });
+}
+
+function lowerInvisibleButton(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext, loc: SourceLoc): void {
+    const id = attrs['id'] ?? '""';
+    const width = attrs['width'] ?? '0';
+    const height = attrs['height'] ?? '0';
+    const onPressExpr = rawAttrs.get('onPress');
+    let action: string[] = [];
+    if (onPressExpr) {
+        action = extractActionStatements(onPressExpr, ctx);
+    }
+    body.push({ kind: 'invisible_button', id, width, height, action, loc });
+}
+
+function lowerImageButton(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext, loc: SourceLoc): void {
+    const id = attrs['id'] ?? '""';
+    const src = attrs['src'] ?? '""';
+    const width = attrs['width'];
+    const height = attrs['height'];
+    const onPressExpr = rawAttrs.get('onPress');
+    let action: string[] = [];
+    if (onPressExpr) {
+        action = extractActionStatements(onPressExpr, ctx);
+    }
+    body.push({ kind: 'image_button', id, src, width, height, action, loc });
 }
 
 function lowerTextInput(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext, loc: SourceLoc): void {

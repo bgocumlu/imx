@@ -583,6 +583,40 @@ export const HOST_COMPONENTS: Record<string, HostComponentDef> = {
         },
         hasChildren: false, isContainer: false,
     },
+    SmallButton: {
+        props: {
+            label: { type: 'string', required: true },
+            onPress: { type: 'callback', required: true },
+        },
+        hasChildren: false, isContainer: false,
+    },
+    ArrowButton: {
+        props: {
+            id: { type: 'string', required: true },
+            direction: { type: 'string', required: true },
+            onPress: { type: 'callback', required: true },
+        },
+        hasChildren: false, isContainer: false,
+    },
+    InvisibleButton: {
+        props: {
+            id: { type: 'string', required: true },
+            width: { type: 'number', required: true },
+            height: { type: 'number', required: true },
+            onPress: { type: 'callback', required: true },
+        },
+        hasChildren: false, isContainer: false,
+    },
+    ImageButton: {
+        props: {
+            id: { type: 'string', required: true },
+            src: { type: 'string', required: true },
+            width: { type: 'number', required: false },
+            height: { type: 'number', required: false },
+            onPress: { type: 'callback', required: true },
+        },
+        hasChildren: false, isContainer: false,
+    },
     SliderFloat2: {
         props: {
             label: { type: 'string', required: true },

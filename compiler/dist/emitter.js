@@ -339,6 +339,18 @@ function emitNode(node, lines, depth) {
         case 'button':
             emitButton(node, lines, indent, depth);
             break;
+        case 'small_button':
+            emitSmallButton(node, lines, indent);
+            break;
+        case 'arrow_button':
+            emitArrowButton(node, lines, indent);
+            break;
+        case 'invisible_button':
+            emitInvisibleButton(node, lines, indent);
+            break;
+        case 'image_button':
+            emitImageButton(node, lines, indent);
+            break;
         case 'text_input':
             emitTextInput(node, lines, indent);
             break;
@@ -1069,6 +1081,69 @@ function emitButton(node, lines, indent, depth) {
     }
     else {
         lines.push(`${indent}if (imx::renderer::button(${title}${disabledArg})) {`);
+        for (const stmt of node.action) {
+            lines.push(`${indent}${INDENT}${stmt}`);
+        }
+        lines.push(`${indent}}`);
+    }
+}
+function emitSmallButton(node, lines, indent) {
+    emitLocComment(node.loc, 'SmallButton', lines, indent);
+    const label = asCharPtr(node.label);
+    if (node.action.length === 0) {
+        lines.push(`${indent}imx::renderer::small_button(${label});`);
+    }
+    else {
+        lines.push(`${indent}if (imx::renderer::small_button(${label})) {`);
+        for (const stmt of node.action) {
+            lines.push(`${indent}${INDENT}${stmt}`);
+        }
+        lines.push(`${indent}}`);
+    }
+}
+function emitArrowButton(node, lines, indent) {
+    emitLocComment(node.loc, 'ArrowButton', lines, indent);
+    const id = asCharPtr(node.id);
+    const dirMap = { '"left"': '0', '"right"': '1', '"up"': '2', '"down"': '3' };
+    const dir = dirMap[node.direction] ?? '0';
+    if (node.action.length === 0) {
+        lines.push(`${indent}imx::renderer::arrow_button(${id}, ${dir});`);
+    }
+    else {
+        lines.push(`${indent}if (imx::renderer::arrow_button(${id}, ${dir})) {`);
+        for (const stmt of node.action) {
+            lines.push(`${indent}${INDENT}${stmt}`);
+        }
+        lines.push(`${indent}}`);
+    }
+}
+function emitInvisibleButton(node, lines, indent) {
+    emitLocComment(node.loc, 'InvisibleButton', lines, indent);
+    const id = asCharPtr(node.id);
+    const width = emitFloat(node.width);
+    const height = emitFloat(node.height);
+    if (node.action.length === 0) {
+        lines.push(`${indent}imx::renderer::invisible_button(${id}, ${width}, ${height});`);
+    }
+    else {
+        lines.push(`${indent}if (imx::renderer::invisible_button(${id}, ${width}, ${height})) {`);
+        for (const stmt of node.action) {
+            lines.push(`${indent}${INDENT}${stmt}`);
+        }
+        lines.push(`${indent}}`);
+    }
+}
+function emitImageButton(node, lines, indent) {
+    emitLocComment(node.loc, 'ImageButton', lines, indent);
+    const id = asCharPtr(node.id);
+    const src = asCharPtr(node.src);
+    const width = node.width ? emitFloat(node.width) : '0';
+    const height = node.height ? emitFloat(node.height) : '0';
+    if (node.action.length === 0) {
+        lines.push(`${indent}imx::renderer::image_button(${id}, ${src}, ${width}, ${height});`);
+    }
+    else {
+        lines.push(`${indent}if (imx::renderer::image_button(${id}, ${src}, ${width}, ${height})) {`);
         for (const stmt of node.action) {
             lines.push(`${indent}${INDENT}${stmt}`);
         }

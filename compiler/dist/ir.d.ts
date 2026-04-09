@@ -26,7 +26,7 @@ export interface IRPropParam {
     name: string;
     type: IRType | 'callback';
 }
-export type IRNode = IRBeginContainer | IREndContainer | IRText | IRButton | IRTextInput | IRCheckbox | IRSeparator | IRBeginPopup | IREndPopup | IROpenPopup | IRConditional | IRListMap | IRCustomComponent | IRMenuItem | IRSliderFloat | IRSliderInt | IRDragFloat | IRDragInt | IRCombo | IRInputInt | IRInputFloat | IRColorEdit | IRListBox | IRProgressBar | IRTooltip | IRDockLayout | IRNativeWidget | IRBulletText | IRLabelText | IRSelectable | IRRadio | IRInputTextMultiline | IRColorPicker | IRPlotLines | IRPlotHistogram | IRImage | IRDrawLine | IRDrawRect | IRDrawCircle | IRDrawText | IRInputFloatN | IRInputIntN | IRDragFloatN | IRDragIntN | IRSliderFloatN | IRSliderIntN;
+export type IRNode = IRBeginContainer | IREndContainer | IRText | IRButton | IRTextInput | IRCheckbox | IRSeparator | IRBeginPopup | IREndPopup | IROpenPopup | IRConditional | IRListMap | IRCustomComponent | IRMenuItem | IRSliderFloat | IRSliderInt | IRDragFloat | IRDragInt | IRCombo | IRInputInt | IRInputFloat | IRColorEdit | IRListBox | IRProgressBar | IRTooltip | IRDockLayout | IRNativeWidget | IRBulletText | IRLabelText | IRSelectable | IRRadio | IRInputTextMultiline | IRColorPicker | IRPlotLines | IRPlotHistogram | IRImage | IRDrawLine | IRDrawRect | IRDrawCircle | IRDrawText | IRInputFloatN | IRInputIntN | IRDragFloatN | IRDragIntN | IRSliderFloatN | IRSliderIntN | IRSmallButton | IRArrowButton | IRInvisibleButton | IRImageButton;
 export interface IRBeginContainer {
     kind: 'begin_container';
     tag: 'Window' | 'View' | 'Row' | 'Column' | 'DockSpace' | 'MenuBar' | 'Menu' | 'Table' | 'TableRow' | 'TabBar' | 'TabItem' | 'TreeNode' | 'CollapsingHeader' | 'Theme' | 'DockLayout' | 'DockSplit' | 'DockPanel' | 'Modal' | 'Group' | 'ID' | 'StyleColor' | 'StyleVar' | 'DragDropSource' | 'DragDropTarget' | 'Canvas' | 'Disabled' | 'Child' | 'Font';
@@ -420,6 +420,36 @@ export interface IRSliderIntN {
     min: string;
     max: string;
     style?: string;
+    loc?: SourceLoc;
+}
+export interface IRSmallButton {
+    kind: 'small_button';
+    label: string;
+    action: string[];
+    loc?: SourceLoc;
+}
+export interface IRArrowButton {
+    kind: 'arrow_button';
+    id: string;
+    direction: string;
+    action: string[];
+    loc?: SourceLoc;
+}
+export interface IRInvisibleButton {
+    kind: 'invisible_button';
+    id: string;
+    width: string;
+    height: string;
+    action: string[];
+    loc?: SourceLoc;
+}
+export interface IRImageButton {
+    kind: 'image_button';
+    id: string;
+    src: string;
+    width?: string;
+    height?: string;
+    action: string[];
     loc?: SourceLoc;
 }
 export interface IRDockLayout {

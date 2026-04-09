@@ -44,7 +44,8 @@ export type IRNode =
     | IRPlotLines | IRPlotHistogram
     | IRImage
     | IRDrawLine | IRDrawRect | IRDrawCircle | IRDrawText
-    | IRInputFloatN | IRInputIntN | IRDragFloatN | IRDragIntN | IRSliderFloatN | IRSliderIntN;
+    | IRInputFloatN | IRInputIntN | IRDragFloatN | IRDragIntN | IRSliderFloatN | IRSliderIntN
+    | IRSmallButton | IRArrowButton | IRInvisibleButton | IRImageButton;
 
 export interface IRBeginContainer {
     kind: 'begin_container';
@@ -126,6 +127,11 @@ export interface IRDragFloatN { kind: 'drag_float_n'; label: string; count: numb
 export interface IRDragIntN { kind: 'drag_int_n'; label: string; count: number; valueExpr: string; directBind?: boolean; onChangeExpr?: string; speed: string; style?: string; loc?: SourceLoc; }
 export interface IRSliderFloatN { kind: 'slider_float_n'; label: string; count: number; valueExpr: string; directBind?: boolean; onChangeExpr?: string; min: string; max: string; style?: string; loc?: SourceLoc; }
 export interface IRSliderIntN { kind: 'slider_int_n'; label: string; count: number; valueExpr: string; directBind?: boolean; onChangeExpr?: string; min: string; max: string; style?: string; loc?: SourceLoc; }
+
+export interface IRSmallButton { kind: 'small_button'; label: string; action: string[]; loc?: SourceLoc; }
+export interface IRArrowButton { kind: 'arrow_button'; id: string; direction: string; action: string[]; loc?: SourceLoc; }
+export interface IRInvisibleButton { kind: 'invisible_button'; id: string; width: string; height: string; action: string[]; loc?: SourceLoc; }
+export interface IRImageButton { kind: 'image_button'; id: string; src: string; width?: string; height?: string; action: string[]; loc?: SourceLoc; }
 
 export interface IRDockLayout {
     kind: 'dock_layout';

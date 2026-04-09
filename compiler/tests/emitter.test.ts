@@ -989,6 +989,61 @@ export function App(props: AppState) {
         expect(output).toContain(', 2');
     });
 
+    it('emits SmallButton', () => {
+        const output = compile(`
+function App() {
+  return (
+    <Window title="Test">
+      <SmallButton label="x" onPress={() => {}} />
+    </Window>
+  );
+}
+        `);
+        expect(output).toContain('small_button("x")');
+    });
+
+    it('emits ArrowButton', () => {
+        const output = compile(`
+function App() {
+  return (
+    <Window title="Test">
+      <ArrowButton id="nav" direction="left" onPress={() => {}} />
+    </Window>
+  );
+}
+        `);
+        expect(output).toContain('arrow_button("nav"');
+    });
+
+    it('emits InvisibleButton', () => {
+        const output = compile(`
+function App() {
+  return (
+    <Window title="Test">
+      <InvisibleButton id="hidden" width={100} height={50} onPress={() => {}} />
+    </Window>
+  );
+}
+        `);
+        expect(output).toContain('invisible_button("hidden"');
+        expect(output).toContain('100.0F');
+        expect(output).toContain('50.0F');
+    });
+
+    it('emits ImageButton', () => {
+        const output = compile(`
+function App() {
+  return (
+    <Window title="Test">
+      <ImageButton id="icon" src="icon.png" width={32} height={32} onPress={() => {}} />
+    </Window>
+  );
+}
+        `);
+        expect(output).toContain('image_button("icon"');
+        expect(output).toContain('"icon.png"');
+    });
+
     it('emits DragInt4 with direct binding', () => {
         const output = compile(`
 export function App(props: AppState) {
