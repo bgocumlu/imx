@@ -7,7 +7,7 @@ import { lowerComponent } from './lowering.js';
 import { emitComponent, emitComponentHeader, emitRoot } from './emitter.js';
 import { formatDiagnostic } from './diagnostics.js';
 import type { ImportInfo } from './emitter.js';
-import type { IRComponent, IRNode, IRImage } from './ir.js';
+import type { IRComponent, IRNode, IRImage, IRBeginContainer } from './ir.js';
 
 interface CompiledComponent {
     name: string;
@@ -158,6 +158,19 @@ export function compile(files: string[], outputDir: string): CompileResult {
         }
     }
 
+    // Collect font declarations from ALL components
+    const allFontDeclarations: FontDeclaration[] = [];
+    for (const comp of compiled) {
+        allFontDeclarations.push(...collectFontDeclarations(comp.ir.body));
+    }
+    const fontDeclarations = deduplicateFonts(allFontDeclarations);
+
+    // Generate embed headers for fonts
+    if (fontDeclarations.some(f => f.embed)) {
+        const sourceDir = path.dirname(path.resolve(compiled[0].sourcePath));
+        generateFontEmbedHeaders(fontDeclarations, sourceDir, outputDir);
+    }
+
     // Phase 4: Emit root entry point
     if (compiled.length > 0) {
         const root = compiled[0];
@@ -166,7 +179,7 @@ export function compile(files: string[], outputDir: string): CompileResult {
         const propsType = root.ir.namedPropsType
             ? root.ir.namedPropsType
             : root.hasProps ? root.name + 'Props' : undefined;
-        const rootOutput = emitRoot(root.name, root.stateCount, root.bufferCount, root.sourceFile, propsType, isNamedPropsType);
+        const rootOutput = emitRoot(root.name, root.stateCount, root.bufferCount, root.sourceFile, propsType, isNamedPropsType, fontDeclarations);
         const rootPath = path.join(outputDir, 'app_root.gen.cpp');
         fs.writeFileSync(rootPath, rootOutput);
         console.log(`  -> ${rootPath} (root entry point)`);
@@ -288,6 +301,95 @@ function generateEmbedHeaders(images: IRImage[], sourceDir: string, outputDir: s
 
         fs.writeFileSync(headerPath, header);
         console.log(`  ${rawSrc} -> ${headerPath} (embed)`);
+    }
+}
+
+export interface FontDeclaration {
+    name: string;
+    src: string;
+    size: string;
+    embed: boolean;
+    embedKey?: string;
+}
+
+function collectFontDeclarations(nodes: IRNode[]): FontDeclaration[] {
+    const fonts: FontDeclaration[] = [];
+    for (const node of nodes) {
+        if (node.kind === 'begin_container' && node.tag === 'Font' && node.props['src']) {
+            const name = (node.props['name'] ?? '').replace(/^"|"$/g, '');
+            const src = (node.props['src'] ?? '').replace(/^"|"$/g, '');
+            const size = node.props['size'] ?? '16.0f';
+            const embed = node.props['embed'] === 'true';
+            let embedKey: string | undefined;
+            if (embed) {
+                embedKey = src.replace(/[^a-zA-Z0-9]/g, '_');
+            }
+            fonts.push({ name, src, size, embed, embedKey });
+        } else if (node.kind === 'conditional') {
+            fonts.push(...collectFontDeclarations(node.body));
+            if (node.elseBody) fonts.push(...collectFontDeclarations(node.elseBody));
+        } else if (node.kind === 'list_map') {
+            fonts.push(...collectFontDeclarations(node.body));
+        }
+    }
+    return fonts;
+}
+
+function deduplicateFonts(fonts: FontDeclaration[]): FontDeclaration[] {
+    const seen = new Map<string, FontDeclaration>();
+    for (const f of fonts) {
+        if (seen.has(f.name)) {
+            const existing = seen.get(f.name)!;
+            if (existing.src !== f.src) {
+                console.error(`  error: font "${f.name}" declared with different sources: "${existing.src}" vs "${f.src}"`);
+            }
+            continue;
+        }
+        seen.set(f.name, f);
+    }
+    return Array.from(seen.values());
+}
+
+function generateFontEmbedHeaders(fonts: FontDeclaration[], sourceDir: string, outputDir: string): void {
+    for (const font of fonts) {
+        if (!font.embed || !font.embedKey) continue;
+
+        let fontPath = path.resolve(sourceDir, font.src);
+        const headerPath = path.join(outputDir, `${font.embedKey}.embed.h`);
+
+        // Mtime caching: skip if header exists and is newer than font file
+        if (fs.existsSync(headerPath) && fs.existsSync(fontPath)) {
+            const fontStat = fs.statSync(fontPath);
+            const hdrStat = fs.statSync(headerPath);
+            if (hdrStat.mtimeMs >= fontStat.mtimeMs) {
+                continue;
+            }
+        }
+
+        if (!fs.existsSync(fontPath)) {
+            // Try public/ subdirectory
+            const publicPath = path.resolve(sourceDir, 'public', font.src);
+            if (fs.existsSync(publicPath)) {
+                fontPath = publicPath;
+            } else {
+                console.warn(`  warning: embedded font not found: ${fontPath} (also tried public/)`);
+                continue;
+            }
+        }
+
+        const fontData = fs.readFileSync(fontPath);
+        const bytes = Array.from(fontData)
+            .map(b => `0x${b.toString(16).padStart(2, '0')}`)
+            .join(', ');
+        const header = [
+            `// Generated from ${font.src} by imxc`,
+            `#pragma once`,
+            `static const unsigned char ${font.embedKey}_data[] = { ${bytes} };`,
+            `static const unsigned int ${font.embedKey}_size = ${fontData.length};`,
+            '',
+        ].join('\n');
+        fs.writeFileSync(headerPath, header);
+        console.log(`  ${font.src} -> ${headerPath} (font embed)`);
     }
 }
 
