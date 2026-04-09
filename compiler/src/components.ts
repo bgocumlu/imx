@@ -87,7 +87,12 @@ export const HOST_COMPONENTS: Record<string, HostComponentDef> = {
         hasChildren: true, isContainer: true,
     },
     Text: {
-        props: { style: { type: 'style', required: false } },
+        props: {
+            color: { type: 'number', required: false },
+            disabled: { type: 'boolean', required: false },
+            wrapped: { type: 'boolean', required: false },
+            style: { type: 'style', required: false },
+        },
         hasChildren: true, isContainer: false,
     },
     Button: {

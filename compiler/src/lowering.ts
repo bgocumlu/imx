@@ -812,10 +812,14 @@ function lowerJsxSelfClosing(node: ts.JsxSelfClosingElement, body: IRNode[], ctx
         case 'Separator':
             body.push({ kind: 'separator', loc });
             break;
-        case 'Text':
-            // Self-closing <Text /> - empty text
-            body.push({ kind: 'text', format: '', args: [], loc });
+        case 'Text': {
+            // Self-closing <Text /> — may have disabled/wrapped/color props
+            const disabled = attrs['disabled'] === 'true';
+            const wrapped = attrs['wrapped'] === 'true';
+            const color = attrs['color'];
+            body.push({ kind: 'text', format: '', args: [], color, disabled: disabled || undefined, wrapped: wrapped || undefined, loc });
             break;
+        }
         case 'BulletText':
             // Self-closing <BulletText /> - empty bullet
             body.push({ kind: 'bullet_text', format: '', args: [], loc });
@@ -1122,6 +1126,12 @@ function lowerTextElement(node: ts.JsxElement, body: IRNode[], ctx: LoweringCont
     let format = '';
     const args: string[] = [];
 
+    // Extract Text props
+    const attrs = getAttributes(node.openingElement.attributes, ctx);
+    const color = attrs['color'];
+    const disabled = attrs['disabled'] === 'true';
+    const wrapped = attrs['wrapped'] === 'true';
+
     for (const child of node.children) {
         if (ts.isJsxText(child)) {
             // Collapse whitespace (newlines, tabs, runs of spaces) into single spaces,
@@ -1176,7 +1186,7 @@ function lowerTextElement(node: ts.JsxElement, body: IRNode[], ctx: LoweringCont
         }
     }
 
-    body.push({ kind: 'text', format, args, loc });
+    body.push({ kind: 'text', format, args, color, disabled: disabled || undefined, wrapped: wrapped || undefined, loc });
 }
 
 /**

@@ -139,7 +139,7 @@ export interface IRBeginCollapsingHeader {
     loc?: SourceLoc;
 }
 export interface IREndCollapsingHeader { kind: 'end_collapsing_header'; closable?: string; }
-export interface IRText { kind: 'text'; format: string; args: string[]; loc?: SourceLoc; }
+export interface IRText { kind: 'text'; format: string; args: string[]; color?: string; disabled?: boolean; wrapped?: boolean; loc?: SourceLoc; }
 export interface IRButton { kind: 'button'; title: string; action: string[]; disabled?: boolean; style?: string; item?: IRItemInteraction; loc?: SourceLoc; }
 export interface IRTextInput { kind: 'text_input'; label: string; bufferIndex: number; stateVar: string; valueExpr?: string; onChangeExpr?: string; directBind?: boolean; width?: string; style?: string; item?: IRItemInteraction; loc?: SourceLoc; }
 export interface IRCheckbox { kind: 'checkbox'; label: string; stateVar: string; valueExpr?: string; onChangeExpr?: string; directBind?: boolean; style?: string; item?: IRItemInteraction; loc?: SourceLoc; }

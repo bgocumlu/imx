@@ -1534,11 +1534,30 @@ function emitEndContainer(node: IREndContainer, lines: string[], indent: string)
 
 function emitText(node: IRText, lines: string[], indent: string): void {
     emitLocComment(node.loc, 'Text', lines, indent);
-    if (node.args.length === 0) {
-        lines.push(`${indent}imx::renderer::text(${JSON.stringify(node.format)});`);
+    const fmtStr = JSON.stringify(node.format);
+    const argsStr = node.args.length > 0 ? ', ' + node.args.join(', ') : '';
+
+    if (node.disabled) {
+        // disabled takes priority — ImGui::TextDisabled has its own grayed style
+        lines.push(`${indent}imx::renderer::text_disabled(${fmtStr}${argsStr});`);
+    } else if (node.color && node.wrapped) {
+        // color + wrapped: PushStyleColor + TextWrapped + PopStyleColor
+        lines.push(`${indent}ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(${node.color}));`);
+        lines.push(`${indent}imx::renderer::text_wrapped(${fmtStr}${argsStr});`);
+        lines.push(`${indent}ImGui::PopStyleColor();`);
+    } else if (node.color) {
+        // color only: inline ImGui::TextColored
+        lines.push(`${indent}ImGui::TextColored(ImVec4(${node.color}), ${fmtStr}${argsStr});`);
+    } else if (node.wrapped) {
+        // wrapped only
+        lines.push(`${indent}imx::renderer::text_wrapped(${fmtStr}${argsStr});`);
     } else {
-        const argsStr = node.args.join(', ');
-        lines.push(`${indent}imx::renderer::text(${JSON.stringify(node.format)}, ${argsStr});`);
+        // plain text (current behavior)
+        if (node.args.length === 0) {
+            lines.push(`${indent}imx::renderer::text(${fmtStr});`);
+        } else {
+            lines.push(`${indent}imx::renderer::text(${fmtStr}${argsStr});`);
+        }
     }
 }
 
