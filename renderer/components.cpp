@@ -765,9 +765,9 @@ void label_text(const char* label, const char* text) {
     ImGui::LabelText(label, "%s", text);
 }
 
-bool selectable(const char* label, bool selected, const Style& style) {
+bool selectable(const char* label, bool selected, int flags, const Style& style) {
     before_child();
-    return ImGui::Selectable(label, selected);
+    return ImGui::Selectable(label, selected, flags);
 }
 
 bool radio(const char* label, int* value, int v_button, const Style& style) {

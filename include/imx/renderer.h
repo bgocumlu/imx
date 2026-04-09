@@ -287,7 +287,7 @@ bool shortcut_pressed(const char* keys);
 void bullet_text(const char* fmt, ...) IM_FMTARGS(1);
 void bullet();
 void label_text(const char* label, const char* text);
-bool selectable(const char* label, bool selected = false, const Style& style = {});
+bool selectable(const char* label, bool selected = false, int flags = 0, const Style& style = {});
 bool radio(const char* label, int* value, int v_button, const Style& style = {});
 bool text_input_multiline(const char* label, TextBuffer& buffer, const Style& style = {});
 bool color_picker(const char* label, float color[4], const Style& style = {});

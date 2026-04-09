@@ -181,7 +181,7 @@ export interface IRNativeWidget {
 
 export interface IRBulletText { kind: 'bullet_text'; format: string; args: string[]; loc?: SourceLoc; }
 export interface IRLabelText { kind: 'label_text'; label: string; value: string; loc?: SourceLoc; }
-export interface IRSelectable { kind: 'selectable'; label: string; selected: string; action: string[]; selectionIndex?: string; style?: string; item?: IRItemInteraction; loc?: SourceLoc; }
+export interface IRSelectable { kind: 'selectable'; label: string; selected: string; action: string[]; selectionIndex?: string; flags?: string; style?: string; item?: IRItemInteraction; loc?: SourceLoc; }
 export interface IRRadio { kind: 'radio'; label: string; stateVar: string; valueExpr?: string; onChangeExpr?: string; directBind?: boolean; index: string; style?: string; item?: IRItemInteraction; loc?: SourceLoc; }
 export interface IRInputTextMultiline { kind: 'input_text_multiline'; label: string; bufferIndex: number; stateVar: string; valueExpr?: string; onChangeExpr?: string; directBind?: boolean; width?: string; style?: string; item?: IRItemInteraction; loc?: SourceLoc; }
 export interface IRColorPicker { kind: 'color_picker'; label: string; stateVar: string; valueExpr?: string; onChangeExpr?: string; directBind?: boolean; style?: string; item?: IRItemInteraction; loc?: SourceLoc; }

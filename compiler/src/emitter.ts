@@ -2394,8 +2394,9 @@ function emitSelectable(node: IRSelectable, lines: string[], indent: string): vo
         lines.push(`${indent}imx::renderer::set_next_item_selection_data(${node.selectionIndex});`);
     }
     const label = asCharPtr(node.label);
+    const flagsArg = node.flags ? `, ${node.flags}` : '';
     const pressedVar = node.action.length > 0 ? nextWidgetTemp('selectable_pressed') : undefined;
-    const resultVar = emitBoolWidgetCall(`imx::renderer::selectable(${label}, ${node.selected})`, node.item, lines, indent, pressedVar);
+    const resultVar = emitBoolWidgetCall(`imx::renderer::selectable(${label}, ${node.selected}${flagsArg})`, node.item, lines, indent, pressedVar);
     if (node.action.length > 0 && resultVar) {
         lines.push(`${indent}if (${resultVar}) {`);
         emitActionStatements(node.action, lines, indent + INDENT);

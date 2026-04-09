@@ -1582,8 +1582,13 @@ function lowerSelectable(attrs: Record<string, string>, rawAttrs: Map<string, ts
     }
     const style = attrs['style'];
     const selectionIndex = attrs['selectionIndex'];
+    const flagParts: string[] = [];
+    if (attrs['spanAllColumns'] === 'true') flagParts.push('ImGuiSelectableFlags_SpanAllColumns');
+    if (attrs['allowDoubleClick'] === 'true') flagParts.push('ImGuiSelectableFlags_AllowDoubleClick');
+    if (attrs['dontClosePopups'] === 'true') flagParts.push('ImGuiSelectableFlags_DontClosePopups');
+    const flags = flagParts.length > 0 ? flagParts.join(' | ') : undefined;
     const item = lowerItemInteraction(attrs, rawAttrs, ctx);
-    body.push({ kind: 'selectable', label, selected, action, selectionIndex, style, item, loc });
+    body.push({ kind: 'selectable', label, selected, action, selectionIndex, flags, style, item, loc });
 }
 
 function lowerRadio(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext, loc: SourceLoc): void {
