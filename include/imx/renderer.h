@@ -253,6 +253,14 @@ void draw_rect(float x1, float y1, float x2, float y2, ImVec4 color, bool filled
 void draw_circle(float cx, float cy, float radius, ImVec4 color, bool filled = false, float thickness = 1.0f);
 void draw_text(float x, float y, ImVec4 color, const char* text);
 
+void draw_bezier_cubic(float p1x, float p1y, float p2x, float p2y, float p3x, float p3y, float p4x, float p4y, ImVec4 color, float thickness = 1.0f, int segments = 0);
+void draw_bezier_quadratic(float p1x, float p1y, float p2x, float p2y, float p3x, float p3y, ImVec4 color, float thickness = 1.0f, int segments = 0);
+void draw_polyline(const float* points, int point_count, ImVec4 color, float thickness = 1.0f, bool closed = false);
+void draw_convex_poly_filled(const float* points, int point_count, ImVec4 color);
+void draw_ngon(float cx, float cy, float radius, ImVec4 color, int num_segments, float thickness = 1.0f);
+void draw_ngon_filled(float cx, float cy, float radius, ImVec4 color, int num_segments);
+void draw_triangle(float p1x, float p1y, float p2x, float p2y, float p3x, float p3y, ImVec4 color, bool filled = false, float thickness = 1.0f);
+
 void begin_font(const char* name);
 void end_font();
 

@@ -855,6 +855,68 @@ void draw_text(float x, float y, ImVec4 color, const char* text) {
         ImGui::ColorConvertFloat4ToU32(color), text);
 }
 
+void draw_bezier_cubic(float p1x, float p1y, float p2x, float p2y, float p3x, float p3y, float p4x, float p4y, ImVec4 color, float thickness, int segments) {
+    ImVec2 o = canvas_origin();
+    ImGui::GetWindowDrawList()->AddBezierCubic(
+        ImVec2(o.x + p1x, o.y + p1y), ImVec2(o.x + p2x, o.y + p2y),
+        ImVec2(o.x + p3x, o.y + p3y), ImVec2(o.x + p4x, o.y + p4y),
+        ImGui::ColorConvertFloat4ToU32(color), thickness, segments);
+}
+
+void draw_bezier_quadratic(float p1x, float p1y, float p2x, float p2y, float p3x, float p3y, ImVec4 color, float thickness, int segments) {
+    ImVec2 o = canvas_origin();
+    ImGui::GetWindowDrawList()->AddBezierQuadratic(
+        ImVec2(o.x + p1x, o.y + p1y), ImVec2(o.x + p2x, o.y + p2y),
+        ImVec2(o.x + p3x, o.y + p3y),
+        ImGui::ColorConvertFloat4ToU32(color), thickness, segments);
+}
+
+void draw_polyline(const float* points, int point_count, ImVec4 color, float thickness, bool closed) {
+    ImVec2 o = canvas_origin();
+    std::vector<ImVec2> pts(point_count);
+    for (int i = 0; i < point_count; ++i) {
+        pts[i] = ImVec2(o.x + points[i * 2], o.y + points[i * 2 + 1]);
+    }
+    ImGui::GetWindowDrawList()->AddPolyline(pts.data(), point_count,
+        ImGui::ColorConvertFloat4ToU32(color), closed ? ImDrawFlags_Closed : ImDrawFlags_None, thickness);
+}
+
+void draw_convex_poly_filled(const float* points, int point_count, ImVec4 color) {
+    ImVec2 o = canvas_origin();
+    std::vector<ImVec2> pts(point_count);
+    for (int i = 0; i < point_count; ++i) {
+        pts[i] = ImVec2(o.x + points[i * 2], o.y + points[i * 2 + 1]);
+    }
+    ImGui::GetWindowDrawList()->AddConvexPolyFilled(pts.data(), point_count,
+        ImGui::ColorConvertFloat4ToU32(color));
+}
+
+void draw_ngon(float cx, float cy, float radius, ImVec4 color, int num_segments, float thickness) {
+    ImVec2 o = canvas_origin();
+    ImGui::GetWindowDrawList()->AddNgon(ImVec2(o.x + cx, o.y + cy), radius,
+        ImGui::ColorConvertFloat4ToU32(color), num_segments, thickness);
+}
+
+void draw_ngon_filled(float cx, float cy, float radius, ImVec4 color, int num_segments) {
+    ImVec2 o = canvas_origin();
+    ImGui::GetWindowDrawList()->AddNgonFilled(ImVec2(o.x + cx, o.y + cy), radius,
+        ImGui::ColorConvertFloat4ToU32(color), num_segments);
+}
+
+void draw_triangle(float p1x, float p1y, float p2x, float p2y, float p3x, float p3y, ImVec4 color, bool filled, float thickness) {
+    ImVec2 o = canvas_origin();
+    ImU32 col = ImGui::ColorConvertFloat4ToU32(color);
+    if (filled) {
+        ImGui::GetWindowDrawList()->AddTriangleFilled(
+            ImVec2(o.x + p1x, o.y + p1y), ImVec2(o.x + p2x, o.y + p2y),
+            ImVec2(o.x + p3x, o.y + p3y), col);
+    } else {
+        ImGui::GetWindowDrawList()->AddTriangle(
+            ImVec2(o.x + p1x, o.y + p1y), ImVec2(o.x + p2x, o.y + p2y),
+            ImVec2(o.x + p3x, o.y + p3y), col, thickness);
+    }
+}
+
 void begin_font(const char* name) {
     before_child();
     auto it = g_font_registry.find(name);
