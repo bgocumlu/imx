@@ -237,8 +237,15 @@ function generateEmbedHeaders(images, sourceDir, outputDir) {
         if (!img.embedKey)
             continue;
         const rawSrc = img.src.replace(/^"|"$/g, '');
-        const imagePath = path.resolve(sourceDir, rawSrc);
+        let imagePath = path.resolve(sourceDir, rawSrc);
         const headerPath = path.join(outputDir, `${img.embedKey}.embed.h`);
+        // Try public/ subdirectory as fallback (relative to sourceDir's parent)
+        if (!fs.existsSync(imagePath)) {
+            const publicPath = path.resolve(sourceDir, '..', 'public', rawSrc);
+            if (fs.existsSync(publicPath)) {
+                imagePath = publicPath;
+            }
+        }
         // Mtime caching: skip if header exists and is newer than image
         if (fs.existsSync(headerPath) && fs.existsSync(imagePath)) {
             const imgStat = fs.statSync(imagePath);
@@ -248,7 +255,7 @@ function generateEmbedHeaders(images, sourceDir, outputDir) {
             }
         }
         if (!fs.existsSync(imagePath)) {
-            console.warn(`  warning: embedded image not found: ${imagePath}`);
+            console.warn(`  warning: embedded image not found: ${imagePath} (also tried public/)`);
             continue;
         }
         const imageData = fs.readFileSync(imagePath);
