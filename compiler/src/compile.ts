@@ -375,8 +375,8 @@ function generateFontEmbedHeaders(fonts: FontDeclaration[], sourceDir: string, o
         }
 
         if (!fs.existsSync(fontPath)) {
-            // Try public/ subdirectory
-            const publicPath = path.resolve(sourceDir, 'public', font.src);
+            // Try public/ subdirectory (relative to sourceDir's parent, for src/ layout)
+            const publicPath = path.resolve(sourceDir, '..', 'public', font.src);
             if (fs.existsSync(publicPath)) {
                 fontPath = publicPath;
             } else {
