@@ -90,8 +90,9 @@ React-Native-like authoring model for Dear ImGui. Write .tsx, compile to native 
 - Don't call `before_child()` in modal/popup begin functions — overlays don't participate in layout
 - Don't work around compiler bugs by modifying example code — fix the pipeline
 
-## Current status (Phases 1-16 complete)
-- ~95 host components covering all ImGui widgets + input expansion
+## Current status (Phases 1-17 complete)
+- ~97 host components covering all ImGui widgets + input expansion
+- Window & Popup Control (Phase 17): all `ImGuiWindowFlags` as boolean props, `x`/`y`/`width`/`height` positioning with `forcePosition`/`forceSize`, `minWidth`/`minHeight`/`maxWidth`/`maxHeight` size constraints, `bgAlpha`, `mouseButton` on `<ContextMenu>`, window flags on `<Modal>`, manual `<Combo>` Begin/End mode with children, `<MultiSelect>` with `onSelectionChange` callback, `selectionIndex` on `<Selectable>`, `noViewport`/`viewportAlwaysOnTop` viewport hints, `get_main_viewport_*()` C++ helpers
 - Interaction & item queries (Phase 16): `onHover`, `onActive`, `onFocused`, `onClicked`, `onDoubleClicked`, `tooltip`, `autoFocus`, `scrollToHere`, `cursor`, `<ContextMenu>`, `<Shortcut>`, plus `imx::clipboard_get()` / `imx::clipboard_set()`
 - Layout & positioning (Phase 14): MainMenuBar, Indent, TextWrap, Spacing, Dummy, SameLine, NewLine, Cursor, explicit `width` prop on input-like widgets
 - Table & tree enhancements (Phase 15): sortable tables, column metadata flags, `TableRow`/`TableCell` background colors, explicit `columnIndex` cell jumps, advanced TreeNode flags, programmatic open control, closable `CollapsingHeader`
@@ -117,4 +118,4 @@ React-Native-like authoring model for Dear ImGui. Write .tsx, compile to native 
 - API documentation + LLM prompt reference complete
 - Packaging: `imxc@0.5.5` on npm, FetchContent for C++ (compiler/dist/ committed)
 - Release builds hide console on Windows (WIN32_EXECUTABLE), Debug shows it
-- Next: Phase 17 candidates (Window & Popup Control)
+- Next: Phase 18 candidates (Text & Display Variants)

@@ -64,11 +64,43 @@ An ImGui window with a title bar.
 | Prop | Type | Required | Description |
 |------|------|----------|-------------|
 | title | string | Yes | Window title displayed in the title bar |
+| open | boolean | No | Controls window visibility |
+| onClose | callback | No | Called when the window close button is clicked |
+| noTitleBar | boolean | No | Hide the title bar |
+| noResize | boolean | No | Prevent resizing |
+| noMove | boolean | No | Prevent moving |
+| noCollapse | boolean | No | Prevent collapsing |
+| noDocking | boolean | No | Prevent docking |
+| noScrollbar | boolean | No | Hide scrollbar |
+| noBackground | boolean | No | Transparent background |
+| alwaysAutoResize | boolean | No | Auto-resize to fit content |
+| noNavFocus | boolean | No | No nav focus |
+| noNav | boolean | No | No nav |
+| noDecoration | boolean | No | No title bar, resize, scrollbar, collapse |
+| noInputs | boolean | No | No mouse/keyboard input |
+| noScrollWithMouse | boolean | No | Disable scroll with mouse wheel |
+| horizontalScrollbar | boolean | No | Show horizontal scrollbar |
+| alwaysVerticalScrollbar | boolean | No | Always show vertical scrollbar |
+| alwaysHorizontalScrollbar | boolean | No | Always show horizontal scrollbar |
+| x | number | No | Initial X position (ImGuiCond_Once by default) |
+| y | number | No | Initial Y position (requires x) |
+| width | number | No | Initial width |
+| height | number | No | Initial height |
+| forcePosition | boolean | No | Force position every frame (ImGuiCond_Always) |
+| forceSize | boolean | No | Force size every frame (ImGuiCond_Always) |
+| minWidth | number | No | Minimum width constraint |
+| minHeight | number | No | Minimum height constraint |
+| maxWidth | number | No | Maximum width constraint |
+| maxHeight | number | No | Maximum height constraint |
+| bgAlpha | number | No | Background alpha (0.0-1.0) |
+| noViewport | boolean | No | Pin to main viewport (prevent floating) |
+| viewportAlwaysOnTop | boolean | No | Float viewport always on top |
 | style | Style | No | Layout and appearance styles |
 
 ```tsx
-<Window title="My Window">
-  <Text>Hello</Text>
+<Window title="My Window" x={100} y={200} width={400} height={300}
+        minWidth={200} maxWidth={800} bgAlpha={0.9}>
+  <Text>Positioned and constrained window</Text>
 </Window>
 ```
 
@@ -782,19 +814,44 @@ const [color, setColor] = useState([1.0, 0.5, 0.0, 1.0]);
 
 #### Combo
 
-A dropdown select box.
+A dropdown select box. Supports two modes: simple (with `items` prop) and manual (with children).
+
+**Simple mode** (items list):
 
 | Prop | Type | Required | Description |
 |------|------|----------|-------------|
 | label | string | Yes | Label displayed next to the dropdown |
 | value | number | Yes | Index of the currently selected item (0-based) |
-| onChange | (v: number) => void | Yes | Called with the new selected index |
+| onChange | (v: number) => void | No | Called with the new selected index |
 | items | string[] | Yes | Array of option labels |
+| width | number | No | Widget width |
 | style | Style | No | Layout and appearance styles |
 
 ```tsx
 const [mode, setMode] = useState(0);
 <Combo label="Mode" value={mode} onChange={setMode} items={["Easy", "Medium", "Hard"]} />
+```
+
+**Manual mode** (Begin/End with children):
+
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| label | string | Yes | Label displayed next to the dropdown |
+| preview | string | No | Preview text shown when combo is closed |
+| noArrowButton | boolean | No | Hide the arrow button |
+| noPreview | boolean | No | Hide the preview text |
+| heightSmall | boolean | No | Small dropdown height |
+| heightLarge | boolean | No | Large dropdown height |
+| heightRegular | boolean | No | Regular dropdown height |
+| width | number | No | Widget width |
+| style | Style | No | Layout and appearance styles |
+
+```tsx
+const [idx, setIdx] = useState(0);
+<Combo label="Pick" preview="Select one">
+  <Selectable label="Apple" selected={idx === 0} onSelect={() => setIdx(0)} />
+  <Selectable label="Banana" selected={idx === 1} onSelect={() => setIdx(1)} />
+</Combo>
 ```
 
 ---
@@ -849,6 +906,7 @@ A clickable item that can be selected or deselected.
 | label | string | Yes | Selectable item label text |
 | selected | boolean | No | Whether the item is currently selected |
 | onSelect | () => void | No | Called when the item is clicked |
+| selectionIndex | number | No | Selection index for use inside `<MultiSelect>` |
 | style | Style | No | Layout and appearance styles |
 
 ```tsx
@@ -856,6 +914,34 @@ const [selected, setSelected] = useState(0);
 <Selectable label="Option A" selected={selected === 0} onSelect={() => setSelected(0)} />
 <Selectable label="Option B" selected={selected === 1} onSelect={() => setSelected(1)} />
 ```
+
+---
+
+#### MultiSelect
+
+A container for multi-selection patterns. Wraps `BeginMultiSelect`/`EndMultiSelect`. Children (typically `<Selectable>`) participate in range/batch selection. Selection state lives in the C++ struct.
+
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| singleSelect | boolean | No | Restrict to single selection |
+| noSelectAll | boolean | No | Disable Ctrl+A select all |
+| noRangeSelect | boolean | No | Disable Shift+click range select |
+| noAutoSelect | boolean | No | Disable auto-select on focus |
+| noAutoClear | boolean | No | Disable auto-clear on click |
+| selectionSize | number | No | Current number of selected items |
+| itemsCount | number | No | Total item count |
+| onSelectionChange | callback | No | Receives `ImGuiMultiSelectIO*` for processing selection requests |
+
+```tsx
+<MultiSelect selectionSize={selectedCount} itemsCount={items.length}
+             onSelectionChange={(io) => applySelection(io)}>
+  {items.map((item, i) => (
+    <Selectable label={item.name} selected={item.selected} selectionIndex={i} />
+  ))}
+</MultiSelect>
+```
+
+> **Note:** The `onSelectionChange` callback receives the ImGui multi-select IO pointer. The C++ struct is responsible for processing selection requests (clear all, select range, etc.).
 
 ---
 
@@ -976,6 +1062,7 @@ Context-menu popup container. By default it attaches to the previous item; set `
 |------|------|----------|-------------|
 | id | string | No | Optional popup ID override |
 | target | `"item" \| "window"` | No | Context target. Defaults to `"item"` |
+| mouseButton | `"left" \| "right" \| "middle"` | No | Which mouse button triggers the menu. Defaults to `"right"` |
 
 ```tsx
 <Button title="Actions" onPress={() => {}} />
@@ -1000,6 +1087,14 @@ A blocking modal dialog window. Shows on top of other content and blocks interac
 | title | string | Yes | Modal window title displayed in the title bar |
 | open | boolean | No | Whether the modal is currently visible |
 | onClose | () => void | No | Called when the modal is closed (e.g., by clicking the close button) |
+| noTitleBar | boolean | No | Hide the title bar |
+| noResize | boolean | No | Prevent resizing |
+| noMove | boolean | No | Prevent moving |
+| noScrollbar | boolean | No | Hide scrollbar |
+| noCollapse | boolean | No | Prevent collapsing |
+| alwaysAutoResize | boolean | No | Auto-resize to fit content |
+| noBackground | boolean | No | Transparent background |
+| horizontalScrollbar | boolean | No | Show horizontal scrollbar |
 | style | Style | No | Layout and appearance styles |
 | children | | Yes | Modal content |
 
@@ -1477,6 +1572,17 @@ imx::clipboard_set("Copied from IMX");
 ```
 
 Use this from your C++ host code or registered native widgets when you need direct access to the platform clipboard.
+
+#### Viewport Helpers
+
+Query the main viewport geometry from C++ code (useful for responsive positioning):
+
+```cpp
+ImVec2 pos  = imx::renderer::get_main_viewport_pos();
+ImVec2 size = imx::renderer::get_main_viewport_size();
+ImVec2 work_pos  = imx::renderer::get_main_viewport_work_pos();   // excludes menu bar
+ImVec2 work_size = imx::renderer::get_main_viewport_work_size();
+```
 
 #### FontOptions
 

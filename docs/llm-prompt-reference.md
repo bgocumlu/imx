@@ -32,7 +32,7 @@ Utilities:
 ### Layout
 ```
 DockSpace: style?(Style) | children — top-level docking container
-Window: title(string, required) | style?(Style) | children — ImGui window with title bar
+Window: title(string, required) | open?(boolean) | onClose?(callback) | noTitleBar? | noResize? | noMove? | noCollapse? | noDocking? | noScrollbar? | noBackground? | alwaysAutoResize? | noNavFocus? | noNav? | noDecoration? | noInputs? | noScrollWithMouse? | horizontalScrollbar? | alwaysVerticalScrollbar? | alwaysHorizontalScrollbar? | x?(number) | y?(number) | width?(number) | height?(number) | forcePosition?(boolean) | forceSize?(boolean) | minWidth?(number) | minHeight?(number) | maxWidth?(number) | maxHeight?(number) | bgAlpha?(number) | noViewport?(boolean) | viewportAlwaysOnTop?(boolean) | style?(Style) | children — ImGui window with full control
 View: style?(Style) | children — generic container
 Indent: width?(number) | children — temporary indentation for child items
 TextWrap: width(number, required) | children — push text wrap boundary relative to current cursor
@@ -90,12 +90,12 @@ DragInt: label(string, required) | value(number, required) | onChange((v: number
 InputInt: label(string, required) | value(number, required) | onChange((v: number) => void, required) | style?(Style)
 InputFloat: label(string, required) | value(number, required) | onChange((v: number) => void, required) | style?(Style)
 Radio: label(string, required) | value(number, required) | index(number, required) | onChange?((v: number) => void) | style?(Style)
-Selectable: label(string, required) | selected?(boolean) | onSelect?(() => void) | style?(Style)
+Selectable: label(string, required) | selected?(boolean) | onSelect?(() => void) | selectionIndex?(number) | style?(Style) — selectionIndex for use inside MultiSelect
 ColorEdit: label(string, required) | value(number[], required) | onChange((v: number[]) => void, required) | style?(Style)
 ColorEdit3: label(string, required) | value([number,number,number], required) | onChange?((v) => void) | style?(Style) — RGB only
 ColorPicker: label(string, required) | value(number[], required) | onChange((v: number[]) => void, required) | style?(Style)
 ColorPicker3: label(string, required) | value([number,number,number], required) | onChange?((v) => void) | style?(Style) — RGB only
-Combo: label(string, required) | value(number, required) | onChange((v: number) => void, required) | items(string[], required) | style?(Style)
+Combo: label(string, required) | value?(number) | onChange?((v: number) => void) | items?(string[]) | preview?(string) | noArrowButton? | noPreview? | heightSmall? | heightLarge? | heightRegular? | width?(number) | style?(Style) | children? — simple mode (items) or manual mode (children)
 ListBox: label(string, required) | value(number, required) | onChange((v: number) => void, required) | items(string[], required) | style?(Style)
 SmallButton: label(string, required) | onPress(() => void, required) — compact button
 ArrowButton: id(string, required) | direction("left"|"right"|"up"|"down", required) | onPress(() => void, required)
@@ -129,9 +129,10 @@ Phase 16 interaction note: interactive widgets also accept `tooltip?(string)`, `
 
 ### Overlay
 ```
-Modal: title(string, required) | open?(boolean) | onClose?(() => void) | style?(Style) | children — blocking modal dialog
+Modal: title(string, required) | open?(boolean) | onClose?(() => void) | noTitleBar? | noResize? | noMove? | noScrollbar? | noCollapse? | alwaysAutoResize? | noBackground? | horizontalScrollbar? | style?(Style) | children — blocking modal dialog with optional window flags
 Popup: id(string, required) | style?(Style) | children
-ContextMenu: id?(string) | target?("item"|"window") | children — right-click popup for previous item or current window
+ContextMenu: id?(string) | target?("item"|"window") | mouseButton?("left"|"right"|"middle") | children — context popup, default right-click
+MultiSelect: singleSelect? | noSelectAll? | noRangeSelect? | noAutoSelect? | noAutoClear? | selectionSize?(number) | itemsCount?(number) | onSelectionChange?(callback) | children — multi-selection container
 Image: src(string, required) | embed?(boolean) | width?(number) | height?(number) — texture display (embed bakes into exe)
 ```
 
