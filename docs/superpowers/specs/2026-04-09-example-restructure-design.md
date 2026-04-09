@@ -7,6 +7,10 @@ Replace the monolithic 608-line hello example with three focused example apps:
 - `examples/demo/` — component-organized demo (like imgui_demo), fully populated
 - `examples/phases/` — phase showcase with hub, content added incrementally by user
 
+## Prerequisites
+
+- **Font embed from TSX** — `<Font>` needs `src` and `embed` props so fonts can be loaded declaratively from TSX instead of manual C++ `load_font()` calls in main.cpp. This feature must be implemented before the demo/phases examples, which will use it. See separate spec.
+
 ## Problem
 
 The current `examples/hello/App.tsx` has 44 useState calls, 14 windows, and 608 lines in one file. It's cluttered, hard to test individual features, and mixes phase-by-phase development history with component showcase.
