@@ -1149,6 +1149,25 @@ function emitBeginContainer(node, lines, indent) {
         }
         case 'Modal': {
             const title = asCharPtr(node.props['title'] ?? '""');
+            // Build modal flags
+            const flagParts = [];
+            if (node.props['noTitleBar'] === 'true')
+                flagParts.push('ImGuiWindowFlags_NoTitleBar');
+            if (node.props['noResize'] === 'true')
+                flagParts.push('ImGuiWindowFlags_NoResize');
+            if (node.props['noMove'] === 'true')
+                flagParts.push('ImGuiWindowFlags_NoMove');
+            if (node.props['noScrollbar'] === 'true')
+                flagParts.push('ImGuiWindowFlags_NoScrollbar');
+            if (node.props['noCollapse'] === 'true')
+                flagParts.push('ImGuiWindowFlags_NoCollapse');
+            if (node.props['alwaysAutoResize'] === 'true')
+                flagParts.push('ImGuiWindowFlags_AlwaysAutoResize');
+            if (node.props['noBackground'] === 'true')
+                flagParts.push('ImGuiWindowFlags_NoBackground');
+            if (node.props['horizontalScrollbar'] === 'true')
+                flagParts.push('ImGuiWindowFlags_HorizontalScrollbar');
+            const modalFlags = flagParts.length > 0 ? flagParts.join(' | ') : '0';
             const openExpr = node.props['open'];
             const onCloseExpr = node.props['onClose'];
             if (openExpr) {
@@ -1162,12 +1181,12 @@ function emitBeginContainer(node, lines, indent) {
                 modalOnCloseStack.push(onCloseBody);
                 lines.push(`${indent}{`);
                 lines.push(`${indent}    bool modal_closed = false;`);
-                lines.push(`${indent}    if (imx::renderer::begin_modal(${title}, ${openExpr}, &modal_closed)) {`);
+                lines.push(`${indent}    if (imx::renderer::begin_modal(${title}, ${openExpr}, &modal_closed, ${modalFlags})) {`);
             }
             else {
                 windowOpenStack.push(false);
                 modalOnCloseStack.push(null);
-                lines.push(`${indent}if (imx::renderer::begin_modal(${title}, true, nullptr)) {`);
+                lines.push(`${indent}if (imx::renderer::begin_modal(${title}, true, nullptr, ${modalFlags})) {`);
             }
             break;
         }
@@ -1277,11 +1296,17 @@ function emitBeginContainer(node, lines, indent) {
         case 'ContextMenu': {
             const idExpr = node.props['id'];
             const idArg = idExpr ? asCharPtr(idExpr) : 'nullptr';
+            const mbExpr = node.props['mouseButton'];
+            let mouseButtonArg = '1'; // default: right click
+            if (mbExpr === '"left"')
+                mouseButtonArg = '0';
+            else if (mbExpr === '"middle"')
+                mouseButtonArg = '2';
             if (node.props['target'] === '"window"') {
-                lines.push(`${indent}if (imx::renderer::begin_context_menu_window(${idArg})) {`);
+                lines.push(`${indent}if (imx::renderer::begin_context_menu_window(${idArg}, ${mouseButtonArg})) {`);
             }
             else {
-                lines.push(`${indent}if (imx::renderer::begin_context_menu_item(${idArg})) {`);
+                lines.push(`${indent}if (imx::renderer::begin_context_menu_item(${idArg}, ${mouseButtonArg})) {`);
             }
             break;
         }

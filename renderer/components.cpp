@@ -300,12 +300,12 @@ void open_popup(const char* id) {
     ImGui::OpenPopup(id);
 }
 
-bool begin_context_menu_item(const char* id) {
-    return ImGui::BeginPopupContextItem((id && id[0] != '\0') ? id : nullptr);
+bool begin_context_menu_item(const char* id, int mouse_button) {
+    return ImGui::BeginPopupContextItem((id && id[0] != '\0') ? id : nullptr, mouse_button);
 }
 
-bool begin_context_menu_window(const char* id) {
-    return ImGui::BeginPopupContextWindow((id && id[0] != '\0') ? id : nullptr);
+bool begin_context_menu_window(const char* id, int mouse_button) {
+    return ImGui::BeginPopupContextWindow((id && id[0] != '\0') ? id : nullptr, mouse_button);
 }
 
 void end_context_menu() {
@@ -740,7 +740,7 @@ void plot_histogram(const char* label, const float* values, int count, const cha
     ImGui::PlotHistogram(label, values, count, 0, overlay, FLT_MAX, FLT_MAX, size);
 }
 
-bool begin_modal(const char* title, bool open, bool* user_closed, const Style& style) {
+bool begin_modal(const char* title, bool open, bool* user_closed, int flags, const Style& style) {
     // No before_child() — modals are overlays, not part of parent layout
     if (user_closed) *user_closed = false;
 
@@ -750,7 +750,7 @@ bool begin_modal(const char* title, bool open, bool* user_closed, const Style& s
     // If state says closed but popup is still open (e.g., button set state to false
     // without going through ImGui's X button), force-close it properly.
     if (!open && ImGui::IsPopupOpen(title)) {
-        if (ImGui::BeginPopupModal(title, nullptr)) {
+        if (ImGui::BeginPopupModal(title, nullptr, flags)) {
             ImGui::CloseCurrentPopup();
             ImGui::EndPopup();
         }
@@ -761,7 +761,7 @@ bool begin_modal(const char* title, bool open, bool* user_closed, const Style& s
     // Pass p_open to get X button. If X is clicked, BeginPopupModal calls
     // EndPopup internally and returns false. We detect this via p_open.
     bool p_open = true;
-    bool visible = ImGui::BeginPopupModal(title, &p_open);
+    bool visible = ImGui::BeginPopupModal(title, &p_open, flags);
     if (!visible && !p_open) {
         // X was clicked — BeginPopupModal already called EndPopup
         if (user_closed) *user_closed = true;

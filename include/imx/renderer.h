@@ -206,8 +206,8 @@ void set_cursor_pos(float x, float y);
 bool begin_popup(const char* id, const Style& style = {});
 void end_popup();
 void open_popup(const char* id);
-bool begin_context_menu_item(const char* id = nullptr);
-bool begin_context_menu_window(const char* id = nullptr);
+bool begin_context_menu_item(const char* id = nullptr, int mouse_button = 1);
+bool begin_context_menu_window(const char* id = nullptr, int mouse_button = 1);
 void end_context_menu();
 
 void begin_dockspace(const Style& style = {}, bool has_menu_bar = false);
@@ -285,7 +285,7 @@ bool color_picker3(const char* label, float color[3], const Style& style = {});
 void plot_lines(const char* label, const float* values, int count, const char* overlay = nullptr, const Style& style = {});
 void plot_histogram(const char* label, const float* values, int count, const char* overlay = nullptr, const Style& style = {});
 
-bool begin_modal(const char* title, bool open, bool* p_open, const Style& style = {});
+bool begin_modal(const char* title, bool open, bool* p_open, int flags = 0, const Style& style = {});
 void end_modal();
 
 void image(const char* path, float width = 0, float height = 0);

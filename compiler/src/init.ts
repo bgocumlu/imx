@@ -224,7 +224,7 @@ interface TextInputProps extends ItemInteractionProps { value: string; onChange?
 interface CheckboxProps extends ItemInteractionProps { value: boolean; onChange?: (v: boolean) => void; label?: string; style?: Style; }
 interface SeparatorProps {}
 interface PopupProps { id: string; style?: Style; children?: any; }
-interface ContextMenuProps { id?: string; target?: "item" | "window"; children?: any; }
+interface ContextMenuProps { id?: string; target?: "item" | "window"; mouseButton?: "left" | "right" | "middle"; children?: any; }
 interface DockSpaceProps { style?: Style; children?: any; }
 interface DockLayoutProps { children?: any; }
 interface DockSplitProps { direction: "horizontal" | "vertical"; size: number; children?: any; }
@@ -303,7 +303,7 @@ interface ColorPickerProps extends ItemInteractionProps { label: string; value: 
 interface ColorPicker3Props extends ItemInteractionProps { label: string; value: [number, number, number]; onChange?: (v: [number, number, number]) => void; width?: number; style?: Style; }
 interface PlotLinesProps { label: string; values: number[]; overlay?: string; style?: Style; }
 interface PlotHistogramProps { label: string; values: number[]; overlay?: string; style?: Style; }
-interface ModalProps { title: string; open?: boolean; onClose?: () => void; style?: Style; children?: any; }
+interface ModalProps { title: string; open?: boolean; onClose?: () => void; noTitleBar?: boolean; noResize?: boolean; noMove?: boolean; noScrollbar?: boolean; noCollapse?: boolean; alwaysAutoResize?: boolean; noBackground?: boolean; horizontalScrollbar?: boolean; style?: Style; children?: any; }
 interface ImageProps { src: string; embed?: boolean; width?: number; height?: number; }
 interface GroupProps { style?: Style; children?: any; }
 interface IDProps { scope: string | number; children?: any; }

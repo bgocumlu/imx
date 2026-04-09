@@ -1411,7 +1411,7 @@ function App() {
         expect(output).toContain('if (imx::renderer::item_hovered()) {');
         expect(output).toContain('if (imx::renderer::item_clicked()) {');
         expect(output).toContain('if (imx::renderer::item_double_clicked()) {');
-        expect(output).toContain('if (imx::renderer::begin_context_menu_window("actions")) {');
+        expect(output).toContain('if (imx::renderer::begin_context_menu_window("actions", 1)) {');
         expect(output).toContain('imx::renderer::end_context_menu();');
         expect(output).toContain('if (imx::renderer::shortcut_pressed("Ctrl+S")) {');
     });
