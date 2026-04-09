@@ -275,6 +275,77 @@ export default function App() {
 
 Props access: `props.name` (no destructuring). Types: `string`, `number`, `boolean`, `() => void`.
 
+## Critical Patterns
+
+### Window with Close Button
+```tsx
+const [showSettings, setShowSettings] = useState(false);
+
+<Button title="Settings" onPress={() => setShowSettings(true)} />
+{showSettings && <Window title="Settings" open={true} onClose={() => setShowSettings(false)}>
+  <Text>Window content here</Text>
+</Window>}
+```
+`open={true}` shows the X button. Clicking X calls `onClose`. The `{showSettings && ...}` pattern removes the window from the tree.
+
+### ContextMenu (SIBLING, not child)
+```tsx
+// ContextMenu goes AFTER the target item as a sibling — never inside it
+<Button title="Right-click me" onPress={() => {}} />
+<ContextMenu id="my-ctx">
+  <MenuItem label="Option A" onPress={() => setResult("A")} />
+  <MenuItem label="Option B" onPress={() => setResult("B")} />
+</ContextMenu>
+
+// Window-level context menu (right-click anywhere in the window)
+<ContextMenu id="win-ctx" target="window">
+  <MenuItem label="Refresh" onPress={() => {}} />
+</ContextMenu>
+
+// Left-click context menu
+<Button title="Left-click for menu" onPress={() => {}} />
+<ContextMenu id="left-ctx" mouseButton="left">
+  <MenuItem label="Action" onPress={() => {}} />
+</ContextMenu>
+```
+
+### DockLayout (initial window arrangement)
+```tsx
+<DockSpace>
+  <DockLayout>
+    <DockSplit direction="horizontal" size={0.25}>
+      <DockPanel>
+        <Window title="Sidebar" />
+      </DockPanel>
+      <DockPanel>
+        <Window title="Main" />
+      </DockPanel>
+    </DockSplit>
+  </DockLayout>
+  <Window title="Sidebar">
+    <Text>Sidebar content</Text>
+  </Window>
+  <Window title="Main">
+    <Text>Main content</Text>
+  </Window>
+</DockSpace>
+```
+`DockLayout` declares where windows dock initially. `DockPanel` children are window title strings. Window content is defined separately below.
+
+### Font Loading from TSX
+```tsx
+// First occurrence with src declares the font (embedded into binary)
+<Font name="mono" src="JetBrainsMono-Regular.ttf" size={15} embed>
+  <Text>Monospace text</Text>
+</Font>
+
+// Subsequent uses just select by name — no src/size/embed needed
+<Font name="mono">
+  <Text>Also monospace</Text>
+</Font>
+```
+Font files in `public/` are resolved automatically. The compiler generates `_imx_load_fonts()` which loads all declared fonts.
+
 ## Component Examples (Batch 1-2)
 
 ### Modal
@@ -443,37 +514,50 @@ const [dropped, setDropped] = useState(0);
 ## Full Example
 
 ```tsx
-import { TodoItem } from './TodoItem';
-
 export default function App() {
-  const [done1, setDone1] = useState(false);
-  const [done2, setDone2] = useState(false);
   const [speed, setSpeed] = useState(5.0);
   const [mode, setMode] = useState(0);
   const [color, setColor] = useState([1.0, 0.5, 0.0, 1.0]);
+  const [checked, setChecked] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
 
   return (
     <DockSpace>
-      <MenuBar>
+      <DockLayout>
+        <DockSplit direction="horizontal" size={0.4}>
+          <DockPanel>
+            <Window title="Controls" />
+          </DockPanel>
+          <DockPanel>
+            <Window title="Preview" />
+          </DockPanel>
+        </DockSplit>
+      </DockLayout>
+      <MainMenuBar>
         <Menu label="File">
           <MenuItem label="New" shortcut="Ctrl+N" />
-          <MenuItem label="Exit" onPress={() => setShowAbout(false)} />
-        </Menu>
-      </MenuBar>
-      <Window title="Main">
-        <Column gap={4}>
-          <TodoItem text="Task A" done={done1} onToggle={() => setDone1(!done1)} />
-          <TodoItem text="Task B" done={done2} onToggle={() => setDone2(!done2)} />
           <Separator />
+          <MenuItem label="Exit" />
+        </Menu>
+        <Menu label="Help">
+          <MenuItem label="About" onPress={() => setShowAbout(true)} />
+        </Menu>
+      </MainMenuBar>
+      <Window title="Controls">
+        <Column gap={4}>
           <SliderFloat label="Speed" value={speed} onChange={setSpeed} min={0} max={100} />
           <Combo label="Mode" value={mode} onChange={setMode} items={["Easy", "Hard"]} />
           <ColorEdit label="Color" value={color} onChange={setColor} />
+          <Checkbox label="Enabled" value={checked} onChange={setChecked} />
         </Column>
       </Window>
-      {showAbout && <Window title="About">
-        <Text>IMX v0.1</Text>
-        <Button title="Close" onPress={() => setShowAbout(false)} />
+      <Window title="Preview">
+        <Text>Speed: {speed}</Text>
+        <Text>Mode: {mode === 0 ? "Easy" : "Hard"}</Text>
+        <ProgressBar value={speed / 100.0} />
+      </Window>
+      {showAbout && <Window title="About" open={true} onClose={() => setShowAbout(false)}>
+        <Text>Built with IMX</Text>
       </Window>}
     </DockSpace>
   );
