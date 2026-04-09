@@ -3,6 +3,16 @@
 ## What this is
 React-Native-like authoring model for Dear ImGui. Write .tsx, compile to native C++ ImGui app. No JS runtime in shipped binary.
 
+## Philosophy
+IMX is a **UI layer for C++ applications**. The target user is a C++ developer who wants a GUI without writing ImGui boilerplate. TSX describes what the UI looks like; C++ owns the data, configuration, and application lifecycle.
+
+Key principles:
+- **C++ is the authority** — TSX generates C++ code. Every TSX feature compiles to the same C++ a developer would write by hand. The C++ API is never hidden or replaced.
+- **TSX is convenience, not abstraction** — features like `<Font src="..." embed>` or `<Image embed>` reduce boilerplate. They don't introduce new runtime concepts. The generated code is readable, debuggable C++.
+- **No runtime in the binary** — TSX is compiled away at build time. The shipped binary is pure C++ + ImGui. No interpreter, no VM, no JS.
+- **Struct binding, not state management** — `value={props.field}` emits a pointer to the C++ struct field. No copies, no sync layer. `useState` exists for UI-only state (toggles, selection), not application data.
+- **Don't pull responsibility from C++** — initialization, cleanup, networking, persistence, threading, and side effects belong in C++. IMX wraps ImGui, not the OS.
+
 ## Pipeline
 `.tsx` -> TypeScript compiler (`compiler/`) -> `.gen.cpp` + `.gen.h` -> links with `imx_runtime` + `imx_renderer` + ImGui -> native binary
 
