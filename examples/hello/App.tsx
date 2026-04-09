@@ -1,6 +1,6 @@
 import { TodoItem } from './TodoItem';
 
-export default function App() {
+export default function App(props: AppState) {
   const [done1, setDone1] = useState(false);
   const [done2, setDone2] = useState(false);
   const [done3, setDone3] = useState(true);
@@ -522,12 +522,17 @@ export default function App() {
           </ContextMenu>
           <Text>{phase17CtxMsg}</Text>
           <Separator />
-          <Text>Modal with alwaysAutoResize:</Text>
-          <Button title="Open Modal" onPress={() => setPhase17ModalShow(true)} />
-          <Modal title="Auto-Sized Modal" open={phase17ModalShow} onClose={() => setPhase17ModalShow(false)} alwaysAutoResize>
-            <Text>This modal auto-resizes to fit content.</Text>
-            <Button title="Close" onPress={() => setPhase17ModalShow(false)} />
-          </Modal>
+          <Text>MultiSelect with drag select (boxSelect):</Text>
+          <MultiSelect boxSelect selectionSize={props.ms_selection_count} itemsCount={6}
+                       onSelectionChange={() => props.apply_selection(0)}>
+            <Selectable label="Alpha" selected={props.ms_selected[0]} selectionIndex={0} />
+            <Selectable label="Beta" selected={props.ms_selected[1]} selectionIndex={1} />
+            <Selectable label="Gamma" selected={props.ms_selected[2]} selectionIndex={2} />
+            <Selectable label="Delta" selected={props.ms_selected[3]} selectionIndex={3} />
+            <Selectable label="Epsilon" selected={props.ms_selected[4]} selectionIndex={4} />
+            <Selectable label="Zeta" selected={props.ms_selected[5]} selectionIndex={5} />
+          </MultiSelect>
+          <Text>Selected: {props.ms_selection_count} / 6</Text>
         </Column>
       </Window>
       <Modal title="Confirm Action" open={showConfirm} onClose={() => setShowConfirm(false)}>

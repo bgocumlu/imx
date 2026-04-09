@@ -1,6 +1,7 @@
 // examples/hello/main.cpp
 #include <imx/runtime.h>
 #include <imx/renderer.h>
+#include "AppState.h"
 
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
@@ -12,6 +13,7 @@ struct App {
     GLFWwindow*      window  = nullptr;
     ImGuiIO*         io      = nullptr;
     imx::Runtime runtime;
+    AppState state;
 };
 
 static void render_frame(App& app) {
@@ -35,7 +37,7 @@ static void render_frame(App& app) {
     ImGui::NewFrame();
 
     // DockSpace component handles the dock host window now
-    imx::render_root(app.runtime);
+    imx::render_root<AppState>(app.runtime, app.state);
 
     ImGui::Render();
 

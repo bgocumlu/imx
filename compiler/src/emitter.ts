@@ -1362,6 +1362,13 @@ function emitBeginContainer(node: IRBeginContainer, lines: string[], indent: str
             lines.push(`${indent}{`);
             lines.push(`${indent}    auto* ms_io = imx::renderer::begin_multi_select(${flags}, ${selSize}, ${itemCount});`);
             const onChangeExpr = node.props['onSelectionChange'];
+            // Also apply requests from BeginMultiSelect (ImGui protocol requires both)
+            if (onChangeExpr) {
+                const lambdaMatch = onChangeExpr.match(/^\[&\]\(\)\s*\{\s*(.*?)\(\s*\d+\s*\)\s*;?\s*\}$/);
+                if (lambdaMatch) {
+                    lines.push(`${indent}    ${lambdaMatch[1]}(ms_io);`);
+                }
+            }
             multiSelectCallbackStack.push(onChangeExpr ?? null);
             break;
         }
@@ -1485,7 +1492,14 @@ function emitEndContainer(node: IREndContainer, lines: string[], indent: string)
             lines.push(`${indent}    auto* ms_io_end = imx::renderer::end_multi_select();`);
             const onChangeExpr = multiSelectCallbackStack.pop() ?? null;
             if (onChangeExpr) {
-                lines.push(`${indent}    if (ms_io_end) { ${onChangeExpr}(ms_io_end); }`);
+                // Extract function call from lambda [&]() { fn(placeholder); }
+                // Replace the placeholder argument with ms_io_end
+                const lambdaMatch = onChangeExpr.match(/^\[&\]\(\)\s*\{\s*(.*?)\(\s*\d+\s*\)\s*;?\s*\}$/);
+                if (lambdaMatch) {
+                    lines.push(`${indent}    if (ms_io_end) { ${lambdaMatch[1]}(ms_io_end); }`);
+                } else {
+                    lines.push(`${indent}    if (ms_io_end) { ${onChangeExpr}; }`);
+                }
             }
             lines.push(`${indent}}`);
             break;

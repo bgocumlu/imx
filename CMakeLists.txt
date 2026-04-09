@@ -125,7 +125,7 @@ if(IMX_BUILD_EXAMPLES)
         ${HELLO_GENERATED}
     )
     target_link_libraries(hello_app PRIVATE imx_renderer)
-    target_include_directories(hello_app PRIVATE ${CMAKE_BINARY_DIR}/generated)
+    target_include_directories(hello_app PRIVATE ${CMAKE_BINARY_DIR}/generated ${CMAKE_CURRENT_SOURCE_DIR}/examples/hello)
 
     # Copy public/ assets to output directory
     add_custom_command(TARGET hello_app POST_BUILD
