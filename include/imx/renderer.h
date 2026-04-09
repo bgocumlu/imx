@@ -43,6 +43,23 @@ struct FontOptions {
     bool merge_mode = false;
 };
 
+struct TableColumn {
+    const char* label = "";
+    ImGuiTableColumnFlags flags = 0;
+};
+
+struct TableOptions {
+    bool sortable = false;
+    bool hideable = false;
+    bool multi_sortable = false;
+    bool no_clip = false;
+    bool pad_outer_x = false;
+    bool scroll_x = false;
+    bool scroll_y = false;
+    bool no_borders = false;
+    bool no_row_bg = false;
+};
+
 struct StyleColorOverrides {
     std::optional<ImVec4> text;
     std::optional<ImVec4> text_disabled;
@@ -202,20 +219,21 @@ void end_menu();
 
 bool menu_item(const char* label, const char* shortcut = nullptr);
 
-bool begin_table(const char* id, int column_count, const char** column_names, const Style& style = {}, bool scroll_y = false, bool no_borders = false, bool no_row_bg = false);
+bool begin_table(const char* id, const TableColumn* columns, int column_count, const Style& style = {}, const TableOptions& options = {});
 void end_table();
-void begin_table_row();
+void begin_table_row(std::optional<ImVec4> bg_color = std::nullopt);
 void end_table_row();
-void table_next_column();
+void begin_table_cell(int column_index = -1, std::optional<ImVec4> bg_color = std::nullopt);
+void end_table_cell();
 
 bool begin_tab_bar(const Style& style = {});
 void end_tab_bar();
 bool begin_tab_item(const char* label);
 void end_tab_item();
 
-bool begin_tree_node(const char* label);
-void end_tree_node();
-bool begin_collapsing_header(const char* label);
+bool begin_tree_node(const char* label, ImGuiTreeNodeFlags flags = 0);
+void end_tree_node(bool no_tree_push_on_open = false);
+bool begin_collapsing_header(const char* label, ImGuiTreeNodeFlags flags = 0, bool* p_visible = nullptr);
 void end_collapsing_header();
 
 bool slider_float(const char* label, float* value, float min, float max, const Style& style = {});

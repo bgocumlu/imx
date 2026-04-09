@@ -217,12 +217,16 @@ interface MainMenuBarProps { children?: any; }
 interface MenuBarProps { children?: any; }
 interface MenuProps { label: string; children?: any; }
 interface MenuItemProps { label: string; onPress?: () => void; shortcut?: string; }
-interface TableProps { columns: string[]; scrollY?: boolean; noBorders?: boolean; noRowBg?: boolean; style?: Style; children?: any; }
-interface TableRowProps { key?: number | string; children?: any; }
+interface ImGuiTableColumnSortSpecs { ColumnIndex: number; SortOrder: number; SortDirection: number; }
+interface ImGuiTableSortSpecs { Specs: ImGuiTableColumnSortSpecs[]; SpecsCount: number; SpecsDirty: boolean; }
+interface TableColumn { label: string; defaultHide?: boolean; preferSortAscending?: boolean; preferSortDescending?: boolean; noResize?: boolean; fixedWidth?: boolean; }
+interface TableProps { columns: (string | TableColumn)[]; sortable?: boolean; onSort?: (specs: ImGuiTableSortSpecs) => void; hideable?: boolean; multiSortable?: boolean; noClip?: boolean; padOuterX?: boolean; scrollX?: boolean; scrollY?: boolean; noBorders?: boolean; noRowBg?: boolean; style?: Style; children?: any; }
+interface TableRowProps { key?: number | string; bgColor?: [number, number, number, number]; children?: any; }
+interface TableCellProps { columnIndex?: number; bgColor?: [number, number, number, number]; children?: any; }
 interface TabBarProps { style?: Style; children?: any; }
 interface TabItemProps { label: string; children?: any; }
-interface TreeNodeProps { label: string; children?: any; }
-interface CollapsingHeaderProps { label: string; children?: any; }
+interface TreeNodeProps { label: string; defaultOpen?: boolean; forceOpen?: boolean; openOnArrow?: boolean; openOnDoubleClick?: boolean; leaf?: boolean; bullet?: boolean; noTreePushOnOpen?: boolean; children?: any; }
+interface CollapsingHeaderProps { label: string; defaultOpen?: boolean; forceOpen?: boolean; closable?: boolean; onClose?: () => void; children?: any; }
 interface SliderFloatProps { label: string; value: number; onChange?: (v: number) => void; min: number; max: number; width?: number; style?: Style; }
 interface SliderIntProps { label: string; value: number; onChange?: (v: number) => void; min: number; max: number; width?: number; style?: Style; }
 interface DragFloatProps { label: string; value: number; onChange?: (v: number) => void; speed?: number; width?: number; style?: Style; }
@@ -332,6 +336,7 @@ declare function Menu(props: MenuProps): any;
 declare function MenuItem(props: MenuItemProps): any;
 declare function Table(props: TableProps): any;
 declare function TableRow(props: TableRowProps): any;
+declare function TableCell(props: TableCellProps): any;
 declare function TabBar(props: TabBarProps): any;
 declare function TabItem(props: TabItemProps): any;
 declare function TreeNode(props: TreeNodeProps): any;

@@ -391,6 +391,57 @@ function App() {
         expect(output).toMatch(/input_float_n\("Position", val\.data\(\), 3, style_\d+\)/);
     });
 
+    it('emits Phase 15 table metadata, sort callback, and tree controls', () => {
+        const output = compile(`
+function App() {
+  return (
+    <Window title="Phase15">
+      <Table
+        columns={[
+          { label: "Name", defaultHide: true, preferSortAscending: true, noResize: true, fixedWidth: true },
+          "Owner"
+        ]}
+        sortable
+        hideable
+        multiSortable
+        noClip
+        padOuterX
+        scrollX
+        scrollY
+        onSort={(specs) => specs}
+      >
+        <TableRow bgColor={[0.1, 0.2, 0.3, 1.0]}>
+          <TableCell columnIndex={1} bgColor={[0.2, 0.3, 0.4, 1.0]}>
+            <Text>Ada</Text>
+          </TableCell>
+        </TableRow>
+      </Table>
+      <TreeNode label="Root" defaultOpen forceOpen={true} openOnArrow openOnDoubleClick>
+        <TreeNode label="Leaf" leaf bullet noTreePushOnOpen />
+      </TreeNode>
+      <CollapsingHeader label="Details" defaultOpen forceOpen={true} closable onClose={() => {}}>
+        <Text>Body</Text>
+      </CollapsingHeader>
+    </Window>
+  );
+}
+        `);
+
+        expect(output).toContain('ImGuiTableColumnFlags_DefaultHide');
+        expect(output).toContain('ImGuiTableColumnFlags_PreferSortAscending');
+        expect(output).toContain('ImGuiTableColumnFlags_NoResize');
+        expect(output).toContain('ImGuiTableColumnFlags_WidthFixed');
+        expect(output).toContain('table_opts_');
+        expect(output).toContain('ImGui::TableGetSortSpecs()');
+        expect(output).toContain('begin_table_row(ImVec4(');
+        expect(output).toContain('begin_table_cell(1, ImVec4(');
+        expect(output).toContain('ImGui::SetNextItemOpen(true, ImGuiCond_Always);');
+        expect(output).toContain('ImGuiTreeNodeFlags tree_flags_');
+        expect(output).toContain('ImGuiTreeNodeFlags_NoTreePushOnOpen');
+        expect(output).toContain('begin_collapsing_header("Details", header_flags_');
+        expect(output).toContain('header_visible_ptr');
+    });
+
     it('emits ColorEdit3 with direct binding', () => {
         const output = compile(`
 export function App(props: AppState) {
@@ -959,7 +1010,9 @@ function compileMultiFiles(files: Record<string, string>): Record<string, string
     for (const [name, content] of Object.entries(files)) {
         const filePath = path.join(tmpDir, name);
         fs.writeFileSync(filePath, content);
-        paths.push(filePath);
+        if (name.endsWith('.tsx')) {
+            paths.push(filePath);
+        }
     }
 
     compileFiles(paths, outDir);
@@ -1041,8 +1094,8 @@ export function StatusItem(props: { active: boolean }) {
 
         // Conditional should dereference: (*props.active)
         expect(todoCpp).toContain('(*props.active)');
-        // Checkbox directBind should use &*props.active (identity for pointer)
-        expect(todoCpp).toContain('&*props.active');
+        // Checkbox directBind should preserve the pointed-to bool without introducing bool**
+        expect(todoCpp).toContain('&(*props.active)');
     });
 
     it('chains pointer props through 3 levels of components', () => {
@@ -1088,6 +1141,72 @@ export function Toggle(props: { done: boolean }) {
         expect(panelCpp).toContain('p.done = &*props.done');
         // Should NOT double-address (&props.done would be bool**)
         expect(panelCpp).not.toContain('= &props.done');
+    });
+
+    it('includes root state header for nested sub-struct child bindings', () => {
+        const files = compileMultiFiles({
+            'App.tsx': `
+import { SettingsPanel } from './SettingsPanel';
+export default function App(props: AppState) {
+  return (
+    <Window title="Test">
+      <SettingsPanel value={props.settings} />
+    </Window>
+  );
+}`,
+            'SettingsPanel.tsx': `
+export function SettingsPanel(props: { value: SettingsData }) {
+  return <SliderFloat label="Speed" value={props.value.speed} min={0} max={100} />;
+}`,
+            'imx.d.ts': `
+interface SettingsData { speed: number; }
+interface AppState { settings: SettingsData; }
+`
+        });
+
+        const header = files['SettingsPanel.gen.h'] ?? '';
+        const cpp = files['SettingsPanel.gen.cpp'] ?? '';
+        const appCpp = files['App.gen.cpp'] ?? '';
+
+        expect(header).toContain('#include "AppState.h"');
+        expect(header).toContain('SettingsData* value');
+        expect(cpp).toContain('slider_float("Speed", &((*props.value).speed)');
+        expect(appCpp).toContain('&props.settings');
+    });
+
+    it('emits nested sub-struct color bindings with member access before data()', () => {
+        const files = compileMultiFiles({
+            'App.tsx': `
+import { AppearancePanel } from './AppearancePanel';
+export default function App(props: AppState) {
+  return (
+    <Window title="Test">
+      <AppearancePanel value={props.appearance} />
+    </Window>
+  );
+}`,
+            'AppearancePanel.tsx': `
+export function AppearancePanel(props: { value: AppearanceSettings }) {
+  return (
+    <Column>
+      <ColorEdit label="Color" value={props.value.color} />
+      <ColorPicker label="Picker" value={props.value.pickerColor} />
+    </Column>
+  );
+}`,
+            'imx.d.ts': `
+interface AppearanceSettings {
+  color: [number, number, number, number];
+  pickerColor: [number, number, number, number];
+}
+interface AppState { appearance: AppearanceSettings; }
+`
+        });
+
+        const cpp = files['AppearancePanel.gen.cpp'] ?? '';
+        expect(cpp).toContain('color_edit("Color", ((*props.value).color).data())');
+        expect(cpp).toContain('color_picker("Picker", ((*props.value).pickerColor).data())');
+        expect(cpp).not.toContain('->data()');
     });
 
     it('emits Font with PushFont/PopFont', () => {

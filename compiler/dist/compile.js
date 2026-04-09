@@ -90,6 +90,7 @@ export function compile(files, outputDir) {
     for (const comp of compiled) {
         boundPropsMap.set(comp.name, comp.boundProps);
     }
+    const sharedPropsType = compiled.find(c => c.ir.namedPropsType)?.ir.namedPropsType;
     for (const comp of compiled) {
         const importInfos = [];
         for (const [importedName] of comp.imports) {
@@ -115,7 +116,7 @@ export function compile(files, outputDir) {
         // Only generate a header for inline props (not for named interface types —
         // those are declared in the user's main.cpp)
         if (comp.hasProps && !comp.ir.namedPropsType) {
-            const headerOutput = emitComponentHeader(comp.ir, comp.sourceFile, comp.boundProps);
+            const headerOutput = emitComponentHeader(comp.ir, comp.sourceFile, comp.boundProps, sharedPropsType);
             const headerPath = path.join(outputDir, `${baseName}.gen.h`);
             fs.writeFileSync(headerPath, headerOutput);
             console.log(`  ${baseName} -> ${headerPath} (header)`);
@@ -305,6 +306,16 @@ function walkNodesForBinding(nodes, bound) {
  * Parse the imx.d.ts in the given directory (if present) and extract
  * all interface declarations as a map from interface name -> field name -> type.
  */
+function normalizeExternalPropType(typeText) {
+    const trimmed = typeText.trim().replace(/\s*\|\s*undefined$/, '');
+    if (trimmed === 'number')
+        return 'float';
+    if (trimmed === 'boolean')
+        return 'bool';
+    if (trimmed === 'string')
+        return 'string';
+    return trimmed;
+}
 function loadExternalInterfaces(dir) {
     const result = new Map();
     const dtsPath = path.join(dir, 'imx.d.ts');
@@ -327,20 +338,7 @@ function loadExternalInterfaces(dir) {
                         fields.set(fieldName, 'callback');
                         continue;
                     }
-                    const typeText = member.type.getText(sf);
-                    if (typeText === 'number') {
-                        fields.set(fieldName, 'float');
-                    }
-                    else if (typeText === 'boolean') {
-                        fields.set(fieldName, 'bool');
-                    }
-                    else if (typeText === 'string') {
-                        fields.set(fieldName, 'string');
-                    }
-                    else {
-                        // Arrays, nested interfaces, etc. treated as opaque (non-scalar)
-                        fields.set(fieldName, 'string');
-                    }
+                    fields.set(fieldName, normalizeExternalPropType(member.type.getText(sf)));
                 }
                 else if (ts.isMethodSignature(member)) {
                     const mName = ts.isIdentifier(member.name) ? member.name.text : '';

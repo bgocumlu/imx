@@ -113,11 +113,31 @@ export const HOST_COMPONENTS: Record<string, HostComponentDef> = {
         hasChildren: false, isContainer: false,
     },
     Table: {
-        props: { columns: { type: 'string', required: true }, scrollY: { type: 'boolean', required: false }, noBorders: { type: 'boolean', required: false }, noRowBg: { type: 'boolean', required: false }, style: { type: 'style', required: false } },
+        props: {
+            columns: { type: 'string', required: true },
+            sortable: { type: 'boolean', required: false },
+            onSort: { type: 'callback', required: false },
+            hideable: { type: 'boolean', required: false },
+            multiSortable: { type: 'boolean', required: false },
+            noClip: { type: 'boolean', required: false },
+            padOuterX: { type: 'boolean', required: false },
+            scrollX: { type: 'boolean', required: false },
+            scrollY: { type: 'boolean', required: false },
+            noBorders: { type: 'boolean', required: false },
+            noRowBg: { type: 'boolean', required: false },
+            style: { type: 'style', required: false },
+        },
         hasChildren: true, isContainer: true,
     },
     TableRow: {
-        props: {},
+        props: { bgColor: { type: 'style', required: false } },
+        hasChildren: true, isContainer: true,
+    },
+    TableCell: {
+        props: {
+            columnIndex: { type: 'number', required: false },
+            bgColor: { type: 'style', required: false },
+        },
         hasChildren: true, isContainer: true,
     },
     TabBar: {
@@ -129,11 +149,26 @@ export const HOST_COMPONENTS: Record<string, HostComponentDef> = {
         hasChildren: true, isContainer: true,
     },
     TreeNode: {
-        props: { label: { type: 'string', required: true } },
+        props: {
+            label: { type: 'string', required: true },
+            defaultOpen: { type: 'boolean', required: false },
+            forceOpen: { type: 'boolean', required: false },
+            openOnArrow: { type: 'boolean', required: false },
+            openOnDoubleClick: { type: 'boolean', required: false },
+            leaf: { type: 'boolean', required: false },
+            bullet: { type: 'boolean', required: false },
+            noTreePushOnOpen: { type: 'boolean', required: false },
+        },
         hasChildren: true, isContainer: true,
     },
     CollapsingHeader: {
-        props: { label: { type: 'string', required: true } },
+        props: {
+            label: { type: 'string', required: true },
+            defaultOpen: { type: 'boolean', required: false },
+            forceOpen: { type: 'boolean', required: false },
+            closable: { type: 'boolean', required: false },
+            onClose: { type: 'callback', required: false },
+        },
         hasChildren: true, isContainer: true,
     },
     SliderFloat: {

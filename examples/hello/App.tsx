@@ -31,6 +31,9 @@ export default function App() {
   const [phaseWrapWidth, setPhaseWrapWidth] = useState(220);
   const [phaseCursorX, setPhaseCursorX] = useState(92);
   const [phaseCursorY, setPhaseCursorY] = useState(54);
+  const [phaseSortEvents, setPhaseSortEvents] = useState(0);
+  const [phaseTreeForcedOpen, setPhaseTreeForcedOpen] = useState(true);
+  const [phaseShowClosableHeader, setPhaseShowClosableHeader] = useState(true);
 
   return (
     <Theme preset="dark" accentColor={[0.9, 0.2, 0.2, 1.0]} backgroundColor={[0.12, 0.12, 0.15, 1.0]} textColor={[0.95, 0.95, 0.95, 1.0]} borderColor={[0.3, 0.3, 0.35, 1.0]} surfaceColor={[0.18, 0.18, 0.22, 1.0]} rounding={6}>
@@ -264,6 +267,74 @@ export default function App() {
             </Child>
             <Text>Last placement action: {phaseArrow}</Text>
           </CollapsingHeader>
+        </Column>
+      </Window>
+      <Window title="Phase 15">
+        <Column gap={8}>
+          <Font name="jetbrains-mono">
+            <Text>Phase 15 showcase: sortable tables, advanced tree flags, closable headers, and targeted cell control.</Text>
+          </Font>
+          <CollapsingHeader label="Sortable Table" defaultOpen>
+            <Text>Column metadata now accepts flags, and rows/cells can override background colors directly.</Text>
+            <Text>This hello demo only proves that ImGui sort specs reach the callback; the dashboard example performs real data reordering in C++.</Text>
+            <Table
+              columns={[
+                { label: "System", fixedWidth: true, preferSortAscending: true },
+                { label: "Priority", noResize: true },
+                { label: "Owner / Notes", defaultHide: false, preferSortDescending: true },
+              ]}
+              sortable
+              hideable
+              multiSortable
+              noClip
+              padOuterX
+              scrollX
+              scrollY
+              onSort={() => setPhaseSortEvents(phaseSortEvents + 1)}
+              style={{ width: 420, height: 120 }}
+            >
+              <TableRow bgColor={[0.16, 0.18, 0.22, 1.0]}>
+                <TableCell bgColor={[0.22, 0.27, 0.34, 1.0]}>
+                  <Text>Compiler</Text>
+                </TableCell>
+                <Text>High</Text>
+                <Text>Sort callback wired</Text>
+              </TableRow>
+              <TableRow>
+                <TableCell columnIndex={0}>
+                  <Text>Renderer</Text>
+                </TableCell>
+                <TableCell columnIndex={2} bgColor={[0.22, 0.20, 0.16, 1.0]}>
+                  <Text>Manual column jump</Text>
+                </TableCell>
+                <TableCell columnIndex={1}>
+                  <Text>Medium</Text>
+                </TableCell>
+              </TableRow>
+            </Table>
+            <Text>Sort callbacks observed: {phaseSortEvents}</Text>
+          </CollapsingHeader>
+          <CollapsingHeader label="Advanced Tree Nodes" defaultOpen>
+            <Checkbox label="Force root open" value={phaseTreeForcedOpen} onChange={setPhaseTreeForcedOpen} />
+            <TreeNode label="Workspace" defaultOpen forceOpen={phaseTreeForcedOpen} openOnArrow openOnDoubleClick>
+              <TreeNode label="assets" defaultOpen openOnArrow>
+                <TreeNode label="logo.png" leaf bullet noTreePushOnOpen />
+                <TreeNode label="flower.jpg" leaf bullet noTreePushOnOpen />
+              </TreeNode>
+              <TreeNode label="src" defaultOpen openOnArrow>
+                <TreeNode label="app.tsx" leaf bullet noTreePushOnOpen />
+                <TreeNode label="layout.cpp" leaf bullet noTreePushOnOpen />
+              </TreeNode>
+            </TreeNode>
+          </CollapsingHeader>
+          {phaseShowClosableHeader && (
+            <CollapsingHeader label="Closable Header" defaultOpen closable onClose={() => setPhaseShowClosableHeader(false)}>
+              <Text>This header uses ImGui's close button path and disappears until restored.</Text>
+            </CollapsingHeader>
+          )}
+          {!phaseShowClosableHeader && (
+            <Button title="Restore Closable Header" onPress={() => setPhaseShowClosableHeader(true)} />
+          )}
         </Column>
       </Window>
       <Window title="Batch 3 Demo">

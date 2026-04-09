@@ -222,22 +222,30 @@ bool menu_item(const char* label, const char* shortcut) {
     return ImGui::MenuItem(label, shortcut);
 }
 
-bool begin_table(const char* id, int column_count, const char** column_names, const Style& style, bool scroll_y, bool no_borders, bool no_row_bg) {
+bool begin_table(const char* id, const TableColumn* columns, int column_count, const Style& style, const TableOptions& options) {
     before_child();
     char table_id[64];
     snprintf(table_id, sizeof(table_id), "##table_%d", g_table_id++);
     ImGuiTableFlags flags = ImGuiTableFlags_Resizable;
-    if (!no_borders) flags |= ImGuiTableFlags_Borders;
-    if (!no_row_bg) flags |= ImGuiTableFlags_RowBg;
-    if (scroll_y) flags |= ImGuiTableFlags_ScrollY;
+    if (!options.no_borders) flags |= ImGuiTableFlags_Borders;
+    if (!options.no_row_bg) flags |= ImGuiTableFlags_RowBg;
+    if (options.sortable) flags |= ImGuiTableFlags_Sortable;
+    if (options.hideable) flags |= ImGuiTableFlags_Hideable;
+    if (options.multi_sortable) flags |= ImGuiTableFlags_SortMulti;
+    if (options.no_clip) flags |= ImGuiTableFlags_NoClip;
+    if (options.pad_outer_x) flags |= ImGuiTableFlags_PadOuterX;
+    if (options.scroll_x) flags |= ImGuiTableFlags_ScrollX;
+    if (options.scroll_y) flags |= ImGuiTableFlags_ScrollY;
     ImVec2 size(0, 0);
     if (style.width) size.x = *style.width;
     if (style.height) size.y = *style.height;
     if (ImGui::BeginTable(table_id, column_count, flags, size)) {
         for (int i = 0; i < column_count; i++) {
-            ImGui::TableSetupColumn(column_names[i]);
+            ImGui::TableSetupColumn(columns[i].label, columns[i].flags);
         }
-        ImGui::TableHeadersRow();
+        if (column_count > 0) {
+            ImGui::TableHeadersRow();
+        }
         return true;
     }
     return false;
@@ -266,18 +274,23 @@ void end_tab_item() {
     ImGui::EndTabItem();
 }
 
-bool begin_tree_node(const char* label) {
+bool begin_tree_node(const char* label, ImGuiTreeNodeFlags flags) {
     before_child();
-    return ImGui::TreeNode(label);
+    return ImGui::TreeNodeEx(label, flags);
 }
 
-void end_tree_node() {
-    ImGui::TreePop();
+void end_tree_node(bool no_tree_push_on_open) {
+    if (!no_tree_push_on_open) {
+        ImGui::TreePop();
+    }
 }
 
-bool begin_collapsing_header(const char* label) {
+bool begin_collapsing_header(const char* label, ImGuiTreeNodeFlags flags, bool* p_visible) {
     before_child();
-    return ImGui::CollapsingHeader(label);
+    if (p_visible) {
+        return ImGui::CollapsingHeader(label, p_visible, flags);
+    }
+    return ImGui::CollapsingHeader(label, flags);
 }
 
 void end_collapsing_header() {

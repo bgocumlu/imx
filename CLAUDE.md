@@ -90,9 +90,10 @@ React-Native-like authoring model for Dear ImGui. Write .tsx, compile to native 
 - Don't call `before_child()` in modal/popup begin functions — overlays don't participate in layout
 - Don't work around compiler bugs by modifying example code — fix the pipeline
 
-## Current status (Phases 1-14 complete)
+## Current status (Phases 1-15 complete)
 - ~95 host components covering all ImGui widgets + input expansion
 - Layout & positioning (Phase 14): MainMenuBar, Indent, TextWrap, Spacing, Dummy, SameLine, NewLine, Cursor, explicit `width` prop on input-like widgets
+- Table & tree enhancements (Phase 15): sortable tables, column metadata flags, `TableRow`/`TableCell` background colors, explicit `columnIndex` cell jumps, advanced TreeNode flags, programmatic open control, closable `CollapsingHeader`
 - Font loading (Phase 13): `imx::load_font()` / `imx::load_font_embedded()` C++ API, `<Font name="...">` TSX container
 - Vector inputs (Phase 13): InputFloat2/3/4, InputInt2/3/4, DragFloat2/3/4, DragInt2/3/4, SliderFloat2/3/4, SliderInt2/3/4
 - Button variants (Phase 13): SmallButton, ArrowButton, InvisibleButton, ImageButton
@@ -115,4 +116,4 @@ React-Native-like authoring model for Dear ImGui. Write .tsx, compile to native 
 - API documentation + LLM prompt reference complete
 - Packaging: `imxc@0.5.5` on npm, FetchContent for C++ (compiler/dist/ committed)
 - Release builds hide console on Windows (WIN32_EXECUTABLE), Debug shows it
-- Next: Phase 15 candidates (Table & Tree Enhancements)
+- Next: Phase 16 candidates (Interaction & State Queries)

@@ -7,6 +7,7 @@
 #include <GLFW/glfw3.h>
 
 #include "DashboardState.h"
+#include <algorithm>
 #include <cstdlib>
 #include <ctime>
 #include <cmath>
@@ -158,6 +159,30 @@ int main() {
 
     app.state.onClearLogs = [&]() {
         app.state.logs.clear();
+    };
+
+    app.state.onSortLogs = [&](ImGuiTableSortSpecs& sortSpecs) {
+        if (sortSpecs.SpecsCount == 0) {
+            return;
+        }
+
+        const ImGuiTableColumnSortSpecs& spec = sortSpecs.Specs[0];
+        const bool ascending = spec.SortDirection == ImGuiSortDirection_Ascending;
+        auto compareStrings = [ascending](const std::string& a, const std::string& b) {
+            return ascending ? a < b : a > b;
+        };
+
+        std::stable_sort(app.state.logs.begin(), app.state.logs.end(),
+            [&](const LogEntry& lhs, const LogEntry& rhs) {
+                switch (spec.ColumnIndex) {
+                    case 0: return compareStrings(lhs.timestamp, rhs.timestamp);
+                    case 1: return compareStrings(lhs.level, rhs.level);
+                    case 2: return compareStrings(lhs.message, rhs.message);
+                    default: return false;
+                }
+            });
+
+        app.runtime.request_frame();
     };
 
     while (glfwWindowShouldClose(window) == 0) {

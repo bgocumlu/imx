@@ -55,10 +55,11 @@ TabItem: label(string, required) | children — single tab
 
 ### Data
 ```
-Table: columns(string[], required) | style?(Style) | children — table with named columns
-TableRow: children — one row, children map to columns
-TreeNode: label(string, required) | children — collapsible tree node
-CollapsingHeader: label(string, required) | children — collapsible section
+Table: columns((string | TableColumn)[], required) | sortable?(boolean) | onSort?((specs) => void) | hideable?(boolean) | multiSortable?(boolean) | noClip?(boolean) | padOuterX?(boolean) | scrollX?(boolean) | scrollY?(boolean) | style?(Style) | children — table with named columns and advanced ImGui flags
+TableRow: bgColor?([r,g,b,a]) | children — one row, children map to columns
+TableCell: columnIndex?(number) | bgColor?([r,g,b,a]) | children — explicit cell for column jumps and cell background colors
+TreeNode: label(string, required) | defaultOpen?(boolean) | forceOpen?(boolean) | openOnArrow?(boolean) | openOnDoubleClick?(boolean) | leaf?(boolean) | bullet?(boolean) | noTreePushOnOpen?(boolean) | children — advanced ImGui tree node
+CollapsingHeader: label(string, required) | defaultOpen?(boolean) | forceOpen?(boolean) | closable?(boolean) | onClose?(() => void) | children — collapsible section with optional close button
 ```
 
 ### Text & Display
@@ -524,6 +525,7 @@ Thread safety: developer's responsibility (same as raw ImGui).
 
 - **TextInput / InputTextMultiline**: supports struct binding via `value={props.name}` — buffer syncs to/from the struct field each frame.
 - **Custom component props**: bound props (used with `value={props.x}` without onChange) are automatically passed as `T*` pointers through custom components. Direct binding works at any nesting level.
+- **Sub-struct binding**: nested struct references also flow through child components. Patterns like `<SettingsPanel value={props.settings} />` and then `value={props.value.speed}` inside the child now emit valid pointer-based binding code.
 - **Nested `.map()`**: auto-generated unique loop indices — same variable name in nested maps is safe.
 - **ColorEdit/ColorPicker**: works with struct binding via `std::vector<float>` fields (emits `.data()`).
 - **DragDrop payloads**: type matches the `onDrop` callback's parameter type annotation. Defaults to `float` if no target is found in the same component.

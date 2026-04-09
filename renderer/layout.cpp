@@ -126,8 +126,15 @@ void set_cursor_pos(float x, float y) {
     }
 }
 
-void begin_table_row() {
+void end_table_row() {
+    if (!g_layout_stack.empty()) g_layout_stack.pop_back();
+}
+
+void begin_table_row(std::optional<ImVec4> bg_color) {
     ImGui::TableNextRow();
+    if (bg_color.has_value()) {
+        ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0, ImGui::GetColorU32(*bg_color));
+    }
     LayoutState ls;
     ls.direction = LayoutState::Direction::TableRow;
     ls.gap = 0.0f;
@@ -135,7 +142,35 @@ void begin_table_row() {
     g_layout_stack.push_back(ls);
 }
 
-void end_table_row() {
+void begin_table_cell(int column_index, std::optional<ImVec4> bg_color) {
+    if (!g_layout_stack.empty() && g_layout_stack.back().direction == LayoutState::Direction::TableRow) {
+        auto& row = g_layout_stack.back();
+        if (column_index >= 0) {
+            ImGui::TableSetColumnIndex(column_index);
+        } else {
+            ImGui::TableNextColumn();
+        }
+        row.child_count++;
+    } else if (column_index >= 0) {
+        ImGui::TableSetColumnIndex(column_index);
+    } else {
+        ImGui::TableNextColumn();
+    }
+
+    if (bg_color.has_value()) {
+        ImGui::TableSetBgColor(ImGuiTableBgTarget_CellBg, ImGui::GetColorU32(*bg_color));
+    }
+
+    LayoutState ls;
+    ls.direction = LayoutState::Direction::Vertical;
+    ls.gap = 0.0f;
+    ls.child_count = 0;
+    g_layout_stack.push_back(ls);
+    ImGui::BeginGroup();
+}
+
+void end_table_cell() {
+    ImGui::EndGroup();
     if (!g_layout_stack.empty()) g_layout_stack.pop_back();
 }
 

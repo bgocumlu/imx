@@ -313,7 +313,7 @@ Exit criteria:
 
 - any ImGui layout achievable in raw C++ is also achievable in TSX
 
-## Phase 15: Table & Tree Enhancements
+## Phase 15: Table & Tree Enhancements (DONE)
 
 Goal:
 

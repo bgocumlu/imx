@@ -26,7 +26,7 @@ export interface IRStateSlot {
 
 export interface IRPropParam {
     name: string;
-    type: IRType | 'callback';
+    type: string | 'callback';
 }
 
 export type IRNode =
@@ -36,6 +36,8 @@ export type IRNode =
     | IRBeginPopup | IREndPopup | IROpenPopup
     | IRConditional | IRListMap | IRCustomComponent
     | IRMenuItem
+    | IRBeginTable | IREndTable | IRBeginTableRow | IREndTableRow | IRBeginTableCell | IREndTableCell
+    | IRBeginTreeNode | IREndTreeNode | IRBeginCollapsingHeader | IREndCollapsingHeader
     | IRSliderFloat | IRSliderInt | IRDragFloat | IRDragInt | IRCombo
     | IRInputInt | IRInputFloat | IRColorEdit | IRListBox | IRProgressBar | IRTooltip
     | IRDockLayout | IRNativeWidget
@@ -54,7 +56,7 @@ export type IRNode =
 export interface IRBeginContainer {
     kind: 'begin_container';
     tag: 'Window' | 'View' | 'Indent' | 'TextWrap' | 'Row' | 'Column' | 'DockSpace' | 'MainMenuBar' | 'MenuBar' | 'Menu'
-       | 'Table' | 'TableRow' | 'TabBar' | 'TabItem' | 'TreeNode' | 'CollapsingHeader'
+       | 'TabBar' | 'TabItem'
        | 'Theme' | 'DockLayout' | 'DockSplit' | 'DockPanel' | 'Modal'
        | 'Group' | 'ID' | 'StyleColor' | 'StyleVar' | 'DragDropSource' | 'DragDropTarget' | 'Canvas' | 'Disabled' | 'Child' | 'Font';
     props: Record<string, string>;
@@ -64,10 +66,63 @@ export interface IRBeginContainer {
 export interface IREndContainer {
     kind: 'end_container';
     tag: 'Window' | 'View' | 'Indent' | 'TextWrap' | 'Row' | 'Column' | 'DockSpace' | 'MainMenuBar' | 'MenuBar' | 'Menu'
-       | 'Table' | 'TableRow' | 'TabBar' | 'TabItem' | 'TreeNode' | 'CollapsingHeader'
+       | 'TabBar' | 'TabItem'
        | 'Theme' | 'DockLayout' | 'DockSplit' | 'DockPanel' | 'Modal'
        | 'Group' | 'ID' | 'StyleColor' | 'StyleVar' | 'DragDropSource' | 'DragDropTarget' | 'Canvas' | 'Disabled' | 'Child' | 'Font';
 }
+export interface IRTableColumn {
+    label: string;
+    defaultHide?: string;
+    preferSortAscending?: string;
+    preferSortDescending?: string;
+    noResize?: string;
+    fixedWidth?: string;
+}
+export interface IRBeginTable {
+    kind: 'begin_table';
+    columns: IRTableColumn[];
+    sortable?: string;
+    hideable?: string;
+    multiSortable?: string;
+    noClip?: string;
+    padOuterX?: string;
+    scrollX?: string;
+    scrollY?: string;
+    noBorders?: string;
+    noRowBg?: string;
+    onSortBody?: string;
+    onSortParam?: string;
+    style?: string;
+    loc?: SourceLoc;
+}
+export interface IREndTable { kind: 'end_table'; }
+export interface IRBeginTableRow { kind: 'begin_table_row'; bgColor?: string; loc?: SourceLoc; }
+export interface IREndTableRow { kind: 'end_table_row'; }
+export interface IRBeginTableCell { kind: 'begin_table_cell'; columnIndex?: string; bgColor?: string; loc?: SourceLoc; }
+export interface IREndTableCell { kind: 'end_table_cell'; }
+export interface IRBeginTreeNode {
+    kind: 'begin_tree_node';
+    label: string;
+    defaultOpen?: string;
+    forceOpen?: string;
+    openOnArrow?: string;
+    openOnDoubleClick?: string;
+    leaf?: string;
+    bullet?: string;
+    noTreePushOnOpen?: string;
+    loc?: SourceLoc;
+}
+export interface IREndTreeNode { kind: 'end_tree_node'; noTreePushOnOpen?: string; }
+export interface IRBeginCollapsingHeader {
+    kind: 'begin_collapsing_header';
+    label: string;
+    defaultOpen?: string;
+    forceOpen?: string;
+    closable?: string;
+    onCloseBody?: string;
+    loc?: SourceLoc;
+}
+export interface IREndCollapsingHeader { kind: 'end_collapsing_header'; closable?: string; }
 export interface IRText { kind: 'text'; format: string; args: string[]; loc?: SourceLoc; }
 export interface IRButton { kind: 'button'; title: string; action: string[]; disabled?: boolean; style?: string; loc?: SourceLoc; }
 export interface IRTextInput { kind: 'text_input'; label: string; bufferIndex: number; stateVar: string; valueExpr?: string; onChangeExpr?: string; directBind?: boolean; width?: string; style?: string; loc?: SourceLoc; }

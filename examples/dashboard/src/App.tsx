@@ -51,11 +51,25 @@ export default function App(props: DashboardState) {
       <Window title="Logs">
         <Column gap={4}>
           <Button title="Clear Logs" onPress={props.onClearLogs} />
-          <Table columns={["Time", "Level", "Message"]}>
+          <Table
+            columns={[
+              { label: "Time", fixedWidth: true, preferSortDescending: true },
+              { label: "Level", noResize: true },
+              { label: "Message", preferSortAscending: true },
+            ]}
+            sortable
+            hideable
+            multiSortable
+            padOuterX
+            noClip
+            onSort={props.onSortLogs}
+          >
             {props.logs.map((log, i) => (
-              <TableRow>
+              <TableRow bgColor={log.level === "ERROR" ? [0.24, 0.12, 0.12, 1.0] : log.level === "WARN" ? [0.20, 0.16, 0.10, 1.0] : [0.12, 0.16, 0.20, 1.0]}>
                 <Text>{log.timestamp}</Text>
-                <Text>{log.level}</Text>
+                <TableCell bgColor={log.level === "ERROR" ? [0.35, 0.12, 0.12, 1.0] : log.level === "WARN" ? [0.32, 0.22, 0.10, 1.0] : [0.14, 0.22, 0.28, 1.0]}>
+                  <Text>{log.level}</Text>
+                </TableCell>
                 <Text>{log.message}</Text>
               </TableRow>
             ))}

@@ -19,20 +19,17 @@ declare function useState(initial: [number, number, number]): [[number, number, 
 declare function useState(initial: [number, number, number, number]): [[number, number, number, number], (value: [number, number, number, number]) => void];
 declare function useState<T>(initial: T): [T, (value: T) => void];
 
+interface TransformSettings { speed: number; count: number; posX: number; dragVal: number; }
+interface InputSettings { level: number; weight: number; }
+interface SelectionSettings { mode: number; listChoice: number; size: number; }
+interface AppearanceSettings { color: [number, number, number, number]; pickerColor: [number, number, number, number]; }
+interface ToggleSettings { enabled: boolean; darkMode: boolean; }
 interface SettingsState {
-    speed: number;
-    count: number;
-    posX: number;
-    dragVal: number;
-    level: number;
-    weight: number;
-    mode: number;
-    listChoice: number;
-    size: number;
-    color: number[];
-    pickerColor: number[];
-    enabled: boolean;
-    darkMode: boolean;
+    transform: TransformSettings;
+    input: InputSettings;
+    selection: SelectionSettings;
+    appearance: AppearanceSettings;
+    toggles: ToggleSettings;
     onReset: () => void;
 }
 
@@ -72,12 +69,16 @@ interface MainMenuBarProps { children?: any; }
 interface MenuBarProps { children?: any; }
 interface MenuProps { label: string; children?: any; }
 interface MenuItemProps { label: string; onPress?: () => void; shortcut?: string; }
-interface TableProps { columns: string[]; scrollY?: boolean; noBorders?: boolean; noRowBg?: boolean; style?: Style; children?: any; }
-interface TableRowProps { key?: number | string; children?: any; }
+interface ImGuiTableColumnSortSpecs { ColumnIndex: number; SortOrder: number; SortDirection: number; }
+interface ImGuiTableSortSpecs { Specs: ImGuiTableColumnSortSpecs[]; SpecsCount: number; SpecsDirty: boolean; }
+interface TableColumn { label: string; defaultHide?: boolean; preferSortAscending?: boolean; preferSortDescending?: boolean; noResize?: boolean; fixedWidth?: boolean; }
+interface TableProps { columns: (string | TableColumn)[]; sortable?: boolean; onSort?: (specs: ImGuiTableSortSpecs) => void; hideable?: boolean; multiSortable?: boolean; noClip?: boolean; padOuterX?: boolean; scrollX?: boolean; scrollY?: boolean; noBorders?: boolean; noRowBg?: boolean; style?: Style; children?: any; }
+interface TableRowProps { key?: number | string; bgColor?: [number, number, number, number]; children?: any; }
+interface TableCellProps { columnIndex?: number; bgColor?: [number, number, number, number]; children?: any; }
 interface TabBarProps { style?: Style; children?: any; }
 interface TabItemProps { label: string; children?: any; }
-interface TreeNodeProps { label: string; children?: any; }
-interface CollapsingHeaderProps { label: string; children?: any; }
+interface TreeNodeProps { label: string; defaultOpen?: boolean; forceOpen?: boolean; openOnArrow?: boolean; openOnDoubleClick?: boolean; leaf?: boolean; bullet?: boolean; noTreePushOnOpen?: boolean; children?: any; }
+interface CollapsingHeaderProps { label: string; defaultOpen?: boolean; forceOpen?: boolean; closable?: boolean; onClose?: () => void; children?: any; }
 interface SliderFloatProps { label: string; value: number; onChange?: (v: number) => void; min: number; max: number; width?: number; style?: Style; }
 interface SliderIntProps { label: string; value: number; onChange?: (v: number) => void; min: number; max: number; width?: number; style?: Style; }
 interface DragFloatProps { label: string; value: number; onChange?: (v: number) => void; speed?: number; width?: number; style?: Style; }
@@ -197,6 +198,7 @@ declare function Menu(props: MenuProps): any;
 declare function MenuItem(props: MenuItemProps): any;
 declare function Table(props: TableProps): any;
 declare function TableRow(props: TableRowProps): any;
+declare function TableCell(props: TableCellProps): any;
 declare function TabBar(props: TabBarProps): any;
 declare function TabItem(props: TabItemProps): any;
 declare function TreeNode(props: TreeNodeProps): any;

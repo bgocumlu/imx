@@ -1,4 +1,5 @@
 #pragma once
+#include <imgui.h>
 #include <functional>
 #include <string>
 #include <vector>
@@ -27,4 +28,5 @@ struct DashboardState {
     // Actions
     std::function<void()> onRefresh;
     std::function<void()> onClearLogs;
+    std::function<void(ImGuiTableSortSpecs&)> onSortLogs;
 };

@@ -289,4 +289,48 @@ function App() {
         expect(ir.body[2]).toMatchObject({ kind: 'slider_float', width: '140' });
         expect(ir.body[3]).toMatchObject({ kind: 'input_float_n', width: '220' });
     });
+
+    it('lowers Phase 15 table and tree enhancements', () => {
+        const ir = lower(`
+function App() {
+  return (
+    <Window title="Phase15">
+      <Table
+        columns={[
+          { label: "Name", defaultHide: true, preferSortAscending: true, noResize: true, fixedWidth: true },
+          "Owner"
+        ]}
+        sortable
+        hideable
+        multiSortable
+        noClip
+        padOuterX
+        scrollX
+        scrollY
+        onSort={(specs) => specs}
+      >
+        <TableRow bgColor={[0.1, 0.2, 0.3, 1.0]}>
+          <TableCell columnIndex={1} bgColor={[0.2, 0.3, 0.4, 1.0]}>
+            <Text>Ada</Text>
+          </TableCell>
+        </TableRow>
+      </Table>
+      <TreeNode label="Root" defaultOpen forceOpen={true} openOnArrow openOnDoubleClick>
+        <TreeNode label="Leaf" leaf bullet noTreePushOnOpen />
+      </TreeNode>
+      <CollapsingHeader label="Details" defaultOpen forceOpen={true} closable onClose={() => {}}>
+        <Text>Body</Text>
+      </CollapsingHeader>
+    </Window>
+  );
+}
+        `);
+
+        expect(ir.body[1]).toMatchObject({ kind: 'begin_table', sortable: 'true', hideable: 'true', scrollX: 'true', scrollY: 'true' });
+        expect(ir.body[2]).toMatchObject({ kind: 'begin_table_row', bgColor: '0.1, 0.2, 0.3, 1' });
+        expect(ir.body[3]).toMatchObject({ kind: 'begin_table_cell', columnIndex: '1', bgColor: '0.2, 0.3, 0.4, 1' });
+        expect(ir.body[8]).toMatchObject({ kind: 'begin_tree_node', forceOpen: 'true', openOnArrow: 'true', openOnDoubleClick: 'true' });
+        expect(ir.body[9]).toMatchObject({ kind: 'begin_tree_node', leaf: 'true', bullet: 'true', noTreePushOnOpen: 'true' });
+        expect(ir.body[12]).toMatchObject({ kind: 'begin_collapsing_header', closable: 'true', forceOpen: 'true' });
+    });
 });

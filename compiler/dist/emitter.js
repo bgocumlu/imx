@@ -20,7 +20,10 @@ function cppType(t) {
 function cppPropType(t) {
     if (t === 'callback')
         return 'std::function<void()>';
-    return cppType(t);
+    if (t === 'int' || t === 'float' || t === 'bool' || t === 'string' || t === 'color' || t === 'int_array') {
+        return cppType(t);
+    }
+    return t;
 }
 /**
  * Ensure a string expression is a const char*.
@@ -39,16 +42,30 @@ function asCharPtr(expr) {
 }
 /**
  * For directBind emitters: if the valueExpr references a bound prop (pointer),
- * return &*expr for bound props (C++ identity: &*ptr == ptr, and the *
- * blocks the post-processing regex lookbehind from dereferencing again).
+ * return the correct address expression for nested bound props.
  * Otherwise, emit &expr.
  */
 function emitDirectBindPtr(valueExpr) {
-    const propName = valueExpr.startsWith('props.') ? valueExpr.slice(6).split('.')[0].split('[')[0] : '';
-    if (currentBoundProps.has(propName)) {
-        return `&*${valueExpr}`; // already a pointer; &* is identity, * blocks regex lookbehind
+    const boundExpr = emitBoundValueExpr(valueExpr);
+    if (boundExpr !== valueExpr) {
+        return `&${boundExpr}`;
     }
     return `&${valueExpr}`;
+}
+function boundPropName(valueExpr) {
+    return valueExpr.startsWith('props.') ? valueExpr.slice(6).split('.')[0].split('[')[0] : '';
+}
+function emitBoundValueExpr(valueExpr) {
+    const propName = boundPropName(valueExpr);
+    if (!currentBoundProps.has(propName)) {
+        return valueExpr;
+    }
+    const prefix = `props.${propName}`;
+    const suffix = valueExpr.slice(prefix.length);
+    if (suffix.length === 0) {
+        return `(*props.${propName})`;
+    }
+    return `((*props.${propName})${suffix})`;
 }
 function emitImVec4(arrayStr) {
     const parts = arrayStr.split(',').map(s => {
@@ -115,7 +132,7 @@ function emitDockSetupFunction(layout, compName, lines) {
  * Emit a .gen.h header for a component that has props.
  * Contains the props struct and function forward declaration.
  */
-export function emitComponentHeader(comp, sourceFile, boundProps) {
+export function emitComponentHeader(comp, sourceFile, boundProps, sharedPropsType) {
     const lines = [];
     if (sourceFile) {
         lines.push(`// Generated from ${sourceFile} by imxc`);
@@ -125,6 +142,9 @@ export function emitComponentHeader(comp, sourceFile, boundProps) {
     lines.push('#include <imx/renderer.h>');
     lines.push('#include <functional>');
     lines.push('#include <string>');
+    if (sharedPropsType) {
+        lines.push(`#include "${sharedPropsType}.h"`);
+    }
     lines.push('');
     // Props struct
     lines.push(`struct ${comp.name}Props {`);
@@ -155,6 +175,7 @@ export function emitComponent(comp, imports, sourceFile, boundProps, boundPropsM
     plotCounter = 0;
     dragDropSourceStack.length = 0;
     dragDropTargetStack.length = 0;
+    collapsingHeaderOnCloseStack.length = 0;
     currentCompName = comp.name;
     currentBoundProps = boundProps ?? new Set();
     allBoundProps = boundPropsMap ?? new Map();
@@ -402,6 +423,37 @@ function emitNode(node, lines, depth) {
         case 'menu_item':
             emitMenuItem(node, lines, indent, depth);
             break;
+        case 'begin_table':
+            emitBeginTable(node, lines, indent);
+            break;
+        case 'end_table':
+            lines.push(`${indent}imx::renderer::end_table();`);
+            lines.push(`${indent}}`);
+            break;
+        case 'begin_table_row':
+            emitBeginTableRow(node, lines, indent);
+            break;
+        case 'end_table_row':
+            lines.push(`${indent}imx::renderer::end_table_row();`);
+            break;
+        case 'begin_table_cell':
+            emitBeginTableCell(node, lines, indent);
+            break;
+        case 'end_table_cell':
+            lines.push(`${indent}imx::renderer::end_table_cell();`);
+            break;
+        case 'begin_tree_node':
+            emitBeginTreeNode(node, lines, indent);
+            break;
+        case 'end_tree_node':
+            emitEndTreeNode(node, lines, indent);
+            break;
+        case 'begin_collapsing_header':
+            emitBeginCollapsingHeader(node, lines, indent);
+            break;
+        case 'end_collapsing_header':
+            emitEndCollapsingHeader(node, lines, indent);
+            break;
         case 'custom_component':
             emitCustomComponent(node, lines, indent);
             break;
@@ -569,6 +621,7 @@ let nativeWidgetCounter = 0;
 let plotCounter = 0;
 const windowOpenStack = []; // tracks if begin_window used open prop
 const modalOnCloseStack = []; // tracks modal onClose expressions
+const collapsingHeaderOnCloseStack = [];
 const dragDropSourceStack = [];
 const dragDropTargetStack = [];
 /**
@@ -693,6 +746,142 @@ function buildStyleBlock(node, indent, lines) {
     }
     return varName;
 }
+function emitTableOptions(node, varName, indent, lines) {
+    lines.push(`${indent}imx::TableOptions ${varName};`);
+    if (node.sortable || node.onSortBody)
+        lines.push(`${indent}${varName}.sortable = ${node.sortable ?? 'true'};`);
+    if (node.hideable)
+        lines.push(`${indent}${varName}.hideable = ${node.hideable};`);
+    if (node.multiSortable)
+        lines.push(`${indent}${varName}.multi_sortable = ${node.multiSortable};`);
+    if (node.noClip)
+        lines.push(`${indent}${varName}.no_clip = ${node.noClip};`);
+    if (node.padOuterX)
+        lines.push(`${indent}${varName}.pad_outer_x = ${node.padOuterX};`);
+    if (node.scrollX)
+        lines.push(`${indent}${varName}.scroll_x = ${node.scrollX};`);
+    if (node.scrollY)
+        lines.push(`${indent}${varName}.scroll_y = ${node.scrollY};`);
+    if (node.noBorders)
+        lines.push(`${indent}${varName}.no_borders = ${node.noBorders};`);
+    if (node.noRowBg)
+        lines.push(`${indent}${varName}.no_row_bg = ${node.noRowBg};`);
+}
+function emitBeginTable(node, lines, indent) {
+    emitLocComment(node.loc, 'Table', lines, indent);
+    const colsVar = `table_cols_${styleCounter++}`;
+    const optsVar = `table_opts_${styleCounter++}`;
+    const style = node.style ? buildStyleVar(node.style, indent, lines) : null;
+    lines.push(`${indent}imx::TableColumn ${colsVar}[${node.columns.length}];`);
+    node.columns.forEach((column, index) => {
+        lines.push(`${indent}${colsVar}[${index}].label = ${asCharPtr(column.label)};`);
+        if (column.defaultHide)
+            lines.push(`${indent}if (${column.defaultHide}) ${colsVar}[${index}].flags |= ImGuiTableColumnFlags_DefaultHide;`);
+        if (column.preferSortAscending)
+            lines.push(`${indent}if (${column.preferSortAscending}) ${colsVar}[${index}].flags |= ImGuiTableColumnFlags_PreferSortAscending;`);
+        if (column.preferSortDescending)
+            lines.push(`${indent}if (${column.preferSortDescending}) ${colsVar}[${index}].flags |= ImGuiTableColumnFlags_PreferSortDescending;`);
+        if (column.noResize)
+            lines.push(`${indent}if (${column.noResize}) ${colsVar}[${index}].flags |= ImGuiTableColumnFlags_NoResize;`);
+        if (column.fixedWidth)
+            lines.push(`${indent}if (${column.fixedWidth}) ${colsVar}[${index}].flags |= ImGuiTableColumnFlags_WidthFixed;`);
+    });
+    emitTableOptions(node, optsVar, indent, lines);
+    const styleArg = style ?? '{}';
+    lines.push(`${indent}if (imx::renderer::begin_table("##table", ${colsVar}, ${node.columns.length}, ${styleArg}, ${optsVar})) {`);
+    if (node.onSortBody) {
+        const paramName = node.onSortParam ?? 'tableSortSpecs';
+        lines.push(`${indent}${INDENT}if (ImGuiTableSortSpecs* _imx_sort_specs = ImGui::TableGetSortSpecs()) {`);
+        lines.push(`${indent}${INDENT}${INDENT}if (_imx_sort_specs->SpecsDirty) {`);
+        lines.push(`${indent}${INDENT}${INDENT}${INDENT}ImGuiTableSortSpecs& ${paramName} = *_imx_sort_specs;`);
+        lines.push(`${indent}${INDENT}${INDENT}${INDENT}${node.onSortBody}`);
+        lines.push(`${indent}${INDENT}${INDENT}${INDENT}_imx_sort_specs->SpecsDirty = false;`);
+        lines.push(`${indent}${INDENT}${INDENT}}`);
+        lines.push(`${indent}${INDENT}}`);
+    }
+}
+function emitBeginTableRow(node, lines, indent) {
+    emitLocComment(node.loc, 'TableRow', lines, indent);
+    if (node.bgColor) {
+        lines.push(`${indent}imx::renderer::begin_table_row(${emitImVec4(node.bgColor)});`);
+    }
+    else {
+        lines.push(`${indent}imx::renderer::begin_table_row();`);
+    }
+}
+function emitBeginTableCell(node, lines, indent) {
+    emitLocComment(node.loc, 'TableCell', lines, indent);
+    const columnIndex = node.columnIndex ?? '-1';
+    if (node.bgColor) {
+        lines.push(`${indent}imx::renderer::begin_table_cell(${columnIndex}, ${emitImVec4(node.bgColor)});`);
+    }
+    else {
+        lines.push(`${indent}imx::renderer::begin_table_cell(${columnIndex});`);
+    }
+}
+function emitBeginTreeNode(node, lines, indent) {
+    emitLocComment(node.loc, 'TreeNode', lines, indent);
+    if (node.forceOpen) {
+        lines.push(`${indent}ImGui::SetNextItemOpen(${node.forceOpen}, ImGuiCond_Always);`);
+    }
+    else if (node.defaultOpen) {
+        lines.push(`${indent}ImGui::SetNextItemOpen(${node.defaultOpen}, ImGuiCond_Once);`);
+    }
+    const flagsVar = `tree_flags_${styleCounter++}`;
+    lines.push(`${indent}ImGuiTreeNodeFlags ${flagsVar} = 0;`);
+    if (node.defaultOpen)
+        lines.push(`${indent}if (${node.defaultOpen}) ${flagsVar} |= ImGuiTreeNodeFlags_DefaultOpen;`);
+    if (node.openOnArrow)
+        lines.push(`${indent}if (${node.openOnArrow}) ${flagsVar} |= ImGuiTreeNodeFlags_OpenOnArrow;`);
+    if (node.openOnDoubleClick)
+        lines.push(`${indent}if (${node.openOnDoubleClick}) ${flagsVar} |= ImGuiTreeNodeFlags_OpenOnDoubleClick;`);
+    if (node.leaf)
+        lines.push(`${indent}if (${node.leaf}) ${flagsVar} |= ImGuiTreeNodeFlags_Leaf;`);
+    if (node.bullet)
+        lines.push(`${indent}if (${node.bullet}) ${flagsVar} |= ImGuiTreeNodeFlags_Bullet;`);
+    if (node.noTreePushOnOpen)
+        lines.push(`${indent}if (${node.noTreePushOnOpen}) ${flagsVar} |= ImGuiTreeNodeFlags_NoTreePushOnOpen;`);
+    lines.push(`${indent}if (imx::renderer::begin_tree_node(${asCharPtr(node.label)}, ${flagsVar})) {`);
+}
+function emitEndTreeNode(node, lines, indent) {
+    lines.push(`${indent}imx::renderer::end_tree_node(${node.noTreePushOnOpen ?? 'false'});`);
+    lines.push(`${indent}}`);
+}
+function emitBeginCollapsingHeader(node, lines, indent) {
+    emitLocComment(node.loc, 'CollapsingHeader', lines, indent);
+    if (node.forceOpen) {
+        lines.push(`${indent}ImGui::SetNextItemOpen(${node.forceOpen}, ImGuiCond_Always);`);
+    }
+    else if (node.defaultOpen) {
+        lines.push(`${indent}ImGui::SetNextItemOpen(${node.defaultOpen}, ImGuiCond_Once);`);
+    }
+    const flagsVar = `header_flags_${styleCounter++}`;
+    lines.push(`${indent}ImGuiTreeNodeFlags ${flagsVar} = 0;`);
+    if (node.defaultOpen)
+        lines.push(`${indent}if (${node.defaultOpen}) ${flagsVar} |= ImGuiTreeNodeFlags_DefaultOpen;`);
+    if (node.closable) {
+        collapsingHeaderOnCloseStack.push(node.onCloseBody ?? null);
+        lines.push(`${indent}{`);
+        lines.push(`${indent}${INDENT}bool header_visible = true;`);
+        lines.push(`${indent}${INDENT}bool* header_visible_ptr = ${node.closable} ? &header_visible : nullptr;`);
+        lines.push(`${indent}${INDENT}if (imx::renderer::begin_collapsing_header(${asCharPtr(node.label)}, ${flagsVar}, header_visible_ptr)) {`);
+    }
+    else {
+        collapsingHeaderOnCloseStack.push(null);
+        lines.push(`${indent}if (imx::renderer::begin_collapsing_header(${asCharPtr(node.label)}, ${flagsVar})) {`);
+    }
+}
+function emitEndCollapsingHeader(node, lines, indent) {
+    lines.push(`${indent}imx::renderer::end_collapsing_header();`);
+    lines.push(`${indent}}`);
+    const onCloseBody = collapsingHeaderOnCloseStack.pop() ?? null;
+    if (node.closable) {
+        if (onCloseBody) {
+            lines.push(`${indent}${INDENT}if (${node.closable} && !header_visible) { ${onCloseBody} }`);
+        }
+        lines.push(`${indent}}`);
+    }
+}
 function emitBeginContainer(node, lines, indent) {
     emitLocComment(node.loc, node.tag, lines, indent);
     switch (node.tag) {
@@ -795,32 +984,6 @@ function emitBeginContainer(node, lines, indent) {
             lines.push(`${indent}if (imx::renderer::begin_menu(${label})) {`);
             break;
         }
-        case 'Table': {
-            const columnsRaw = node.props['columns'] ?? '';
-            const columnNames = columnsRaw.split(',').map(s => s.trim()).filter(s => s.length > 0);
-            const count = columnNames.length;
-            const varName = `table_cols_${styleCounter++}`;
-            const style = buildStyleVar(node.style, indent, lines);
-            const scrollY = node.props['scrollY'] === 'true';
-            const noBorders = node.props['noBorders'] === 'true';
-            const noRowBg = node.props['noRowBg'] === 'true';
-            lines.push(`${indent}const char* ${varName}[] = {${columnNames.join(', ')}};`);
-            const styleArg = style ?? '{}';
-            if (scrollY || noBorders || noRowBg) {
-                lines.push(`${indent}if (imx::renderer::begin_table("##table", ${count}, ${varName}, ${styleArg}, ${scrollY}, ${noBorders}, ${noRowBg})) {`);
-            }
-            else if (style) {
-                lines.push(`${indent}if (imx::renderer::begin_table("##table", ${count}, ${varName}, ${styleArg})) {`);
-            }
-            else {
-                lines.push(`${indent}if (imx::renderer::begin_table("##table", ${count}, ${varName})) {`);
-            }
-            break;
-        }
-        case 'TableRow': {
-            lines.push(`${indent}imx::renderer::begin_table_row();`);
-            break;
-        }
         case 'TabBar': {
             lines.push(`${indent}if (imx::renderer::begin_tab_bar()) {`);
             break;
@@ -828,16 +991,6 @@ function emitBeginContainer(node, lines, indent) {
         case 'TabItem': {
             const label = asCharPtr(node.props['label'] ?? '""');
             lines.push(`${indent}if (imx::renderer::begin_tab_item(${label})) {`);
-            break;
-        }
-        case 'TreeNode': {
-            const label = asCharPtr(node.props['label'] ?? '""');
-            lines.push(`${indent}if (imx::renderer::begin_tree_node(${label})) {`);
-            break;
-        }
-        case 'CollapsingHeader': {
-            const label = asCharPtr(node.props['label'] ?? '""');
-            lines.push(`${indent}if (imx::renderer::begin_collapsing_header(${label})) {`);
             break;
         }
         case 'Theme': {
@@ -1044,27 +1197,12 @@ function emitEndContainer(node, lines, indent) {
             lines.push(`${indent}imx::renderer::end_menu();`);
             lines.push(`${indent}}`);
             break;
-        case 'Table':
-            lines.push(`${indent}imx::renderer::end_table();`);
-            lines.push(`${indent}}`);
-            break;
-        case 'TableRow':
-            lines.push(`${indent}imx::renderer::end_table_row();`);
-            break;
         case 'TabBar':
             lines.push(`${indent}imx::renderer::end_tab_bar();`);
             lines.push(`${indent}}`);
             break;
         case 'TabItem':
             lines.push(`${indent}imx::renderer::end_tab_item();`);
-            lines.push(`${indent}}`);
-            break;
-        case 'TreeNode':
-            lines.push(`${indent}imx::renderer::end_tree_node();`);
-            lines.push(`${indent}}`);
-            break;
-        case 'CollapsingHeader':
-            lines.push(`${indent}imx::renderer::end_collapsing_header();`);
             lines.push(`${indent}}`);
             break;
         case 'Theme':
@@ -1281,10 +1419,8 @@ function emitTextInput(node, lines, indent) {
         lines.push(`${indent}}`);
     }
     else if (node.directBind && node.valueExpr) {
-        const propName = node.valueExpr.startsWith('props.') ? node.valueExpr.slice(6).split('.')[0].split('[')[0] : '';
-        const isBound = currentBoundProps.has(propName);
-        const readExpr = isBound ? `(*${node.valueExpr})` : node.valueExpr;
-        const writeExpr = isBound ? `(*${node.valueExpr})` : node.valueExpr;
+        const readExpr = emitBoundValueExpr(node.valueExpr);
+        const writeExpr = emitBoundValueExpr(node.valueExpr);
         lines.push(`${indent}{`);
         const innerIndent = indent + INDENT;
         const styleVar = buildWidgetStyleVar(node.style, node.width, innerIndent, lines);
@@ -1804,9 +1940,7 @@ function emitColorEdit(node, lines, indent) {
         lines.push(`${indent}}`);
     }
     else if (node.directBind && node.valueExpr) {
-        const propName = node.valueExpr.startsWith('props.') ? node.valueExpr.slice(6).split('.')[0].split('[')[0] : '';
-        const isBound = currentBoundProps.has(propName);
-        const dataExpr = isBound ? `(${node.valueExpr})->data()` : `${node.valueExpr}.data()`;
+        const dataExpr = `${emitBoundValueExpr(node.valueExpr)}.data()`;
         const styleVar = buildWidgetStyleVar(node.style, node.width, indent, lines);
         const styleArg = styleVar ? `, ${styleVar}` : '';
         lines.push(`${indent}imx::renderer::color_edit(${label}, ${dataExpr}${styleArg});`);
@@ -1840,9 +1974,7 @@ function emitColorEdit3(node, lines, indent) {
         lines.push(`${indent}}`);
     }
     else if (node.directBind && node.valueExpr) {
-        const propName = node.valueExpr.startsWith('props.') ? node.valueExpr.slice(6).split('.')[0].split('[')[0] : '';
-        const isBound = currentBoundProps.has(propName);
-        const dataExpr = isBound ? `(${node.valueExpr})->data()` : `${node.valueExpr}.data()`;
+        const dataExpr = `${emitBoundValueExpr(node.valueExpr)}.data()`;
         const styleVar = buildWidgetStyleVar(node.style, node.width, indent, lines);
         const styleArg = styleVar ? `, ${styleVar}` : '';
         lines.push(`${indent}imx::renderer::color_edit3(${label}, ${dataExpr}${styleArg});`);
@@ -1987,10 +2119,8 @@ function emitInputTextMultiline(node, lines, indent) {
         lines.push(`${innerIndent}}`);
     }
     else if (node.directBind && node.valueExpr) {
-        const propName = node.valueExpr.startsWith('props.') ? node.valueExpr.slice(6).split('.')[0].split('[')[0] : '';
-        const isBound = currentBoundProps.has(propName);
-        const readExpr = isBound ? `(*${node.valueExpr})` : node.valueExpr;
-        const writeExpr = isBound ? `(*${node.valueExpr})` : node.valueExpr;
+        const readExpr = emitBoundValueExpr(node.valueExpr);
+        const writeExpr = emitBoundValueExpr(node.valueExpr);
         lines.push(`${innerIndent}buf.sync_from(${readExpr});`);
         lines.push(`${innerIndent}if (imx::renderer::text_input_multiline(${node.label}, buf${styleArg})) {`);
         lines.push(`${innerIndent}${INDENT}${writeExpr} = buf.value();`);
@@ -2021,9 +2151,7 @@ function emitColorPicker(node, lines, indent) {
         lines.push(`${indent}}`);
     }
     else if (node.directBind && node.valueExpr) {
-        const propName = node.valueExpr.startsWith('props.') ? node.valueExpr.slice(6).split('.')[0].split('[')[0] : '';
-        const isBound = currentBoundProps.has(propName);
-        const dataExpr = isBound ? `(${node.valueExpr})->data()` : `${node.valueExpr}.data()`;
+        const dataExpr = `${emitBoundValueExpr(node.valueExpr)}.data()`;
         lines.push(`${indent}imx::renderer::color_picker(${label}, ${dataExpr});`);
     }
     else if (node.valueExpr !== undefined) {
@@ -2052,9 +2180,7 @@ function emitColorPicker3(node, lines, indent) {
         lines.push(`${indent}}`);
     }
     else if (node.directBind && node.valueExpr) {
-        const propName = node.valueExpr.startsWith('props.') ? node.valueExpr.slice(6).split('.')[0].split('[')[0] : '';
-        const isBound = currentBoundProps.has(propName);
-        const dataExpr = isBound ? `(${node.valueExpr})->data()` : `${node.valueExpr}.data()`;
+        const dataExpr = `${emitBoundValueExpr(node.valueExpr)}.data()`;
         const styleVar = buildWidgetStyleVar(node.style, node.width, indent, lines);
         const styleArg = styleVar ? `, ${styleVar}` : '';
         lines.push(`${indent}imx::renderer::color_picker3(${label}, ${dataExpr}${styleArg});`);

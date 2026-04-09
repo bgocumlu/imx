@@ -7,7 +7,7 @@ import { lowerComponent } from './lowering.js';
 import { emitComponent, emitComponentHeader, emitRoot } from './emitter.js';
 import { formatDiagnostic } from './diagnostics.js';
 import type { ImportInfo } from './emitter.js';
-import type { IRComponent, IRNode, IRImage, IRType } from './ir.js';
+import type { IRComponent, IRNode, IRImage } from './ir.js';
 
 interface CompiledComponent {
     name: string;
@@ -121,6 +121,7 @@ export function compile(files: string[], outputDir: string): CompileResult {
     for (const comp of compiled) {
         boundPropsMap.set(comp.name, comp.boundProps);
     }
+    const sharedPropsType = compiled.find(c => c.ir.namedPropsType)?.ir.namedPropsType;
 
     for (const comp of compiled) {
         const importInfos: ImportInfo[] = [];
@@ -150,7 +151,7 @@ export function compile(files: string[], outputDir: string): CompileResult {
         // Only generate a header for inline props (not for named interface types —
         // those are declared in the user's main.cpp)
         if (comp.hasProps && !comp.ir.namedPropsType) {
-            const headerOutput = emitComponentHeader(comp.ir, comp.sourceFile, comp.boundProps);
+            const headerOutput = emitComponentHeader(comp.ir, comp.sourceFile, comp.boundProps, sharedPropsType);
             const headerPath = path.join(outputDir, `${baseName}.gen.h`);
             fs.writeFileSync(headerPath, headerOutput);
             console.log(`  ${baseName} -> ${headerPath} (header)`);
@@ -339,8 +340,16 @@ function walkNodesForBinding(nodes: IRNode[], bound: Set<string>): void {
  * Parse the imx.d.ts in the given directory (if present) and extract
  * all interface declarations as a map from interface name -> field name -> type.
  */
-function loadExternalInterfaces(dir: string): Map<string, Map<string, IRType | 'callback'>> {
-    const result = new Map<string, Map<string, IRType | 'callback'>>();
+function normalizeExternalPropType(typeText: string): string | 'callback' {
+    const trimmed = typeText.trim().replace(/\s*\|\s*undefined$/, '');
+    if (trimmed === 'number') return 'float';
+    if (trimmed === 'boolean') return 'bool';
+    if (trimmed === 'string') return 'string';
+    return trimmed;
+}
+
+function loadExternalInterfaces(dir: string): Map<string, Map<string, string | 'callback'>> {
+    const result = new Map<string, Map<string, string | 'callback'>>();
     const dtsPath = path.join(dir, 'imx.d.ts');
     if (!fs.existsSync(dtsPath)) return result;
 
@@ -350,23 +359,13 @@ function loadExternalInterfaces(dir: string): Map<string, Map<string, IRType | '
     for (const stmt of sf.statements) {
         if (ts.isInterfaceDeclaration(stmt)) {
             const ifName = stmt.name.text;
-            const fields = new Map<string, IRType | 'callback'>();
+            const fields = new Map<string, string | 'callback'>();
             for (const member of stmt.members) {
                 if (ts.isPropertySignature(member) && member.name && ts.isIdentifier(member.name)) {
                     const fieldName = member.name.text;
                     if (!member.type) { fields.set(fieldName, 'string'); continue; }
                     if (ts.isFunctionTypeNode(member.type)) { fields.set(fieldName, 'callback'); continue; }
-                    const typeText = member.type.getText(sf);
-                    if (typeText === 'number') {
-                        fields.set(fieldName, 'float');
-                    } else if (typeText === 'boolean') {
-                        fields.set(fieldName, 'bool');
-                    } else if (typeText === 'string') {
-                        fields.set(fieldName, 'string');
-                    } else {
-                        // Arrays, nested interfaces, etc. treated as opaque (non-scalar)
-                        fields.set(fieldName, 'string');
-                    }
+                    fields.set(fieldName, normalizeExternalPropType(member.type.getText(sf)));
                 } else if (ts.isMethodSignature(member)) {
                     const mName = ts.isIdentifier(member.name) ? member.name.text : '';
                     if (mName) fields.set(mName, 'callback');

@@ -86,19 +86,22 @@ export function lowerComponent(parsed, validation, externalInterfaces) {
         body,
     };
 }
+function normalizePropTypeText(typeText) {
+    const trimmed = typeText.trim().replace(/\s*\|\s*undefined$/, '');
+    if (trimmed === 'number')
+        return 'int';
+    if (trimmed === 'boolean')
+        return 'bool';
+    if (trimmed === 'string')
+        return 'string';
+    return trimmed;
+}
 function inferPropType(member) {
     if (!member.type)
         return 'string';
     if (ts.isFunctionTypeNode(member.type))
         return 'callback';
-    const text = member.type.getText();
-    if (text === 'number')
-        return 'int';
-    if (text === 'boolean')
-        return 'bool';
-    if (text === 'string')
-        return 'string';
-    return 'string';
+    return normalizePropTypeText(member.type.getText());
 }
 /**
  * Scan the source file for an interface declaration matching `interfaceName`
@@ -119,20 +122,7 @@ function extractInterfaceFields(interfaceName, sourceFile, fieldTypes) {
                         fieldTypes.set(fieldName, 'callback');
                         continue;
                     }
-                    const typeText = member.type.getText();
-                    if (typeText === 'number' || typeText === 'number | undefined') {
-                        fieldTypes.set(fieldName, 'float');
-                    }
-                    else if (typeText === 'boolean') {
-                        fieldTypes.set(fieldName, 'bool');
-                    }
-                    else if (typeText === 'string') {
-                        fieldTypes.set(fieldName, 'string');
-                    }
-                    else {
-                        // Array types, nested interfaces, etc. treated as opaque
-                        fieldTypes.set(fieldName, 'string');
-                    }
+                    fieldTypes.set(fieldName, normalizePropTypeText(member.type.getText()));
                 }
             }
             return;
@@ -414,11 +404,68 @@ function lowerJsxElement(node, body, ctx) {
     if (isHostComponent(name)) {
         const def = HOST_COMPONENTS[name];
         const attrs = getAttributes(node.openingElement.attributes, ctx);
+        const rawAttrs = getRawAttributes(node.openingElement.attributes);
+        if (name === 'Table') {
+            lowerTableElement(node, body, ctx, attrs, rawAttrs, getLoc(node, ctx));
+            return;
+        }
+        if (name === 'TableRow') {
+            body.push({ kind: 'begin_table_row', bgColor: attrs['bgColor'], loc: getLoc(node, ctx) });
+            for (const child of node.children) {
+                lowerJsxChild(child, body, ctx);
+            }
+            body.push({ kind: 'end_table_row' });
+            return;
+        }
+        if (name === 'TableCell') {
+            body.push({ kind: 'begin_table_cell', columnIndex: attrs['columnIndex'], bgColor: attrs['bgColor'], loc: getLoc(node, ctx) });
+            for (const child of node.children) {
+                lowerJsxChild(child, body, ctx);
+            }
+            body.push({ kind: 'end_table_cell' });
+            return;
+        }
+        if (name === 'TreeNode') {
+            body.push({
+                kind: 'begin_tree_node',
+                label: attrs['label'] ?? '""',
+                defaultOpen: attrs['defaultOpen'],
+                forceOpen: attrs['forceOpen'],
+                openOnArrow: attrs['openOnArrow'],
+                openOnDoubleClick: attrs['openOnDoubleClick'],
+                leaf: attrs['leaf'],
+                bullet: attrs['bullet'],
+                noTreePushOnOpen: attrs['noTreePushOnOpen'],
+                loc: getLoc(node, ctx),
+            });
+            for (const child of node.children) {
+                lowerJsxChild(child, body, ctx);
+            }
+            body.push({ kind: 'end_tree_node', noTreePushOnOpen: attrs['noTreePushOnOpen'] });
+            return;
+        }
+        if (name === 'CollapsingHeader') {
+            const onClose = rawAttrs.get('onClose');
+            const closeInfo = onClose ? lowerParameterizedCallback(onClose, ctx, 'onCloseHeader') : undefined;
+            body.push({
+                kind: 'begin_collapsing_header',
+                label: attrs['label'] ?? '""',
+                defaultOpen: attrs['defaultOpen'],
+                forceOpen: attrs['forceOpen'],
+                closable: attrs['closable'],
+                onCloseBody: closeInfo?.bodyCode,
+                loc: getLoc(node, ctx),
+            });
+            for (const child of node.children) {
+                lowerJsxChild(child, body, ctx);
+            }
+            body.push({ kind: 'end_collapsing_header', closable: attrs['closable'] });
+            return;
+        }
         if (def.isContainer) {
             const containerTag = name;
             // Special handling for DragDropTarget — lower onDrop callback with type info
             if (name === 'DragDropTarget') {
-                const rawAttrs = getRawAttributes(node.openingElement.attributes);
                 const props = {};
                 for (const [attrName, expr] of rawAttrs) {
                     if (attrName === 'onDrop' && expr && (ts.isArrowFunction(expr) || ts.isFunctionExpression(expr))) {
@@ -510,6 +557,47 @@ function lowerJsxSelfClosing(node, body, ctx) {
     const rawAttrs = getRawAttributes(node.attributes);
     const loc = getLoc(node, ctx);
     switch (name) {
+        case 'Table': {
+            lowerTableSelfClosing(body, ctx, attrs, rawAttrs, loc);
+            break;
+        }
+        case 'TableRow':
+            body.push({ kind: 'begin_table_row', bgColor: attrs['bgColor'], loc });
+            body.push({ kind: 'end_table_row' });
+            break;
+        case 'TableCell':
+            body.push({ kind: 'begin_table_cell', columnIndex: attrs['columnIndex'], bgColor: attrs['bgColor'], loc });
+            body.push({ kind: 'end_table_cell' });
+            break;
+        case 'TreeNode':
+            body.push({
+                kind: 'begin_tree_node',
+                label: attrs['label'] ?? '""',
+                defaultOpen: attrs['defaultOpen'],
+                forceOpen: attrs['forceOpen'],
+                openOnArrow: attrs['openOnArrow'],
+                openOnDoubleClick: attrs['openOnDoubleClick'],
+                leaf: attrs['leaf'],
+                bullet: attrs['bullet'],
+                noTreePushOnOpen: attrs['noTreePushOnOpen'],
+                loc,
+            });
+            body.push({ kind: 'end_tree_node', noTreePushOnOpen: attrs['noTreePushOnOpen'] });
+            break;
+        case 'CollapsingHeader': {
+            const closeInfo = rawAttrs.get('onClose') ? lowerParameterizedCallback(rawAttrs.get('onClose'), ctx, 'onCloseHeader') : undefined;
+            body.push({
+                kind: 'begin_collapsing_header',
+                label: attrs['label'] ?? '""',
+                defaultOpen: attrs['defaultOpen'],
+                forceOpen: attrs['forceOpen'],
+                closable: attrs['closable'],
+                onCloseBody: closeInfo?.bodyCode,
+                loc,
+            });
+            body.push({ kind: 'end_collapsing_header', closable: attrs['closable'] });
+            break;
+        }
         case 'Button':
             lowerButton(attrs, rawAttrs, body, ctx, loc);
             break;
@@ -1019,8 +1107,12 @@ function inferExprType(expr, ctx) {
         // If accessing a direct field of the props param, look up its type
         if (ctx.propsParam && ts.isIdentifier(expr.expression) && expr.expression.text === ctx.propsParam) {
             const ft = ctx.propsFieldTypes.get(prop);
-            if (ft && ft !== 'callback')
-                return ft;
+            if (ft && ft !== 'callback') {
+                if (ft === 'int' || ft === 'float' || ft === 'bool' || ft === 'string' || ft === 'color' || ft === 'int_array') {
+                    return ft;
+                }
+                return 'string';
+            }
         }
         return 'string';
     }
@@ -1103,6 +1195,113 @@ function lowerCustomComponent(name, attributes, body, ctx, loc) {
         bufferCount: 0,
         loc,
     });
+}
+function lowerParameterizedCallback(expr, ctx, defaultParamName) {
+    if (ts.isArrowFunction(expr) || ts.isFunctionExpression(expr)) {
+        const param = expr.parameters[0];
+        const paramName = param && ts.isIdentifier(param.name) ? param.name.text : defaultParamName;
+        const bodyCode = ts.isBlock(expr.body)
+            ? expr.body.statements.map(s => stmtToCpp(s, ctx)).join(' ')
+            : `${exprToCpp(expr.body, ctx)};`;
+        return { paramName, bodyCode };
+    }
+    const callbackExpr = exprToCpp(expr, ctx);
+    const bodyCode = (ts.isIdentifier(expr) || ts.isPropertyAccessExpression(expr))
+        ? `${callbackExpr}(${defaultParamName});`
+        : `${callbackExpr};`;
+    return { paramName: defaultParamName, bodyCode };
+}
+function lowerTableColumns(expr, ctx) {
+    if (!expr || !ts.isArrayLiteralExpression(expr)) {
+        return [];
+    }
+    const columns = [];
+    for (const element of expr.elements) {
+        if (ts.isStringLiteral(element) || ts.isNoSubstitutionTemplateLiteral(element)) {
+            columns.push({ label: JSON.stringify(element.text) });
+            continue;
+        }
+        if (ts.isObjectLiteralExpression(element)) {
+            const column = { label: '""' };
+            for (const prop of element.properties) {
+                if (!ts.isPropertyAssignment(prop) || !ts.isIdentifier(prop.name))
+                    continue;
+                const propName = prop.name.text;
+                const value = exprToCpp(prop.initializer, ctx);
+                switch (propName) {
+                    case 'label':
+                        column.label = value;
+                        break;
+                    case 'defaultHide':
+                        column.defaultHide = value;
+                        break;
+                    case 'preferSortAscending':
+                        column.preferSortAscending = value;
+                        break;
+                    case 'preferSortDescending':
+                        column.preferSortDescending = value;
+                        break;
+                    case 'noResize':
+                        column.noResize = value;
+                        break;
+                    case 'fixedWidth':
+                        column.fixedWidth = value;
+                        break;
+                }
+            }
+            columns.push(column);
+            continue;
+        }
+        columns.push({ label: exprToCpp(element, ctx) });
+    }
+    return columns;
+}
+function lowerTableSelfClosing(body, ctx, attrs, rawAttrs, loc) {
+    const onSort = rawAttrs.get('onSort') ?? null;
+    const sortInfo = onSort ? lowerParameterizedCallback(onSort, ctx, 'tableSortSpecs') : undefined;
+    body.push({
+        kind: 'begin_table',
+        columns: lowerTableColumns(rawAttrs.get('columns') ?? null, ctx),
+        sortable: attrs['sortable'],
+        hideable: attrs['hideable'],
+        multiSortable: attrs['multiSortable'],
+        noClip: attrs['noClip'],
+        padOuterX: attrs['padOuterX'],
+        scrollX: attrs['scrollX'],
+        scrollY: attrs['scrollY'],
+        noBorders: attrs['noBorders'],
+        noRowBg: attrs['noRowBg'],
+        onSortBody: sortInfo?.bodyCode,
+        onSortParam: sortInfo?.paramName,
+        style: attrs['style'],
+        loc,
+    });
+    body.push({ kind: 'end_table' });
+}
+function lowerTableElement(node, body, ctx, attrs, rawAttrs, loc) {
+    const onSort = rawAttrs.get('onSort') ?? null;
+    const sortInfo = onSort ? lowerParameterizedCallback(onSort, ctx, 'tableSortSpecs') : undefined;
+    body.push({
+        kind: 'begin_table',
+        columns: lowerTableColumns(rawAttrs.get('columns') ?? null, ctx),
+        sortable: attrs['sortable'],
+        hideable: attrs['hideable'],
+        multiSortable: attrs['multiSortable'],
+        noClip: attrs['noClip'],
+        padOuterX: attrs['padOuterX'],
+        scrollX: attrs['scrollX'],
+        scrollY: attrs['scrollY'],
+        noBorders: attrs['noBorders'],
+        noRowBg: attrs['noRowBg'],
+        onSortBody: sortInfo?.bodyCode,
+        onSortParam: sortInfo?.paramName,
+        style: attrs['style'],
+        loc,
+    });
+    for (const child of node.children) {
+        lowerJsxChild(child, body, ctx);
+    }
+    body.push({ kind: 'end_table' });
 }
 function lowerNativeWidget(name, attributes, body, ctx, loc) {
     const props = {};

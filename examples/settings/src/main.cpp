@@ -88,19 +88,11 @@ int main() {
     glfwSetWindowSizeCallback(window, window_size_callback);
 
     app.state.onReset = [&]() {
-        app.state.speed = 5.0f;
-        app.state.count = 3;
-        app.state.posX = 0.0f;
-        app.state.dragVal = 50;
-        app.state.level = 1;
-        app.state.weight = 9.8f;
-        app.state.mode = 0;
-        app.state.listChoice = 0;
-        app.state.size = 0;
-        app.state.color = {1.0f, 0.5f, 0.0f, 1.0f};
-        app.state.pickerColor = {0.2f, 0.8f, 0.4f, 1.0f};
-        app.state.enabled = true;
-        app.state.darkMode = false;
+        app.state.transform = {};
+        app.state.input = {};
+        app.state.selection = {};
+        app.state.appearance = {};
+        app.state.toggles = {};
     };
 
     while (glfwWindowShouldClose(window) == 0) {

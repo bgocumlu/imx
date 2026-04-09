@@ -279,23 +279,53 @@ A table with named columns. Must contain `TableRow` children.
 
 | Prop | Type | Required | Description |
 |------|------|----------|-------------|
-| columns | string[] | Yes | Array of column header names |
+| columns | `(string \| TableColumn)[]` | Yes | Column labels or column config objects |
+| sortable | boolean | No | Enables ImGui table sorting |
+| onSort | `(specs) => void` | No | Called when ImGui marks sort specs dirty |
+| hideable | boolean | No | Allows users to hide columns from the header menu |
+| multiSortable | boolean | No | Allows multi-column sorting |
+| noClip | boolean | No | Disables per-column clipping |
+| padOuterX | boolean | No | Adds outer horizontal cell padding |
+| scrollX | boolean | No | Enables horizontal scrolling |
+| scrollY | boolean | No | Enables vertical scrolling |
+| noBorders | boolean | No | Disables table borders |
+| noRowBg | boolean | No | Disables alternating row backgrounds |
 | style | Style | No | Layout and appearance styles |
 
 ```tsx
-<Table columns={["Name", "Status"]}>
+<Table
+  columns={[
+    { label: "Name", fixedWidth: true, preferSortAscending: true },
+    { label: "Status", noResize: true },
+    "Owner"
+  ]}
+  sortable
+  hideable
+  multiSortable
+  onSort={props.onSortLogs}
+>
   <TableRow>
     <Text>Task 1</Text>
-    <Text>Done</Text>
+    <TableCell bgColor={[0.2, 0.3, 0.4, 1.0]}>
+      <Text>Done</Text>
+    </TableCell>
+    <Text>Editor Team</Text>
   </TableRow>
-  <TableRow>
-    <Text>Task 2</Text>
-    <Text>Pending</Text>
+  <TableRow bgColor={[0.12, 0.16, 0.20, 1.0]}>
+    <TableCell columnIndex={0}>
+      <Text>Task 2</Text>
+    </TableCell>
+    <TableCell columnIndex={2}>
+      <Text>Manual column jump</Text>
+    </TableCell>
+    <TableCell columnIndex={1}>
+      <Text>Pending</Text>
+    </TableCell>
   </TableRow>
 </Table>
 ```
 
-> **Note:** Each TableRow should have the same number of children as there are columns. Each child fills one column cell.
+> **Note:** Direct `TableRow` children still fill columns left-to-right. Use `TableCell` when you need explicit `columnIndex` jumps or per-cell background colors.
 
 ---
 
@@ -305,14 +335,31 @@ A single row inside a Table. Children map to columns left to right.
 
 | Prop | Type | Required | Description |
 |------|------|----------|-------------|
-| *(none)* | | | |
+| bgColor | `[number, number, number, number]` | No | Uses `TableSetBgColor` for the row |
 
 ```tsx
-<TableRow>
+<TableRow bgColor={[0.14, 0.18, 0.22, 1.0]}>
   <Text>Cell 1</Text>
   <Text>Cell 2</Text>
   <Button title="Action" onPress={() => {}} />
 </TableRow>
+```
+
+---
+
+#### TableCell
+
+An explicit table cell container. Use it when you need per-cell coloring or to jump to a specific column index.
+
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| columnIndex | number | No | Jumps to a specific table column before rendering children |
+| bgColor | `[number, number, number, number]` | No | Uses `TableSetBgColor` for the cell |
+
+```tsx
+<TableCell columnIndex={2} bgColor={[0.22, 0.20, 0.16, 1.0]}>
+  <Text>Escalated</Text>
+</TableCell>
 ```
 
 ---
@@ -324,15 +371,20 @@ A collapsible tree node. Children are shown when the node is expanded by the use
 | Prop | Type | Required | Description |
 |------|------|----------|-------------|
 | label | string | Yes | Node label text |
+| defaultOpen | boolean | No | Starts open and also seeds `SetNextItemOpen(..., ImGuiCond_Once)` |
+| forceOpen | boolean | No | Forces open/closed state each frame with `SetNextItemOpen(..., ImGuiCond_Always)` |
+| openOnArrow | boolean | No | Requires arrow click to open |
+| openOnDoubleClick | boolean | No | Allows double-click to open |
+| leaf | boolean | No | Marks the node as a leaf |
+| bullet | boolean | No | Renders the node as a bullet |
+| noTreePushOnOpen | boolean | No | Skips the implicit tree push/pop pair |
 
 ```tsx
-<TreeNode label="Root">
-  <TreeNode label="Child A">
+<TreeNode label="Root" defaultOpen forceOpen={showTree} openOnArrow openOnDoubleClick>
+  <TreeNode label="Child A" defaultOpen>
     <Text>Leaf 1</Text>
   </TreeNode>
-  <TreeNode label="Child B">
-    <Text>Leaf 2</Text>
-  </TreeNode>
+  <TreeNode label="Child B" leaf bullet noTreePushOnOpen />
 </TreeNode>
 ```
 
@@ -345,9 +397,13 @@ A collapsible section with a header. Similar to TreeNode but styled as a full-wi
 | Prop | Type | Required | Description |
 |------|------|----------|-------------|
 | label | string | Yes | Header label text |
+| defaultOpen | boolean | No | Seeds `SetNextItemOpen(..., ImGuiCond_Once)` and sets the default-open flag |
+| forceOpen | boolean | No | Forces open/closed state each frame |
+| closable | boolean | No | Shows ImGui's close button |
+| onClose | `() => void` | No | Called when the close button hides the header |
 
 ```tsx
-<CollapsingHeader label="Settings">
+<CollapsingHeader label="Settings" defaultOpen closable onClose={props.onHideSettings}>
   <SliderFloat label="Volume" value={vol} onChange={setVol} min={0} max={1} />
   <Checkbox value={muted} onChange={setMuted} label="Mute" />
 </CollapsingHeader>
@@ -1598,6 +1654,22 @@ export default function App() {
       <TodoItem text="My task" done={done} onToggle={() => setDone(!done)} />
     </Window>
   );
+}
+```
+
+Nested struct references can also flow into child components without losing direct binding:
+
+```tsx
+// App.tsx
+import { TransformSection } from './TransformSection';
+
+export default function App(props: AppState) {
+  return <TransformSection value={props.transform} />;
+}
+
+// TransformSection.tsx
+export function TransformSection(props: { value: TransformSettings }) {
+  return <SliderFloat label="Speed" value={props.value.speed} min={0} max={100} />;
 }
 ```
 
