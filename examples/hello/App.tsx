@@ -44,6 +44,7 @@ export default function App(props: AppState) {
   const [phase17ComboIdx, setPhase17ComboIdx] = useState(0);
   const [phase17CtxMsg, setPhase17CtxMsg] = useState("Left-click the button below.");
   const [phase17ModalShow, setPhase17ModalShow] = useState(false);
+  const [phase18ListIdx, setPhase18ListIdx] = useState(0);
 
   return (
     <Theme preset="dark" accentColor={[0.9, 0.2, 0.2, 1.0]} backgroundColor={[0.12, 0.12, 0.15, 1.0]} textColor={[0.95, 0.95, 0.95, 1.0]} borderColor={[0.3, 0.3, 0.35, 1.0]} surfaceColor={[0.18, 0.18, 0.22, 1.0]} rounding={6}>
@@ -83,9 +84,14 @@ export default function App(props: AppState) {
                   <DockPanel>
                     <Window title="Phase 13" />
                   </DockPanel>
-                  <DockPanel>
-                    <Window title="Phase 14" />
-                  </DockPanel>
+                  <DockSplit direction="vertical" size={0.5}>
+                    <DockPanel>
+                      <Window title="Phase 14" />
+                    </DockPanel>
+                    <DockPanel>
+                      <Window title="Phase 18" />
+                    </DockPanel>
+                  </DockSplit>
                 </DockSplit>
               </DockSplit>
             </DockSplit>
@@ -533,6 +539,53 @@ export default function App(props: AppState) {
             <Selectable label="Zeta" selected={props.ms_selected[5]} selectionIndex={5} />
           </MultiSelect>
           <Text>Selected: {props.ms_selection_count} / 6</Text>
+        </Column>
+      </Window>
+      <Window title="Phase 18">
+        <Column gap={8}>
+          <Font name="jetbrains-mono">
+            <Text>Phase 18 showcase: text variants, bullet, selectable flags, manual ListBox.</Text>
+          </Font>
+          <CollapsingHeader label="Text Variants" defaultOpen>
+            <Text>Normal text (no props).</Text>
+            <Text color={[1.0, 0.3, 0.3, 1.0]}>Red colored text via color prop.</Text>
+            <Text color={[0.3, 1.0, 0.5, 1.0]}>Green colored text.</Text>
+            <Text disabled>Disabled (grayed out) text.</Text>
+            <Text wrapped>This is wrapped text that will automatically wrap to fit within the available window width, which is especially useful for long descriptions, help text, or log output in narrow docked panels.</Text>
+            <Text color={[1.0, 0.8, 0.2, 1.0]} wrapped>Colored AND wrapped text combined — yellow text that wraps within the panel boundary.</Text>
+          </CollapsingHeader>
+          <CollapsingHeader label="Bullet" defaultOpen>
+            <Bullet />
+            <SameLine spacing={4} />
+            <Text>Standalone bullet followed by text via SameLine.</Text>
+            <Bullet />
+            <SameLine spacing={4} />
+            <Text>Second bullet point.</Text>
+            <BulletText>Classic BulletText for comparison.</BulletText>
+          </CollapsingHeader>
+          <CollapsingHeader label="Selectable Flags" defaultOpen>
+            <Table columns={["Name", "Status", "Action"]}>
+              <TableRow>
+                <Selectable label="Row A" spanAllColumns selected={phase18ListIdx === 0} onSelect={() => setPhase18ListIdx(0)} />
+              </TableRow>
+              <TableRow>
+                <Selectable label="Row B" spanAllColumns selected={phase18ListIdx === 1} onSelect={() => setPhase18ListIdx(1)} />
+              </TableRow>
+              <TableRow>
+                <Selectable label="Row C" spanAllColumns allowDoubleClick selected={phase18ListIdx === 2} onSelect={() => setPhase18ListIdx(2)} />
+              </TableRow>
+            </Table>
+            <Text>Selected index: {phase18ListIdx}</Text>
+          </CollapsingHeader>
+          <CollapsingHeader label="Manual ListBox" defaultOpen>
+            <ListBox label="Colors" width={200} height={120}>
+              <Selectable label="Red" selected={phase18ListIdx === 0} onSelect={() => setPhase18ListIdx(0)} />
+              <Selectable label="Green" selected={phase18ListIdx === 1} onSelect={() => setPhase18ListIdx(1)} />
+              <Selectable label="Blue" selected={phase18ListIdx === 2} onSelect={() => setPhase18ListIdx(2)} />
+              <Selectable label="Yellow" selected={phase18ListIdx === 3} onSelect={() => setPhase18ListIdx(3)} />
+            </ListBox>
+            <Text>ListBox selected: {phase18ListIdx}</Text>
+          </CollapsingHeader>
         </Column>
       </Window>
       <Modal title="Confirm Action" open={showConfirm} onClose={() => setShowConfirm(false)}>
