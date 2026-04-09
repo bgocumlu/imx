@@ -709,6 +709,9 @@ export const HOST_COMPONENTS: Record<string, HostComponentDef> = {
     Font: {
         props: {
             name: { type: 'string', required: true },
+            src: { type: 'string', required: false },
+            size: { type: 'number', required: false },
+            embed: { type: 'boolean', required: false },
         },
         hasChildren: true, isContainer: true,
     },
