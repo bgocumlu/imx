@@ -1134,7 +1134,9 @@ function emitBeginContainer(node: IRBeginContainer, lines: string[], indent: str
                 lines.push(`${indent}    bool win_open = ${openExpr};`);
                 lines.push(`${indent}    imx::renderer::begin_window(${title}, ${flags}, &win_open${vpOnTop ? ', true' : ''});`);
                 if (onCloseExpr) {
-                    lines.push(`${indent}    if (!win_open) { ${onCloseExpr}; }`);
+                    const lambdaMatch = onCloseExpr.match(/^\[&\]\(\)\s*\{\s*(.*?)\s*\}$/);
+                    const onCloseBody = lambdaMatch ? lambdaMatch[1] : `${onCloseExpr}();`;
+                    lines.push(`${indent}    if (!win_open) { ${onCloseBody} }`);
                 }
             } else {
                 const vpOnTopElse = node.props['viewportAlwaysOnTop'] === 'true';
