@@ -493,6 +493,18 @@ export default function App() {
           <DrawText pos={[10, 185]} text="Canvas Drawing" color={[1, 1, 1, 1]} />
         </Canvas>
       </Window>
+      <Window title="Phase 17"
+              x={600} y={100} width={420} height={250}
+              minWidth={250} minHeight={150} maxWidth={800} maxHeight={500}
+              horizontalScrollbar bgAlpha={0.95}>
+        <Column gap={4}>
+          <Text>Phase 17: Window & Popup Control</Text>
+          <Separator />
+          <Text>Positioned at (600,100), sized 420x250 (once).</Text>
+          <Text>Drag/resize freely — min 250x150, max 800x500.</Text>
+          <Text>bgAlpha=0.95, horizontalScrollbar enabled.</Text>
+        </Column>
+      </Window>
       <Modal title="Confirm Action" open={showConfirm} onClose={() => setShowConfirm(false)}>
         <Text>Are you sure you want to proceed?</Text>
         <Row gap={8}>
