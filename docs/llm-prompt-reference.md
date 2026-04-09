@@ -81,15 +81,15 @@ PlotHistogram: label(string, required) | values(number[], required) | overlay?(s
 ### Inputs
 ```
 Button: title(string, required) | onPress(() => void, required) | disabled?(boolean) | style?(Style)
-TextInput: value(string, required) | onChange((v: string) => void, required) | label?(string) | placeholder?(string) | style?(Style)
-InputTextMultiline: label(string, required) | value(string, required) | onChange((v: string) => void, required) | style?(Style)
+TextInput: value(string, required) | onChange((v: string) => void, required) | label?(string) | placeholder?(string) | width?(number) | style?(Style)
+InputTextMultiline: label(string, required) | value(string, required) | onChange((v: string) => void, required) | width?(number) | style?(Style)
 Checkbox: value(boolean, required) | onChange((v: boolean) => void, required) | label?(string) | style?(Style)
-SliderFloat: label(string, required) | value(number, required) | onChange((v: number) => void, required) | min(number, required) | max(number, required) | style?(Style)
-SliderInt: label(string, required) | value(number, required) | onChange((v: number) => void, required) | min(number, required) | max(number, required) | style?(Style)
-DragFloat: label(string, required) | value(number, required) | onChange((v: number) => void, required) | speed?(number) | style?(Style)
-DragInt: label(string, required) | value(number, required) | onChange((v: number) => void, required) | speed?(number) | style?(Style)
-InputInt: label(string, required) | value(number, required) | onChange((v: number) => void, required) | style?(Style)
-InputFloat: label(string, required) | value(number, required) | onChange((v: number) => void, required) | style?(Style)
+SliderFloat: label(string, required) | value(number, required) | onChange((v: number) => void, required) | min(number, required) | max(number, required) | width?(number) | style?(Style)
+SliderInt: label(string, required) | value(number, required) | onChange((v: number) => void, required) | min(number, required) | max(number, required) | width?(number) | style?(Style)
+DragFloat: label(string, required) | value(number, required) | onChange((v: number) => void, required) | speed?(number) | width?(number) | style?(Style)
+DragInt: label(string, required) | value(number, required) | onChange((v: number) => void, required) | speed?(number) | width?(number) | style?(Style)
+InputInt: label(string, required) | value(number, required) | onChange((v: number) => void, required) | width?(number) | style?(Style)
+InputFloat: label(string, required) | value(number, required) | onChange((v: number) => void, required) | width?(number) | style?(Style)
 Radio: label(string, required) | value(number, required) | index(number, required) | onChange?((v: number) => void) | style?(Style)
 Selectable: label(string, required) | selected?(boolean) | onSelect?(() => void) | selectionIndex?(number) | spanAllColumns? | allowDoubleClick? | dontClosePopups? | style?(Style) — clickable list item with optional flags
 ColorEdit: label(string, required) | value(number[], required) | onChange((v: number[]) => void, required) | style?(Style)
@@ -97,7 +97,7 @@ ColorEdit3: label(string, required) | value([number,number,number], required) | 
 ColorPicker: label(string, required) | value(number[], required) | onChange((v: number[]) => void, required) | style?(Style)
 ColorPicker3: label(string, required) | value([number,number,number], required) | onChange?((v) => void) | style?(Style) — RGB only
 Combo: label(string, required) | value?(number) | onChange?((v: number) => void) | items?(string[]) | preview?(string) | noArrowButton? | noPreview? | heightSmall? | heightLarge? | heightRegular? | width?(number) | style?(Style) | children? — simple mode (items) or manual mode (children)
-ListBox: label(string, required) | value?(number) | onChange?((v: number) => void) | items?(string[]) | width?(number) | height?(number) | style?(Style) | children? — simple mode with items array, or manual mode with children (BeginListBox/EndListBox)
+ListBox: label(string, required) | value?(number) | onChange?((v: number) => void) | items?(string[]) | width?(number) | height?(number) | style?(Style) | children? — simple mode (items + value + onChange required) or manual mode (children with Selectable items, no value/items needed)
 SmallButton: label(string, required) | onPress(() => void, required) — compact button
 ArrowButton: id(string, required) | direction("left"|"right"|"up"|"down", required) | onPress(() => void, required)
 InvisibleButton: id(string, required) | width(number, required) | height(number, required) | onPress(() => void, required) — invisible hitbox
@@ -125,7 +125,7 @@ SliderInt3: label(string, required) | value([number,number,number], required) | 
 SliderInt4: label(string, required) | value([number,number,number,number], required) | onChange?((v) => void) | min(number, required) | max(number, required) | style?(Style)
 ```
 
-Phase 14 width note: `TextInput`, `InputTextMultiline`, scalar inputs, vector inputs, sliders, drags, `Combo`, `ListBox`, `ColorEdit3`, and `ColorPicker3` also accept `width?(number)`.
+Width note: All input-like widgets (TextInput, InputTextMultiline, scalar/vector inputs, sliders, drags, Combo, ListBox, ColorEdit, ColorEdit3, ColorPicker, ColorPicker3) accept `width?(number)` for per-item width control.
 Phase 16 interaction note: interactive widgets also accept `tooltip?(string)`, `autoFocus?(boolean)`, `scrollToHere?(boolean)`, `cursor?("none"|"arrow"|"text"|"textInput"|"resizeAll"|"resizeNS"|"resizeEW"|"resizeNESW"|"resizeNWSE"|"hand"|"wait"|"progress"|"notAllowed")`, `onHover?(() => void)`, `onActive?(() => void)`, `onFocused?(() => void)`, `onClicked?(() => void)`, `onDoubleClicked?(() => void)`.
 
 ### Overlay

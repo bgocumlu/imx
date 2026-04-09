@@ -68,9 +68,11 @@ Key principles:
 - `compiler/src/` — TypeScript compiler (parser, validator, ir, lowering, emitter, compile, init)
 - `compiler/dist/` — compiled JS (committed to git so FetchContent works without npm)
 - `cmake/ImxCompile.cmake` — CMake helper for compiling .tsx files
-- `examples/hello/` — main example app with TodoItem, all Batch 1-5 components, Canvas, DragDrop, Image. Uses `render_root<AppState>` for struct binding (MultiSelect demo)
-- `examples/hello/AppState.h` — C++ struct with MultiSelect selection state and `apply_selection()` helper
-- `examples/hello/public/` — static assets copied to exe directory at build time
+- `examples/hello/` — minimal getting-started (~25 lines TSX, no struct binding). `src/App.tsx`, `src/main.cpp`
+- `examples/demo/` — component-organized demo (like imgui_demo). Hub with 14 category buttons, each opens a demo window. `src/App.tsx` + 14 category .tsx files + `src/DemoState.h` + `src/main.cpp`
+- `examples/phases/` — phase showcase hub. Buttons for Phase 11-18. Content files added incrementally. `src/App.tsx` + `src/PhasesState.h` + `src/main.cpp`
+- `examples/dashboard/`, `examples/kanban/`, `examples/settings/`, `examples/todo/` — specialized examples
+- Example layout: `tsconfig.json` at example root, source in `src/`, assets in `public/`
 - `docs/` — spec, mvp, roadmap, api-reference, quick-start, llm-prompt-reference
 - `docs/superpowers/` — design specs and implementation plans for each phase
 
