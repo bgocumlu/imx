@@ -60,6 +60,8 @@ export const HOST_COMPONENTS: Record<string, HostComponentDef> = {
             maxWidth: { type: 'number', required: false },
             maxHeight: { type: 'number', required: false },
             bgAlpha: { type: 'number', required: false },
+            noViewport: { type: 'boolean', required: false },
+            viewportAlwaysOnTop: { type: 'boolean', required: false },
             style: { type: 'style', required: false },
         },
         hasChildren: true, isContainer: true,

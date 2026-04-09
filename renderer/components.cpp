@@ -222,9 +222,13 @@ static std::optional<ImGuiKeyChord> parse_key_chord(const char* keys) {
     return chord;
 }
 
-void begin_window(const char* title, int flags, bool* p_open, const Style& style) {
+void begin_window(const char* title, int flags, bool* p_open, bool viewport_always_on_top, const Style& style) {
     before_child();
     ImGui::Begin(title, p_open, flags);
+    if (viewport_always_on_top) {
+        ImGuiViewport* vp = ImGui::GetWindowViewport();
+        if (vp) vp->Flags |= ImGuiViewportFlags_TopMost;
+    }
     if (style.font_size) {
         float scale = *style.font_size / ImGui::GetFontSize();
         ImGui::SetWindowFontScale(scale);
@@ -1076,6 +1080,22 @@ ImVec2 canvas_origin() {
         return g_canvas_origin_stack.back();
     }
     return ImVec2(0, 0);
+}
+
+ImVec2 get_main_viewport_pos() {
+    return ImGui::GetMainViewport()->Pos;
+}
+
+ImVec2 get_main_viewport_size() {
+    return ImGui::GetMainViewport()->Size;
+}
+
+ImVec2 get_main_viewport_work_pos() {
+    return ImGui::GetMainViewport()->WorkPos;
+}
+
+ImVec2 get_main_viewport_work_size() {
+    return ImGui::GetMainViewport()->WorkSize;
 }
 
 void draw_line(float x1, float y1, float x2, float y2, ImVec4 color, float thickness) {

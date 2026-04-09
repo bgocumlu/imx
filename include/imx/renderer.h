@@ -165,7 +165,7 @@ namespace renderer {
 
 void before_child();
 
-void begin_window(const char* title, int flags = 0, bool* p_open = nullptr, const Style& style = {});
+void begin_window(const char* title, int flags = 0, bool* p_open = nullptr, bool viewport_always_on_top = false, const Style& style = {});
 void end_window();
 
 void begin_view(const Style& style = {});
@@ -309,6 +309,11 @@ void end_style_var();
 void begin_canvas(float width, float height, const Style& style = {});
 void end_canvas();
 ImVec2 canvas_origin();
+
+ImVec2 get_main_viewport_pos();
+ImVec2 get_main_viewport_size();
+ImVec2 get_main_viewport_work_pos();
+ImVec2 get_main_viewport_work_size();
 
 void draw_line(float x1, float y1, float x2, float y2, ImVec4 color, float thickness = 1.0f);
 void draw_rect(float x1, float y1, float x2, float y2, ImVec4 color, bool filled = false, float thickness = 1.0f, float rounding = 0.0f);

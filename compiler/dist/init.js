@@ -203,7 +203,7 @@ interface AppState {
     onIncrement: () => void;
 }
 
-interface WindowProps { title: string; open?: boolean; onClose?: () => void; noTitleBar?: boolean; noResize?: boolean; noMove?: boolean; noCollapse?: boolean; noDocking?: boolean; noScrollbar?: boolean; noBackground?: boolean; alwaysAutoResize?: boolean; noNavFocus?: boolean; noNav?: boolean; noDecoration?: boolean; noInputs?: boolean; noScrollWithMouse?: boolean; horizontalScrollbar?: boolean; alwaysVerticalScrollbar?: boolean; alwaysHorizontalScrollbar?: boolean; x?: number; y?: number; width?: number; height?: number; forcePosition?: boolean; forceSize?: boolean; minWidth?: number; minHeight?: number; maxWidth?: number; maxHeight?: number; bgAlpha?: number; style?: Style; children?: any; }
+interface WindowProps { title: string; open?: boolean; onClose?: () => void; noTitleBar?: boolean; noResize?: boolean; noMove?: boolean; noCollapse?: boolean; noDocking?: boolean; noScrollbar?: boolean; noBackground?: boolean; alwaysAutoResize?: boolean; noNavFocus?: boolean; noNav?: boolean; noDecoration?: boolean; noInputs?: boolean; noScrollWithMouse?: boolean; horizontalScrollbar?: boolean; alwaysVerticalScrollbar?: boolean; alwaysHorizontalScrollbar?: boolean; x?: number; y?: number; width?: number; height?: number; forcePosition?: boolean; forceSize?: boolean; minWidth?: number; minHeight?: number; maxWidth?: number; maxHeight?: number; bgAlpha?: number; noViewport?: boolean; viewportAlwaysOnTop?: boolean; style?: Style; children?: any; }
 interface ViewProps { style?: Style; children?: any; }
 interface IndentProps { width?: number; children?: any; }
 interface TextWrapProps { width: number; children?: any; }

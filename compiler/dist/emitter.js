@@ -1041,20 +1041,31 @@ function emitBeginContainer(node, lines, indent) {
             if (bgAlpha) {
                 lines.push(`${indent}ImGui::SetNextWindowBgAlpha(${bgAlpha});`);
             }
+            // Viewport control
+            if (node.props['noViewport'] === 'true') {
+                lines.push(`${indent}ImGui::SetNextWindowViewport(ImGui::GetMainViewport()->ID);`);
+            }
             const openExpr = node.props['open'];
             const onCloseExpr = node.props['onClose'];
             if (openExpr) {
+                const vpOnTop = node.props['viewportAlwaysOnTop'] === 'true';
                 windowOpenStack.push(true);
                 lines.push(`${indent}{`);
                 lines.push(`${indent}    bool win_open = ${openExpr};`);
-                lines.push(`${indent}    imx::renderer::begin_window(${title}, ${flags}, &win_open);`);
+                lines.push(`${indent}    imx::renderer::begin_window(${title}, ${flags}, &win_open${vpOnTop ? ', true' : ''});`);
                 if (onCloseExpr) {
                     lines.push(`${indent}    if (!win_open) { ${onCloseExpr}; }`);
                 }
             }
             else {
+                const vpOnTopElse = node.props['viewportAlwaysOnTop'] === 'true';
                 windowOpenStack.push(false);
-                lines.push(`${indent}imx::renderer::begin_window(${title}, ${flags});`);
+                if (vpOnTopElse) {
+                    lines.push(`${indent}imx::renderer::begin_window(${title}, ${flags}, nullptr, true);`);
+                }
+                else {
+                    lines.push(`${indent}imx::renderer::begin_window(${title}, ${flags});`);
+                }
             }
             break;
         }
