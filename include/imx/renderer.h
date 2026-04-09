@@ -184,6 +184,8 @@ void begin_column(const Style& style = {});
 void end_column();
 
 void text(const char* fmt, ...) IM_FMTARGS(1);
+void text_disabled(const char* fmt, ...) IM_FMTARGS(1);
+void text_wrapped(const char* fmt, ...) IM_FMTARGS(1);
 
 bool button(const char* title, const Style& style = {}, bool disabled = false);
 

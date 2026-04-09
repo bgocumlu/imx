@@ -260,6 +260,22 @@ void text(const char* fmt, ...) {
     va_end(args);
 }
 
+void text_disabled(const char* fmt, ...) {
+    before_child();
+    va_list args;
+    va_start(args, fmt);
+    ImGui::TextDisabledV(fmt, args);
+    va_end(args);
+}
+
+void text_wrapped(const char* fmt, ...) {
+    before_child();
+    va_list args;
+    va_start(args, fmt);
+    ImGui::TextWrappedV(fmt, args);
+    va_end(args);
+}
+
 bool button(const char* title, const Style& style, bool disabled) {
     before_child();
     if (disabled) ImGui::BeginDisabled();
