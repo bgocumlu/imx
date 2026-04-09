@@ -16,6 +16,7 @@ import type {
     IRSmallButton, IRArrowButton, IRInvisibleButton, IRImageButton,
     IRVSliderFloat, IRVSliderInt, IRSliderAngle, IRItemInteraction, IRShortcut,
     IRBeginCombo, IREndCombo,
+    IRBullet,
 } from './ir.js';
 
 const INDENT = '    ';
@@ -569,6 +570,10 @@ function emitNode(node: IRNode, lines: string[], depth: number): void {
             break;
         case 'bullet_text':
             emitBulletText(node, lines, indent);
+            break;
+        case 'bullet':
+            emitLocComment(node.loc, 'Bullet', lines, indent);
+            lines.push(`${indent}imx::renderer::bullet();`);
             break;
         case 'label_text':
             emitLabelText(node, lines, indent);

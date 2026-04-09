@@ -366,6 +366,10 @@ export const HOST_COMPONENTS: Record<string, HostComponentDef> = {
         props: { style: { type: 'style', required: false } },
         hasChildren: true, isContainer: false,
     },
+    Bullet: {
+        props: { style: { type: 'style', required: false } },
+        hasChildren: false, isContainer: false,
+    },
     LabelText: {
         props: {
             label: { type: 'string', required: true },

@@ -65,7 +65,8 @@ export type IRNode =
     | IRInputFloatN | IRInputIntN | IRDragFloatN | IRDragIntN | IRSliderFloatN | IRSliderIntN
     | IRSmallButton | IRArrowButton | IRInvisibleButton | IRImageButton
     | IRVSliderFloat | IRVSliderInt | IRSliderAngle
-    | IRBeginCombo | IREndCombo;
+    | IRBeginCombo | IREndCombo
+    | IRBullet;
 
 export interface IRBeginContainer {
     kind: 'begin_container';
@@ -233,6 +234,8 @@ export interface IRBeginCombo {
     loc?: SourceLoc;
 }
 export interface IREndCombo { kind: 'end_combo'; }
+
+export interface IRBullet { kind: 'bullet'; loc?: SourceLoc; }
 
 export interface IRSmallButton { kind: 'small_button'; label: string; action: string[]; item?: IRItemInteraction; loc?: SourceLoc; }
 export interface IRArrowButton { kind: 'arrow_button'; id: string; direction: string; action: string[]; item?: IRItemInteraction; loc?: SourceLoc; }

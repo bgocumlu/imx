@@ -755,6 +755,11 @@ void bullet_text(const char* fmt, ...) {
     va_end(args);
 }
 
+void bullet() {
+    before_child();
+    ImGui::Bullet();
+}
+
 void label_text(const char* label, const char* text) {
     before_child();
     ImGui::LabelText(label, "%s", text);

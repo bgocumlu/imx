@@ -24,6 +24,7 @@ import type {
     IRSmallButton, IRArrowButton, IRInvisibleButton, IRImageButton, IRVSliderFloat, IRVSliderInt, IRSliderAngle,
     IRItemInteraction, IRShortcut,
     IRBeginCombo, IREndCombo,
+    IRBullet,
 } from './ir.js';
 
 interface LoweringContext {
@@ -811,6 +812,9 @@ function lowerJsxSelfClosing(node: ts.JsxSelfClosingElement, body: IRNode[], ctx
             break;
         case 'Separator':
             body.push({ kind: 'separator', loc });
+            break;
+        case 'Bullet':
+            body.push({ kind: 'bullet', loc });
             break;
         case 'Text': {
             // Self-closing <Text /> — may have disabled/wrapped/color props
