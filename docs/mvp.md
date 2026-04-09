@@ -28,7 +28,7 @@ The MVP is successful if it can build a small editor-like application with:
 The MVP source language should support:
 
 - function components
-- TSX-like syntax in `.igx` source files
+- TSX-like syntax in `.tsx` source files
 - props
 - children
 - fragments
@@ -190,7 +190,7 @@ It should compile into:
 
 The MVP compiler should:
 
-- parse `.igx` TSX-like source
+- parse `.tsx` TSX-like source
 - validate supported components and props
 - lower to generated C++
 - emit a root render function callable from the existing native loop
@@ -204,7 +204,7 @@ Out of scope for MVP:
 
 The MVP editor story should be:
 
-- `.igx` files associated with TSX or TypeScript React syntax highlighting
+- `.tsx` files use standard TSX or TypeScript React syntax highlighting
 - no custom editor extension required for initial development
 
 ## 9. Runtime Scope

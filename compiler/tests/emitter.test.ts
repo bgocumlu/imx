@@ -1046,6 +1046,36 @@ export function App(props: AppState) {
         expect(output).toContain(', 3');
     });
 
+    it('emits InputFloat3 with useState', () => {
+        const output = compile(`
+function App() {
+  const [position, setPosition] = useState([1.0, 2.0, 3.0]);
+  return (
+    <Window title="Test">
+      <InputFloat3 label="Position" value={position} />
+    </Window>
+  );
+}
+        `);
+        expect(output).toContain('auto val = position.get();');
+        expect(output).toContain('position.set(val);');
+    });
+
+    it('emits SliderInt4 with integer tuple state', () => {
+        const output = compile(`
+function App() {
+  const [padding, setPadding] = useState([8, 16, 24, 32]);
+  return (
+    <Window title="Test">
+      <SliderInt4 label="Padding" value={padding} min={0} max={64} />
+    </Window>
+  );
+}
+        `);
+        expect(output).toContain('use_state<std::array<int, 4>>');
+        expect(output).toContain('slider_int_n("Padding", val.data(), 4, 0, 64)');
+    });
+
     it('emits SliderFloat2 with direct binding', () => {
         const output = compile(`
 export function App(props: AppState) {

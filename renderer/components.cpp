@@ -24,6 +24,16 @@ static std::unordered_map<std::string, WidgetFunc> g_widget_registry;
 static std::unordered_map<std::string, ThemeFunc> g_theme_registry;
 static std::unordered_map<std::string, ImFont*> g_font_registry;
 
+static ImFontConfig make_font_config(const FontOptions& options) {
+    ImFontConfig cfg;
+    cfg.PixelSnapH = options.pixel_snap_h;
+    cfg.OversampleH = options.oversample_h > 0 ? options.oversample_h : 1;
+    cfg.OversampleV = options.oversample_v > 0 ? options.oversample_v : 1;
+    cfg.RasterizerMultiply = options.rasterizer_multiply > 0.0f ? options.rasterizer_multiply : 1.0f;
+    cfg.MergeMode = options.merge_mode;
+    return cfg;
+}
+
 void register_widget(const std::string& name, WidgetFunc func) {
     g_widget_registry[name] = std::move(func);
 }
@@ -40,21 +50,38 @@ void register_theme(const std::string& name, ThemeFunc func) {
     g_theme_registry[name] = std::move(func);
 }
 
-void load_font(const char* name, const char* path, float size) {
-    ImFont* font = ImGui::GetIO().Fonts->AddFontFromFileTTF(path, size);
+ImFont* load_font(const char* name, const char* path, float size, const FontOptions& options) {
+    ImFontConfig cfg = make_font_config(options);
+    ImFont* font = ImGui::GetIO().Fonts->AddFontFromFileTTF(path, size, &cfg);
     if (font) {
         g_font_registry[name] = font;
     }
+    return font;
 }
 
-void load_font_embedded(const char* name, const unsigned char* data, int data_size, float size) {
-    ImFontConfig cfg;
+ImFont* load_font_embedded(const char* name, const unsigned char* data, int data_size, float size, const FontOptions& options) {
+    ImFontConfig cfg = make_font_config(options);
     cfg.FontDataOwnedByAtlas = false;
     ImFont* font = ImGui::GetIO().Fonts->AddFontFromMemoryTTF(
         const_cast<void*>(static_cast<const void*>(data)), data_size, size, &cfg);
     if (font) {
         g_font_registry[name] = font;
     }
+    return font;
+}
+
+ImFont* find_font(const char* name) {
+    auto it = g_font_registry.find(name);
+    return it != g_font_registry.end() ? it->second : nullptr;
+}
+
+bool set_default_font(const char* name) {
+    ImFont* font = find_font(name);
+    if (!font) {
+        return false;
+    }
+    ImGui::GetIO().FontDefault = font;
+    return true;
 }
 
 } // namespace imx

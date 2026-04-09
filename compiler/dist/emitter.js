@@ -14,6 +14,7 @@ function cppType(t) {
         case 'bool': return 'bool';
         case 'string': return 'std::string';
         case 'color': return 'std::array<float, 4>';
+        case 'int_array': return 'std::array<int, 4>';
     }
 }
 function cppPropType(t) {
@@ -241,7 +242,9 @@ export function emitComponent(comp, imports, sourceFile, boundProps, boundPropsM
             ? `std::string(${slot.initialValue})`
             : slot.type === 'color'
                 ? `std::array<float, 4>${slot.initialValue}`
-                : slot.initialValue;
+                : slot.type === 'int_array'
+                    ? `std::array<int, 4>${slot.initialValue}`
+                    : slot.initialValue;
         lines.push(`${INDENT}auto ${slot.name} = ctx.use_state<${cppType(slot.type)}>(${initVal}, ${slot.index});`);
     }
     if (comp.stateSlots.length > 0) {
@@ -2046,7 +2049,15 @@ function emitVectorInput(node, rendererFn, cppType, lines, indent, extraArgs = '
     const label = asCharPtr(node.label);
     const count = node.count;
     const style = node.style ? `, ${node.style}` : '';
-    if (node.directBind && node.valueExpr) {
+    if (node.stateVar) {
+        lines.push(`${indent}{`);
+        lines.push(`${indent}${INDENT}auto val = ${node.stateVar}.get();`);
+        lines.push(`${indent}${INDENT}if (imx::renderer::${rendererFn}(${label}, val.data(), ${count}${extraArgs}${style})) {`);
+        lines.push(`${indent}${INDENT}${INDENT}${node.stateVar}.set(val);`);
+        lines.push(`${indent}${INDENT}}`);
+        lines.push(`${indent}}`);
+    }
+    else if (node.directBind && node.valueExpr) {
         // Direct pointer binding — array decays to pointer naturally
         lines.push(`${indent}imx::renderer::${rendererFn}(${label}, ${node.valueExpr}, ${count}${extraArgs}${style});`);
     }

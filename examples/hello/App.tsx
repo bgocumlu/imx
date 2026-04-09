@@ -19,6 +19,14 @@ export default function App() {
   const [toggle, setToggle] = useState(false);
   const [pickerColor, setPickerColor] = useState([0.2, 0.8, 0.4, 1.0]);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [phaseVector, setPhaseVector] = useState([12.0, 48.0, 96.0]);
+  const [phaseDrag, setPhaseDrag] = useState([32.0, 18.0]);
+  const [phaseSlider, setPhaseSlider] = useState([8, 16, 24, 32]);
+  const [phaseBlend, setPhaseBlend] = useState(0.55);
+  const [phaseAngle, setPhaseAngle] = useState(0.0);
+  const [phaseRgb, setPhaseRgb] = useState([0.3, 0.75, 0.95]);
+  const [phaseClicks, setPhaseClicks] = useState(0);
+  const [phaseArrow, setPhaseArrow] = useState("Idle");
 
   return (
     <Theme preset="dark" accentColor={[0.9, 0.2, 0.2, 1.0]} backgroundColor={[0.12, 0.12, 0.15, 1.0]} textColor={[0.95, 0.95, 0.95, 1.0]} borderColor={[0.3, 0.3, 0.35, 1.0]} surfaceColor={[0.18, 0.18, 0.22, 1.0]} rounding={6}>
@@ -32,13 +40,18 @@ export default function App() {
             <DockPanel>
               <Window title="Inspector" />
             </DockPanel>
-            <DockSplit direction="horizontal" size={0.5}>
+            <DockSplit direction="horizontal" size={0.45}>
               <DockPanel>
                 <Window title="Data" />
               </DockPanel>
-              <DockPanel>
-                <Window title="Widgets" />
-              </DockPanel>
+              <DockSplit direction="vertical" size={0.52}>
+                <DockPanel>
+                  <Window title="Widgets" />
+                </DockPanel>
+                <DockPanel>
+                  <Window title="Phase 13" />
+                </DockPanel>
+              </DockSplit>
             </DockSplit>
           </DockSplit>
         </DockSplit>
@@ -143,6 +156,49 @@ export default function App() {
             <Image src="flower.jpg" width={200} height={150} />
           </CollapsingHeader>
           <Button title="Show Modal" onPress={() => setShowConfirm(true)} />
+        </Column>
+      </Window>
+      <Window title="Phase 13">
+        <Column gap={8}>
+          <Font name="jetbrains-mono">
+            <Text>Phase 13 showcase: expanded inputs and advanced canvas drawing.</Text>
+          </Font>
+          <Text>Custom font loaded from `public/JetBrainsMono-Regular.ttf`.</Text>
+          <CollapsingHeader label="Vector Inputs">
+            <InputFloat3 label="Position" value={phaseVector} />
+            <DragFloat2 label="Bezier Handle" value={phaseDrag} speed={0.1} />
+            <SliderInt4 label="Padding" value={phaseSlider} min={0} max={64} />
+          </CollapsingHeader>
+          <CollapsingHeader label="Button Variants">
+            <Row gap={8}>
+              <SmallButton label="Ping" onPress={() => setPhaseClicks(phaseClicks + 1)} />
+              <ArrowButton id="phase13-left" direction="left" onPress={() => setPhaseArrow("Left")} />
+              <ArrowButton id="phase13-right" direction="right" onPress={() => setPhaseArrow("Right")} />
+              <ArrowButton id="phase13-up" direction="up" onPress={() => setPhaseArrow("Up")} />
+              <ArrowButton id="phase13-down" direction="down" onPress={() => setPhaseArrow("Down")} />
+            </Row>
+            <Text>Last arrow: {phaseArrow}</Text>
+            <Text>InvisibleButton hitbox below:</Text>
+            <InvisibleButton id="phase13-hitbox" width={220} height={32} onPress={() => setPhaseClicks(phaseClicks + 1)} />
+            <Text>Variant clicks: {phaseClicks}</Text>
+          </CollapsingHeader>
+          <CollapsingHeader label="Sliders + Color">
+            <Row gap={16}>
+              <VSliderFloat label="Blend" value={phaseBlend} onChange={setPhaseBlend} min={0} max={1} width={18} height={120} />
+              <Column gap={6}>
+                <SliderAngle label="Angle" value={phaseAngle} onChange={setPhaseAngle} min={-180} max={180} />
+                <ColorEdit3 label="Tint" value={phaseRgb} />
+              </Column>
+            </Row>
+          </CollapsingHeader>
+          <CollapsingHeader label="Advanced Canvas">
+            <Canvas width={320} height={200} style={{ backgroundColor: [0.08, 0.08, 0.1, 1.0] }}>
+              <DrawBezierCubic p1={[18, 154]} p2={[80, 20]} p3={[160, 186]} p4={[240, 60]} color={[0.25, 0.9, 0.85, 1.0]} thickness={3} />
+              <DrawTriangle p1={[36, 54]} p2={[144, 162]} p3={[240, 42]} color={[1.0, 0.65, 0.2, 1.0]} thickness={2} />
+              <DrawNgon center={[274, 132]} radius={34} color={[0.95, 0.3, 0.55, 1.0]} numSegments={7} thickness={2} />
+              <DrawText pos={[12, 180]} text="Bezier / Triangle / Ngon" color={[1, 1, 1, 1]} />
+            </Canvas>
+          </CollapsingHeader>
         </Column>
       </Window>
       <Window title="Batch 3 Demo">

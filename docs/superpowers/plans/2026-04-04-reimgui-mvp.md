@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Build the full IMX MVP — `.igx` TSX-like source compiles to native C++ Dear ImGui applications via a TypeScript compiler and C++ runtime.
+**Goal:** Build the full IMX MVP — `.tsx` TSX-like source compiles to native C++ Dear ImGui applications via a TypeScript compiler and C++ runtime.
 
-**Architecture:** Four layers: TypeScript compiler (dev-time, parses .igx, emits .gen.cpp), C++ runtime (state, instances, lifecycle), C++ renderer (host components mapped to ImGui calls), and app shell (existing GLFW/OpenGL loop). The compiler assigns state slot indices and instance identity at compile time. The runtime tracks component instances in a tree with mount/unmount lifecycle. The renderer maps React-Native-like components to ImGui calls with a layout stack for Row/Column spacing.
+**Architecture:** Four layers: TypeScript compiler (dev-time, parses .tsx, emits .gen.cpp), C++ runtime (state, instances, lifecycle), C++ renderer (host components mapped to ImGui calls), and app shell (existing GLFW/OpenGL loop). The compiler assigns state slot indices and instance identity at compile time. The runtime tracks component instances in a tree with mount/unmount lifecycle. The renderer maps React-Native-like components to ImGui calls with a layout stack for Row/Column spacing.
 
 **Tech Stack:** C++20, Dear ImGui (v1.92.7-docking), GLFW 3.4, OpenGL 3, TypeScript 5, Catch2 v3 (C++ tests), Vitest (TS tests), CMake 3.25+
 
@@ -31,7 +31,7 @@
 - `compiler/package.json` — Node project config
 - `compiler/tsconfig.json` — TypeScript config
 - `compiler/src/index.ts` — CLI entry point
-- `compiler/src/parser.ts` — .igx -> TS AST
+- `compiler/src/parser.ts` — .tsx -> TS AST
 - `compiler/src/ir.ts` — IR type definitions
 - `compiler/src/validator.ts` — validate components, props, hooks
 - `compiler/src/lowering.ts` — AST -> IR
@@ -47,7 +47,7 @@
 - `compiler/tests/emitter.test.ts` — end-to-end emitter tests
 
 ### Example App
-- `examples/hello/App.igx` — example .igx source
+- `examples/hello/App.tsx` — example .tsx source
 - `examples/hello/main.cpp` — app shell (modified from current main.cpp)
 
 ### Build
@@ -1876,7 +1876,7 @@ const { values, positionals } = parseArgs({
 });
 
 if (positionals.length === 0) {
-    console.error('Usage: imx-compiler <input.igx ...> -o <output-dir>');
+    console.error('Usage: imx-compiler <input.tsx ...> -o <output-dir>');
     process.exit(1);
 }
 
@@ -1907,7 +1907,7 @@ Expected: compiles to `compiler/dist/`, no errors.
 Run:
 ```bash
 node compiler/dist/index.js --help 2>&1 || true
-node compiler/dist/index.js nonexistent.igx 2>&1; echo "exit: $?"
+node compiler/dist/index.js nonexistent.tsx 2>&1; echo "exit: $?"
 ```
 Expected: error message for nonexistent file, exit code 1.
 
@@ -1967,7 +1967,7 @@ function formatError(sourceFile: ts.SourceFile, node: ts.Node, message: string):
 }
 
 /**
- * Parse an .igx file as TSX and extract the component function declaration.
+ * Parse an .tsx file as TSX and extract the component function declaration.
  * Returns a ParsedFile with the TS SourceFile AST and the component function.
  */
 export function parseIgxFile(filePath: string, source: string): ParsedFile {
@@ -1993,7 +1993,7 @@ export function parseIgxFile(filePath: string, source: string): ParsedFile {
         if (ts.isFunctionDeclaration(stmt) && stmt.name) {
             if (component !== null) {
                 errors.push(formatError(sourceFile, stmt,
-                    'Only one component function per .igx file is supported'));
+                    'Only one component function per .tsx file is supported'));
             } else {
                 component = stmt;
             }
@@ -2051,7 +2051,7 @@ describe('parseIgxFile', () => {
 function App() {
   return <Window title="Hello"><Text>Hi</Text></Window>;
 }`;
-        const result = parseIgxFile('App.igx', source);
+        const result = parseIgxFile('App.tsx', source);
         expect(result.errors).toHaveLength(0);
         expect(result.component).not.toBeNull();
         expect(result.component!.name!.text).toBe('App');
@@ -2062,14 +2062,14 @@ function App() {
 function Greeting(props: { name: string }) {
   return <Text>Hello {props.name}</Text>;
 }`;
-        const result = parseIgxFile('Greeting.igx', source);
+        const result = parseIgxFile('Greeting.tsx', source);
         expect(result.errors).toHaveLength(0);
         expect(result.component!.name!.text).toBe('Greeting');
     });
 
     it('errors on no function declaration', () => {
         const source = `const x = 42;`;
-        const result = parseIgxFile('Bad.igx', source);
+        const result = parseIgxFile('Bad.tsx', source);
         expect(result.errors.length).toBeGreaterThan(0);
         expect(result.errors[0].message).toContain('Unsupported top-level statement');
     });
@@ -2078,7 +2078,7 @@ function Greeting(props: { name: string }) {
         const source = `
 function A() { return <Text>A</Text>; }
 function B() { return <Text>B</Text>; }`;
-        const result = parseIgxFile('Multi.igx', source);
+        const result = parseIgxFile('Multi.tsx', source);
         expect(result.errors).toHaveLength(1);
         expect(result.errors[0].message).toContain('Only one component');
     });
@@ -2087,7 +2087,7 @@ function B() { return <Text>B</Text>; }`;
         const source = `
 import { TodoItem } from './TodoItem';
 function App() { return <TodoItem />; }`;
-        const result = parseIgxFile('App.igx', source);
+        const result = parseIgxFile('App.tsx', source);
         expect(result.errors).toHaveLength(0);
     });
 });
@@ -2098,7 +2098,7 @@ describe('extractImports', () => {
 import { TodoItem } from './TodoItem';
 import { Header, Footer } from './Layout';
 function App() { return <Text>Hi</Text>; }`;
-        const result = parseIgxFile('App.igx', source);
+        const result = parseIgxFile('App.tsx', source);
         const imports = extractImports(result.sourceFile);
         expect(imports.get('TodoItem')).toBe('./TodoItem');
         expect(imports.get('Header')).toBe('./Layout');
@@ -2132,7 +2132,7 @@ Expected: all parser tests pass.
 
 ```bash
 git add compiler/src/parser.ts compiler/tests/parser.test.ts compiler/vitest.config.ts
-git commit -m "feat: .igx parser using TypeScript compiler API"
+git commit -m "feat: .tsx parser using TypeScript compiler API"
 ```
 
 ---
@@ -2510,7 +2510,7 @@ function App() {
   const [count, setCount] = useState(0);
   return <Window title="Hello"><Text>Hi</Text></Window>;
 }`;
-        const parsed = parseIgxFile('App.igx', source);
+        const parsed = parseIgxFile('App.tsx', source);
         const result = validate(parsed);
         expect(result.errors).toHaveLength(0);
         expect(result.useStateCalls).toHaveLength(1);
@@ -2524,7 +2524,7 @@ function App() {
 function App() {
   return <Slider value={0} />;
 }`;
-        const parsed = parseIgxFile('App.igx', source);
+        const parsed = parseIgxFile('App.tsx', source);
         const result = validate(parsed);
         expect(result.errors.length).toBeGreaterThan(0);
         expect(result.errors[0].message).toContain('Unknown component');
@@ -2536,7 +2536,7 @@ function App() {
 function App() {
   return <Button />;
 }`;
-        const parsed = parseIgxFile('App.igx', source);
+        const parsed = parseIgxFile('App.tsx', source);
         const result = validate(parsed);
         expect(result.errors.length).toBeGreaterThan(0);
         expect(result.errors.some(e => e.message.includes("requires prop 'title'"))).toBe(true);
@@ -2550,7 +2550,7 @@ function App() {
   const [c, setC] = useState(true);
   return <Text>Hi</Text>;
 }`;
-        const parsed = parseIgxFile('App.igx', source);
+        const parsed = parseIgxFile('App.tsx', source);
         const result = validate(parsed);
         expect(result.errors).toHaveLength(0);
         expect(result.useStateCalls[0]).toMatchObject({ name: 'a', index: 0 });
@@ -2564,7 +2564,7 @@ import { TodoItem } from './TodoItem';
 function App() {
   return <TodoItem />;
 }`;
-        const parsed = parseIgxFile('App.igx', source);
+        const parsed = parseIgxFile('App.tsx', source);
         const result = validate(parsed);
         expect(result.errors).toHaveLength(0);
         expect(result.customComponents.get('TodoItem')).toBe('./TodoItem');
@@ -2576,7 +2576,7 @@ function App() {
   const [show, setShow] = useState(true);
   return <Window title="Test">{show && <Text>Visible</Text>}</Window>;
 }`;
-        const parsed = parseIgxFile('App.igx', source);
+        const parsed = parseIgxFile('App.tsx', source);
         const result = validate(parsed);
         expect(result.errors).toHaveLength(0);
     });
@@ -2595,7 +2595,7 @@ Expected: all parser and validator tests pass.
 
 ```bash
 git add compiler/src/ir.ts compiler/src/validator.ts compiler/tests/validator.test.ts
-git commit -m "feat: IR types and validator for .igx components, props, and useState"
+git commit -m "feat: IR types and validator for .tsx components, props, and useState"
 ```
 
 ---
@@ -3096,7 +3096,7 @@ function App() {
     </Window>
   );
 }`;
-        const parsed = parseIgxFile('App.igx', source);
+        const parsed = parseIgxFile('App.tsx', source);
         const validation = validate(parsed);
         const ir = lowerComponent(parsed, validation);
 
@@ -3120,7 +3120,7 @@ function App() {
     </Window>
   );
 }`;
-        const parsed = parseIgxFile('App.igx', source);
+        const parsed = parseIgxFile('App.tsx', source);
         const validation = validate(parsed);
         const ir = lowerComponent(parsed, validation);
 
@@ -3136,7 +3136,7 @@ function App() {
   const [name, setName] = useState("hello");
   return <TextInput value={name} onChange={setName} />;
 }`;
-        const parsed = parseIgxFile('App.igx', source);
+        const parsed = parseIgxFile('App.tsx', source);
         const validation = validate(parsed);
         const ir = lowerComponent(parsed, validation);
 
@@ -3150,7 +3150,7 @@ function App() {
 function Greeting(props: { name: string, count: number, onClose: () => void }) {
   return <Text>Hi</Text>;
 }`;
-        const parsed = parseIgxFile('Greeting.igx', source);
+        const parsed = parseIgxFile('Greeting.tsx', source);
         const validation = validate(parsed);
         const ir = lowerComponent(parsed, validation);
 
@@ -3415,7 +3415,7 @@ function App() {
     </Window>
   );
 }`;
-        const parsed = parseIgxFile('App.igx', source);
+        const parsed = parseIgxFile('App.tsx', source);
         const validation = validate(parsed);
         const ir = lowerComponent(parsed, validation);
         const output = emitComponent(ir);
@@ -3439,7 +3439,7 @@ function App() {
     </Window>
   );
 }`;
-        const parsed = parseIgxFile('App.igx', source);
+        const parsed = parseIgxFile('App.tsx', source);
         const validation = validate(parsed);
         const ir = lowerComponent(parsed, validation);
         const output = emitComponent(ir);
@@ -3452,7 +3452,7 @@ function App() {
 function Greeting(props: { name: string, onClose: () => void }) {
   return <Text>Hello</Text>;
 }`;
-        const parsed = parseIgxFile('Greeting.igx', source);
+        const parsed = parseIgxFile('Greeting.tsx', source);
         const validation = validate(parsed);
         const ir = lowerComponent(parsed, validation);
         const output = emitComponent(ir);
@@ -3518,7 +3518,7 @@ const { values, positionals } = parseArgs({
 });
 
 if (positionals.length === 0) {
-    console.error('Usage: imx-compiler <input.igx ...> -o <output-dir>');
+    console.error('Usage: imx-compiler <input.tsx ...> -o <output-dir>');
     process.exit(1);
 }
 
@@ -3605,11 +3605,11 @@ Run:
 cd compiler && npm run build
 ```
 
-- [ ] **Step 3: Create a test .igx file and run the compiler**
+- [ ] **Step 3: Create a test .tsx file and run the compiler**
 
 Create a temporary test file:
 ```bash
-cat > /tmp/Test.igx << 'EOF'
+cat > /tmp/Test.tsx << 'EOF'
 function Test() {
   const [count, setCount] = useState(0);
   return (
@@ -3619,7 +3619,7 @@ function Test() {
   );
 }
 EOF
-node compiler/dist/index.js /tmp/Test.igx -o /tmp/imx-out/
+node compiler/dist/index.js /tmp/Test.tsx -o /tmp/imx-out/
 cat /tmp/imx-out/Test.gen.cpp
 cat /tmp/imx-out/app_root.gen.cpp
 ```
@@ -3630,7 +3630,7 @@ Expected: two generated files with valid C++ code matching the design spec patte
 
 ```bash
 git add compiler/src/index.ts
-git commit -m "feat: compiler CLI — end-to-end .igx to .gen.cpp pipeline"
+git commit -m "feat: compiler CLI — end-to-end .tsx to .gen.cpp pipeline"
 ```
 
 ---
@@ -3668,17 +3668,17 @@ git commit -m "feat: add render_root declaration to runtime header"
 
 ---
 
-### Task 15: Example App (.igx Source + CMake Integration)
+### Task 15: Example App (.tsx Source + CMake Integration)
 
 **Files:**
-- Create: `examples/hello/App.igx`
+- Create: `examples/hello/App.tsx`
 - Modify: `examples/hello/main.cpp`
 - Modify: `CMakeLists.txt`
 
-- [ ] **Step 1: Write the example App.igx**
+- [ ] **Step 1: Write the example App.tsx**
 
 ```tsx
-// examples/hello/App.igx
+// examples/hello/App.tsx
 function App() {
   const [name, setName] = useState("Berkay");
   const [enabled, setEnabled] = useState(true);
@@ -3835,7 +3835,7 @@ int main() {
 Add after the existing targets:
 
 ```cmake
-# --- Code generation: .igx -> .gen.cpp ---
+# --- Code generation: .tsx -> .gen.cpp ---
 set(IMX_GENERATED_DIR ${CMAKE_BINARY_DIR}/generated)
 file(MAKE_DIRECTORY ${IMX_GENERATED_DIR})
 
@@ -3844,14 +3844,14 @@ add_custom_command(
         ${IMX_GENERATED_DIR}/App.gen.cpp
         ${IMX_GENERATED_DIR}/app_root.gen.cpp
     COMMAND node ${CMAKE_SOURCE_DIR}/compiler/dist/index.js
-        ${CMAKE_SOURCE_DIR}/examples/hello/App.igx
+        ${CMAKE_SOURCE_DIR}/examples/hello/App.tsx
         -o ${IMX_GENERATED_DIR}
     DEPENDS
-        ${CMAKE_SOURCE_DIR}/examples/hello/App.igx
-    COMMENT "Compiling App.igx -> C++"
+        ${CMAKE_SOURCE_DIR}/examples/hello/App.tsx
+    COMMENT "Compiling App.tsx -> C++"
 )
 
-# --- hello_app: end-to-end .igx -> native binary ---
+# --- hello_app: end-to-end .tsx -> native binary ---
 add_executable(hello_app
     examples/hello/main.cpp
     ${IMX_GENERATED_DIR}/App.gen.cpp
@@ -3885,8 +3885,8 @@ Expected: a window titled "imx" opens with the same UI as the hand-written test:
 - [ ] **Step 6: Commit**
 
 ```bash
-git add examples/hello/App.igx examples/hello/main.cpp CMakeLists.txt
-git commit -m "feat: end-to-end .igx -> native app via CMake custom command"
+git add examples/hello/App.tsx examples/hello/main.cpp CMakeLists.txt
+git commit -m "feat: end-to-end .tsx -> native app via CMake custom command"
 ```
 
 ---
@@ -3937,5 +3937,6 @@ Verify:
 
 ```bash
 git add -A
-git commit -m "feat: IMX MVP complete — .igx source compiles to native ImGui app"
+git commit -m "feat: IMX MVP complete — .tsx source compiles to native ImGui app"
 ```
+

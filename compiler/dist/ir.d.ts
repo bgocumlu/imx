@@ -1,4 +1,4 @@
-export type IRType = 'int' | 'float' | 'bool' | 'string' | 'color';
+export type IRType = 'int' | 'float' | 'bool' | 'string' | 'color' | 'int_array';
 export interface SourceLoc {
     file: string;
     line: number;
@@ -442,7 +442,8 @@ export interface IRInputFloatN {
     kind: 'input_float_n';
     label: string;
     count: number;
-    valueExpr: string;
+    stateVar?: string;
+    valueExpr?: string;
     directBind?: boolean;
     onChangeExpr?: string;
     style?: string;
@@ -452,7 +453,8 @@ export interface IRInputIntN {
     kind: 'input_int_n';
     label: string;
     count: number;
-    valueExpr: string;
+    stateVar?: string;
+    valueExpr?: string;
     directBind?: boolean;
     onChangeExpr?: string;
     style?: string;
@@ -462,7 +464,8 @@ export interface IRDragFloatN {
     kind: 'drag_float_n';
     label: string;
     count: number;
-    valueExpr: string;
+    stateVar?: string;
+    valueExpr?: string;
     directBind?: boolean;
     onChangeExpr?: string;
     speed: string;
@@ -473,7 +476,8 @@ export interface IRDragIntN {
     kind: 'drag_int_n';
     label: string;
     count: number;
-    valueExpr: string;
+    stateVar?: string;
+    valueExpr?: string;
     directBind?: boolean;
     onChangeExpr?: string;
     speed: string;
@@ -484,7 +488,8 @@ export interface IRSliderFloatN {
     kind: 'slider_float_n';
     label: string;
     count: number;
-    valueExpr: string;
+    stateVar?: string;
+    valueExpr?: string;
     directBind?: boolean;
     onChangeExpr?: string;
     min: string;
@@ -496,7 +501,8 @@ export interface IRSliderIntN {
     kind: 'slider_int_n';
     label: string;
     count: number;
-    valueExpr: string;
+    stateVar?: string;
+    valueExpr?: string;
     directBind?: boolean;
     onChangeExpr?: string;
     min: string;

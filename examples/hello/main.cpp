@@ -6,6 +6,7 @@
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
 #include <GLFW/glfw3.h>
+#include <algorithm>
 
 struct App {
     GLFWwindow*      window  = nullptr;
@@ -95,6 +96,11 @@ int main() {
     ImGui::StyleColorsDark();
     // --- Multi-viewports: keep platform windows visually consistent with the main imgui style ---
     ImGuiStyle& style = ImGui::GetStyle();
+    float content_scale_x = 1.0f;
+    float content_scale_y = 1.0f;
+    glfwGetWindowContentScale(window, &content_scale_x, &content_scale_y);
+    const float dpi_scale = std::max(1.0f, std::max(content_scale_x, content_scale_y));
+    style.ScaleAllSizes(dpi_scale);
     if ((io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) != 0) {
         style.WindowRounding = 0.0F;
         style.Colors[ImGuiCol_WindowBg].w = 1.0F;
@@ -102,6 +108,23 @@ int main() {
 
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init(glsl_version);
+
+    // Use a dedicated UI font as the app default and keep JetBrains Mono for opt-in demo usage.
+    io.Fonts->Clear();
+    imx::FontOptions ui_font_options;
+    ui_font_options.pixel_snap_h = true;
+    ui_font_options.oversample_h = 2;
+    ui_font_options.oversample_v = 2;
+    ui_font_options.rasterizer_multiply = 1.1f;
+    imx::load_font("inter-ui", "Inter-Regular.ttf", 16.0f * dpi_scale, ui_font_options);
+    imx::set_default_font("inter-ui");
+
+    imx::FontOptions mono_font_options;
+    mono_font_options.pixel_snap_h = true;
+    mono_font_options.oversample_h = 2;
+    mono_font_options.oversample_v = 2;
+    mono_font_options.rasterizer_multiply = 1.05f;
+    imx::load_font("jetbrains-mono", "JetBrainsMono-Regular.ttf", 15.0f * dpi_scale, mono_font_options);
 
     // --- Custom widget: ToggleSwitch ---
     imx::register_widget("ToggleSwitch", [](imx::WidgetArgs& a) {

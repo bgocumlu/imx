@@ -4,13 +4,13 @@
 
 This document specifies the implementation design for the IMX MVP (Phases 2-6 of the roadmap). The goal is to enable LLMs and developers to author native Dear ImGui applications using React-Native-like TSX syntax that compiles to native C++ with no JavaScript runtime in the shipped binary.
 
-The pipeline: `.igx` (TSX-like source) -> TypeScript compiler -> generated C++ -> native ImGui app.
+The pipeline: `.tsx` (TSX-like source) -> TypeScript compiler -> generated C++ -> native ImGui app.
 
 ## 2. Architecture
 
 Four layers:
 
-1. **Compiler** (TypeScript, dev-time only) — parses `.igx` files, validates, emits `.gen.cpp`
+1. **Compiler** (TypeScript, dev-time only) — parses `.tsx` files, validates, emits `.gen.cpp`
 2. **Runtime** (`imx_runtime`, C++) — component instances, state slots, callbacks, lifecycle, style structs
 3. **Renderer** (`imx_renderer_imgui`, C++) — host component functions that map to ImGui calls, style-to-ImGui resolution, layout via child regions
 4. **App shell** (C++) — existing GLFW/OpenGL frame loop, calls `imx::render_root()`
@@ -32,17 +32,17 @@ The compiler is completely separate — it runs before build, knows nothing abou
 
 **Language:** TypeScript, using the TS compiler API for parsing.
 
-**Input:** `.igx` files (syntactically valid TSX).
+**Input:** `.tsx` files (syntactically valid TSX).
 
 **Output:** `*.gen.cpp` files + one `app_root.gen.cpp` entry point.
 
 ### Type checking strategy
 
-Parse-only initially. The TS compiler API parses `.igx` as TSX to produce an AST. Validation is custom (the compiler checks component names, prop types, hook usage). `.d.ts` type definitions for IDE autocomplete and type-checking will be added later.
+Parse-only initially. The TS compiler API parses `.tsx` as TSX to produce an AST. Validation is custom (the compiler checks component names, prop types, hook usage). `.d.ts` type definitions for IDE autocomplete and type-checking will be added later.
 
 ### Pipeline stages
 
-1. **Parse** — TS compiler API parses `.igx` as TSX -> AST
+1. **Parse** — TS compiler API parses `.tsx` as TSX -> AST
 2. **Validate** — walk AST, check: only allowed components, required props present, `useState` only at top level, `key` on mapped elements
 3. **Lower** — transform AST into an intermediate representation of render operations (component calls, state slot access, conditionals, list maps)
 4. **Emit** — generate C++ render functions from the IR
@@ -60,17 +60,17 @@ Parse-only initially. The TS compiler API parses `.igx` as TSX to produce an AST
 Simple text errors with file, line, and column:
 
 ```
-App.igx:12:5 - error: <Slider> is not a supported component
-App.igx:8:20 - error: Button requires 'onPress' prop
+App.tsx:12:5 - error: <Slider> is not a supported component
+App.tsx:8:20 - error: Button requires 'onPress' prop
 ```
 
 ### Multi-component support
 
-- Each `.igx` file produces one `.gen.cpp` with its render function
+- Each `.tsx` file produces one `.gen.cpp` with its render function
 - Imports resolve to generated function calls: `<TodoItem />` -> `TodoItem_render(ctx, props)`
 - Props are passed as generated structs
 - `key` on mapped elements -> `ctx.begin_instance("TodoItem", key)` for stable identity
-- The compiler processes all `.igx` files in the project together to validate cross-file references
+- The compiler processes all `.tsx` files in the project together to validate cross-file references
 
 ## 4. Runtime Design (`imx_runtime`)
 
@@ -189,7 +189,7 @@ Mapping:
 
 ### Single component example
 
-Input (`App.igx`):
+Input (`App.tsx`):
 ```tsx
 function App() {
   const [name, setName] = useState("Berkay");
@@ -273,7 +273,7 @@ void imx::render_root(imx::Runtime& runtime) {
 
 ### Multi-component example
 
-Input (`TodoItem.igx`):
+Input (`TodoItem.tsx`):
 ```tsx
 function TodoItem(props: { text: string, done: boolean, onToggle: () => void }) {
   return (
@@ -366,13 +366,13 @@ imx/
     tsconfig.json
     src/
       index.ts         # CLI entry point
-      parser.ts        # .igx -> AST via TS compiler API
+      parser.ts        # .tsx -> AST via TS compiler API
       validator.ts     # check components, props, hooks
       lowering.ts      # AST -> IR
       emitter.ts       # IR -> .gen.cpp
   examples/
     hello/
-      App.igx
+      App.tsx
       main.cpp         # app shell (current main.cpp, modified)
   docs/
   CMakeLists.txt
@@ -391,13 +391,13 @@ add_custom_command(
   OUTPUT ${CMAKE_BINARY_DIR}/generated/App.gen.cpp
          ${CMAKE_BINARY_DIR}/generated/app_root.gen.cpp
   COMMAND node ${CMAKE_SOURCE_DIR}/compiler/src/index.ts
-          ${CMAKE_SOURCE_DIR}/examples/hello/App.igx
+          ${CMAKE_SOURCE_DIR}/examples/hello/App.tsx
           -o ${CMAKE_BINARY_DIR}/generated/
-  DEPENDS examples/hello/App.igx
+  DEPENDS examples/hello/App.tsx
 )
 ```
 
-`cmake --build` detects `.igx` changes -> runs Node compiler -> compiles generated C++ -> links into native binary. Requires Node on the build machine.
+`cmake --build` detects `.tsx` changes -> runs Node compiler -> compiles generated C++ -> links into native binary. Requires Node on the build machine.
 
 ## 8. Key Design Decisions
 
@@ -424,3 +424,4 @@ add_custom_command(
 - **Phase 4:** TSX frontend — parser, validator using TS compiler API
 - **Phase 5:** C++ codegen — lowering, emitter
 - **Phase 6:** CMake integration + example app wired end-to-end
+

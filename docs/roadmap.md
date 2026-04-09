@@ -17,7 +17,7 @@ Exit criteria:
 - component naming is stable enough to implement
 - non-goals are explicit
 - the team agrees the product is React-Native-like, not React runtime based
-- the `.igx` source extension is standardized
+- the `.tsx` source extension is standardized
 - repository layout and target boundaries are documented
 
 ## Phase 2: Native Runtime Skeleton (DONE)
@@ -71,7 +71,7 @@ Goal:
 Deliverables:
 
 - parser or adapted frontend
-- `.igx` file loading
+- `.tsx` file loading
 - AST for components, props, expressions, and children
 - validation for supported constructs
 - initial `imx_codegen` target
@@ -279,6 +279,8 @@ Deliverables:
 - **ImageButton** — clickable image with full UV coordinate support
 - **ColorEdit3 / ColorPicker3** — RGB-only variants (no alpha)
 - **DrawList advanced** — Bezier curves (`DrawBezierCubic`, `DrawBezierQuadratic`), polylines (`DrawPolyline`), filled polygons (`DrawConvexPolyFilled`), ngons (`DrawNgon`, `DrawNgonFilled`), triangles. Extends existing Canvas drawing (DrawLine, DrawRect, DrawCircle, DrawText)
+- **Hello example refresh** — docked `Phase 13` showcase window demonstrating representative inputs, button variants, color editing, vertical/angle sliders, and advanced canvas drawing
+- **Doc cleanup** — historical old-extension references updated to `.tsx` in legacy Phase 1/MVP documentation
 
 Size impact: ~0 KB (all compile to existing ImGui calls)
 
@@ -474,3 +476,4 @@ Implement only when justified by real need:
 - **Native IR / interpreter** — contradicts "no runtime in shipped binary"
 - **Tauri-like CLI wrapper** — IMX integrates via FetchContent, build stays CMake-native
 - **Embedded JS/Lua runtime** — defeats the purpose, adds 500 KB+ for no benefit
+

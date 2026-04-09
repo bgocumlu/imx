@@ -35,6 +35,14 @@ struct ThemeConfig {
     std::optional<float> spacing;
 };
 
+struct FontOptions {
+    bool pixel_snap_h = true;
+    int oversample_h = 2;
+    int oversample_v = 2;
+    float rasterizer_multiply = 1.0f;
+    bool merge_mode = false;
+};
+
 struct StyleColorOverrides {
     std::optional<ImVec4> text;
     std::optional<ImVec4> text_disabled;
@@ -129,8 +137,10 @@ using ThemeFunc = std::function<void()>;
 void register_theme(const std::string& name, ThemeFunc func);
 
 // Font loading — call before first frame, after ImGui context created
-void load_font(const char* name, const char* path, float size);
-void load_font_embedded(const char* name, const unsigned char* data, int data_size, float size);
+ImFont* load_font(const char* name, const char* path, float size, const FontOptions& options = {});
+ImFont* load_font_embedded(const char* name, const unsigned char* data, int data_size, float size, const FontOptions& options = {});
+ImFont* find_font(const char* name);
+bool set_default_font(const char* name);
 
 namespace renderer {
 

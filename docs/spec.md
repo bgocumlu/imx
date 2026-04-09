@@ -228,20 +228,20 @@ The project may later support a builder API in C++, but the canonical authoring 
 
 ### 7.2 Source File Extension
 
-The canonical source file extension is `.igx`.
+The canonical source file extension is `.tsx`.
 
 Examples:
 
-- `App.igx`
-- `Inspector.igx`
-- `SettingsPanel.igx`
+- `App.tsx`
+- `Inspector.tsx`
+- `SettingsPanel.tsx`
 
 Reasons:
 
-- short and easy to read
-- visually distinct from standard React `.tsx`
-- keeps the ImGui identity visible
-- avoids implying standard React or browser tooling semantics
+- matches the actual codebase and examples
+- works with existing TSX tooling out of the box
+- keeps the authoring model familiar for developers and LLMs
+- still compiles to native output, not a React runtime
 
 Generated output should use native source file names such as:
 
@@ -250,23 +250,13 @@ Generated output should use native source file names such as:
 
 ### 7.3 Editor Tooling and Highlighting
 
-`.igx` files will not have universal editor support by default, so the initial tooling rule is:
+`.tsx` already has universal editor support, so the initial tooling rule is simple:
 
-- treat `.igx` as TSX or TypeScript React in the editor
+- use normal TSX or TypeScript React editor tooling
 
-Example editor mapping:
+The source language should remain close enough to TSX that standard syntax highlighting and editing support stay usable.
 
-```json
-{
-  "files.associations": {
-    "*.igx": "typescriptreact"
-  }
-}
-```
-
-The source language should remain close enough to TSX that this mapping provides usable syntax highlighting and editing support.
-
-Custom syntax highlighting can be added later if the language diverges enough to justify dedicated tooling.
+Custom syntax highlighting is unnecessary unless the language diverges enough to justify dedicated tooling.
 
 ### 7.4 Components
 
@@ -670,7 +660,7 @@ Suggested responsibilities:
 - `renderer/`
   Dear ImGui host component implementations and style-to-ImGui mapping
 - `compiler/`
-  `.igx` parsing, validation, lowering, and C++ code generation
+  `.tsx` parsing, validation, lowering, and C++ code generation
 - `examples/`
   sample apps, integration demos, and eventually LLM-oriented reference examples
 - `docs/`
@@ -694,7 +684,7 @@ Responsibilities:
 - `imx_renderer_imgui`
   Dear ImGui renderer and host component layer built on top of `imx_runtime`
 - `imx_codegen`
-  tool or executable that reads `.igx` files and writes `*.gen.cpp`
+  tool or executable that reads `.tsx` files and writes `*.gen.cpp`
 - example app targets
   native apps that link the runtime and renderer and compile generated output
 
@@ -718,7 +708,7 @@ The boundaries between the major parts should stay strict.
 
 `imx_codegen` should own:
 
-- `.igx` parsing
+- `.tsx` parsing
 - semantic validation
 - lowering author code into generated native code
 

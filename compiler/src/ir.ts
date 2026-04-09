@@ -1,4 +1,4 @@
-export type IRType = 'int' | 'float' | 'bool' | 'string' | 'color';
+export type IRType = 'int' | 'float' | 'bool' | 'string' | 'color' | 'int_array';
 
 export interface SourceLoc {
     file: string;
@@ -133,12 +133,12 @@ export interface IRDrawNgon { kind: 'draw_ngon'; center: string; radius: string;
 export interface IRDrawNgonFilled { kind: 'draw_ngon_filled'; center: string; radius: string; color: string; numSegments: string; loc?: SourceLoc; }
 export interface IRDrawTriangle { kind: 'draw_triangle'; p1: string; p2: string; p3: string; color: string; filled: string; thickness: string; loc?: SourceLoc; }
 
-export interface IRInputFloatN { kind: 'input_float_n'; label: string; count: number; valueExpr: string; directBind?: boolean; onChangeExpr?: string; style?: string; loc?: SourceLoc; }
-export interface IRInputIntN { kind: 'input_int_n'; label: string; count: number; valueExpr: string; directBind?: boolean; onChangeExpr?: string; style?: string; loc?: SourceLoc; }
-export interface IRDragFloatN { kind: 'drag_float_n'; label: string; count: number; valueExpr: string; directBind?: boolean; onChangeExpr?: string; speed: string; style?: string; loc?: SourceLoc; }
-export interface IRDragIntN { kind: 'drag_int_n'; label: string; count: number; valueExpr: string; directBind?: boolean; onChangeExpr?: string; speed: string; style?: string; loc?: SourceLoc; }
-export interface IRSliderFloatN { kind: 'slider_float_n'; label: string; count: number; valueExpr: string; directBind?: boolean; onChangeExpr?: string; min: string; max: string; style?: string; loc?: SourceLoc; }
-export interface IRSliderIntN { kind: 'slider_int_n'; label: string; count: number; valueExpr: string; directBind?: boolean; onChangeExpr?: string; min: string; max: string; style?: string; loc?: SourceLoc; }
+export interface IRInputFloatN { kind: 'input_float_n'; label: string; count: number; stateVar?: string; valueExpr?: string; directBind?: boolean; onChangeExpr?: string; style?: string; loc?: SourceLoc; }
+export interface IRInputIntN { kind: 'input_int_n'; label: string; count: number; stateVar?: string; valueExpr?: string; directBind?: boolean; onChangeExpr?: string; style?: string; loc?: SourceLoc; }
+export interface IRDragFloatN { kind: 'drag_float_n'; label: string; count: number; stateVar?: string; valueExpr?: string; directBind?: boolean; onChangeExpr?: string; speed: string; style?: string; loc?: SourceLoc; }
+export interface IRDragIntN { kind: 'drag_int_n'; label: string; count: number; stateVar?: string; valueExpr?: string; directBind?: boolean; onChangeExpr?: string; speed: string; style?: string; loc?: SourceLoc; }
+export interface IRSliderFloatN { kind: 'slider_float_n'; label: string; count: number; stateVar?: string; valueExpr?: string; directBind?: boolean; onChangeExpr?: string; min: string; max: string; style?: string; loc?: SourceLoc; }
+export interface IRSliderIntN { kind: 'slider_int_n'; label: string; count: number; stateVar?: string; valueExpr?: string; directBind?: boolean; onChangeExpr?: string; min: string; max: string; style?: string; loc?: SourceLoc; }
 
 export interface IRVSliderFloat { kind: 'vslider_float'; label: string; stateVar: string; valueExpr?: string; onChangeExpr?: string; directBind?: boolean; width: string; height: string; min: string; max: string; style?: string; loc?: SourceLoc; }
 export interface IRVSliderInt { kind: 'vslider_int'; label: string; stateVar: string; valueExpr?: string; onChangeExpr?: string; directBind?: boolean; width: string; height: string; min: string; max: string; style?: string; loc?: SourceLoc; }

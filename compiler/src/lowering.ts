@@ -180,6 +180,10 @@ function extractInterfaceFields(
     }
 }
 
+function isIntegerArrayLiteral(expr: ts.ArrayLiteralExpression): boolean {
+    return expr.elements.every(e => ts.isNumericLiteral(e) && !e.getText().includes('.'));
+}
+
 function inferTypeFromExpr(expr: ts.Expression): IRType {
     if (ts.isNumericLiteral(expr)) {
         // Use getText() to check original source text, since TS normalizes 5.0 to "5" in .text
@@ -188,7 +192,7 @@ function inferTypeFromExpr(expr: ts.Expression): IRType {
     }
     if (ts.isStringLiteral(expr) || ts.isNoSubstitutionTemplateLiteral(expr)) return 'string';
     if (expr.kind === ts.SyntaxKind.TrueKeyword || expr.kind === ts.SyntaxKind.FalseKeyword) return 'bool';
-    if (ts.isArrayLiteralExpression(expr)) return 'color';
+    if (ts.isArrayLiteralExpression(expr)) return isIntegerArrayLiteral(expr) ? 'int_array' : 'color';
     // Default to int
     return 'int';
 }
@@ -204,8 +208,10 @@ function exprToLiteral(expr: ts.Expression): string {
     if (ts.isArrayLiteralExpression(expr)) {
         const elements = expr.elements.map(e => {
             const text = e.getText();
-            // Ensure float suffix for color array elements
             if (ts.isNumericLiteral(e)) {
+                if (isIntegerArrayLiteral(expr)) {
+                    return text;
+                }
                 return text.includes('.') ? `${text}f` : `${text}.0f`;
             }
             return text;
@@ -982,6 +988,7 @@ function inferExprType(expr: ts.Expression, ctx: LoweringContext): IRType {
     }
     if (ts.isStringLiteral(expr)) return 'string';
     if (expr.kind === ts.SyntaxKind.TrueKeyword || expr.kind === ts.SyntaxKind.FalseKeyword) return 'bool';
+    if (ts.isArrayLiteralExpression(expr)) return isIntegerArrayLiteral(expr) ? 'int_array' : 'color';
 
     // Identifier: check state var type
     if (ts.isIdentifier(expr)) {
@@ -1390,11 +1397,14 @@ function lowerVectorInput(
     const label = attrs['label'] ?? '""';
     const style = attrs['style'];
     const valueRaw = rawAttrs.get('value');
-    let valueExpr = '';
+    let stateVar = '';
+    let valueExpr: string | undefined;
     let directBind: boolean | undefined;
     let onChangeExpr: string | undefined;
 
-    if (valueRaw) {
+    if (valueRaw && ts.isIdentifier(valueRaw) && ctx.stateVars.has(valueRaw.text)) {
+        stateVar = valueRaw.text;
+    } else if (valueRaw) {
         valueExpr = exprToCpp(valueRaw, ctx);
         const onChangeRaw = rawAttrs.get('onChange');
         if (onChangeRaw) {
@@ -1409,7 +1419,7 @@ function lowerVectorInput(
         }
     }
 
-    const base: any = { kind: family, label, count, valueExpr, directBind, onChangeExpr, style, loc };
+    const base: any = { kind: family, label, count, stateVar, valueExpr, directBind, onChangeExpr, style, loc };
 
     if (family === 'drag_float_n' || family === 'drag_int_n') {
         base.speed = attrs['speed'] ?? '1.0f';
