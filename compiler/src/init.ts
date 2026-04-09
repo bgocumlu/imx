@@ -469,7 +469,7 @@ interface DisabledProps { disabled?: boolean; children?: any; }
 interface ChildProps { id: string; width?: number; height?: number; border?: boolean; style?: Style; children?: any; }
 declare function Disabled(props: DisabledProps): any;
 declare function Child(props: ChildProps): any;
-interface FontProps { name: string; children?: any; }
+interface FontProps { name: string; src?: string; size?: number; embed?: boolean; children?: any; }
 declare function Font(props: FontProps): any;
 
 declare function resetLayout(): void;

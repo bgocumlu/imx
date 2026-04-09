@@ -104,6 +104,7 @@ Key principles:
 - Don't work around compiler bugs by modifying example code — fix the pipeline
 
 ## Current status (Phases 1-18 complete)
+- Font embed from TSX: `<Font name="mono" src="file.ttf" size={15} embed>` — compiler generates .embed.h and `_imx_load_fonts()` in app_root.gen.cpp. C++ `load_font()` / `load_font_embedded()` API unchanged.
 - ~98 host components covering all ImGui widgets + input expansion
 - Text & Display Variants (Phase 18): `color`, `disabled`, `wrapped` props on `<Text>`, `<Bullet />` standalone, Selectable `spanAllColumns`/`allowDoubleClick`/`dontClosePopups` flags, ListBox manual mode (BeginListBox/EndListBox with children), horizontalScrollbar bug fix
 - Window & Popup Control (Phase 17): all `ImGuiWindowFlags` as boolean props, `x`/`y`/`width`/`height` positioning with `forcePosition`/`forceSize`, `minWidth`/`minHeight`/`maxWidth`/`maxHeight` size constraints, `bgAlpha`, `mouseButton` on `<ContextMenu>`, window flags on `<Modal>`, manual `<Combo>` Begin/End mode with children, `<MultiSelect>` with `boxSelect`/`boxSelect2d` drag selection + `onSelectionChange` callback + `apply_multi_select_requests()` C++ helper (requires struct binding), `selectionIndex` on `<Selectable>`, `noViewport`/`viewportAlwaysOnTop` viewport hints, `get_main_viewport_*()` C++ helpers. Hello example now uses `render_root<AppState>` for MultiSelect demo.

@@ -1648,17 +1648,38 @@ ImVec2 work_size = imx::renderer::get_main_viewport_work_size();
 
 #### Font Component (TSX)
 
-Wraps children with the named font. Font must be loaded in C++ first.
+Wraps children with the named font. Can declare and load the font inline via `src`/`size`/`embed`, or just select a previously declared font by `name`.
 
 | Prop | Type | Required | Description |
 |------|------|----------|-------------|
-| name | string | Yes | Name of a loaded font |
+| name | string | Yes | Font identifier |
+| src | string | No | Path to .ttf file (relative to source dir or public/) |
+| size | number | No | Font size in pixels (required when src is present) |
+| embed | boolean | No | Bake font into binary at compile time |
+| children | any | Yes | Content to render with this font |
 
+**Declare and use (embedded — font baked into binary):**
 ```tsx
-<Font name="custom">
-  <Text>This uses the custom font</Text>
+<Font name="mono" src="JetBrainsMono-Regular.ttf" size={15} embed>
+  <Text>Monospace</Text>
 </Font>
 ```
+
+**Reuse (already declared above):**
+```tsx
+<Font name="mono">
+  <Text>Also monospace</Text>
+</Font>
+```
+
+**File-loaded (not embedded — .ttf ships with exe):**
+```tsx
+<Font name="inter" src="Inter-Regular.ttf" size={16}>
+  <Text>UI text</Text>
+</Font>
+```
+
+The first `<Font>` with `src` declares the font. Subsequent uses of the same name just select it. The compiler generates `_imx_load_fonts()` which can be called explicitly in main.cpp before the render loop to avoid a one-frame fallback to the default font.
 
 > **Note:** For best results, load a dedicated UI font as the default app font in C++ and use `<Font>` for specialized regions such as code, logs, or diagnostics.
 

@@ -150,7 +150,7 @@ Group: style?(Style) | children — BeginGroup/EndGroup, makes children act as s
 ID: scope(string|number, required) | children — PushID/PopID explicit ID scope
 Disabled: disabled?(boolean) | children — BeginDisabled/EndDisabled, grays out children (default: true)
 Child: id(string, required) | width?(number) | height?(number) | border?(boolean) | style?(Style) | children — scrollable sub-region
-Font: name(string, required) | children — PushFont/PopFont, selects a font loaded via imx::load_font() in C++
+Font: name(string, required) | src?(string) | size?(number) | embed?(boolean) | children — PushFont/PopFont; first occurrence with src declares the font (file or embedded), subsequent uses just select by name
 ```
 
 ### Interaction
