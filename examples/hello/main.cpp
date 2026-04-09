@@ -121,13 +121,6 @@ int main() {
     imx::load_font("inter-ui", "Inter-Regular.ttf", 16.0f * dpi_scale, ui_font_options);
     imx::set_default_font("inter-ui");
 
-    imx::FontOptions mono_font_options;
-    mono_font_options.pixel_snap_h = true;
-    mono_font_options.oversample_h = 2;
-    mono_font_options.oversample_v = 2;
-    mono_font_options.rasterizer_multiply = 1.05f;
-    imx::load_font("jetbrains-mono", "JetBrainsMono-Regular.ttf", 15.0f * dpi_scale, mono_font_options);
-
     // --- Custom widget: ToggleSwitch ---
     imx::register_widget("ToggleSwitch", [](imx::WidgetArgs& a) {
         bool on = a.get<bool>("value");
@@ -146,6 +139,10 @@ int main() {
     // --- Resize: callback needs App* (same object the main loop uses for render_frame) ---
     glfwSetWindowUserPointer(window, &app);
     glfwSetWindowSizeCallback(window, window_size_callback);
+
+    // Load fonts declared in TSX (embedded and file-loaded)
+    extern void _imx_load_fonts();
+    _imx_load_fonts();
 
     while (glfwWindowShouldClose(window) == 0) {
         if (app.runtime.needs_frame()) {

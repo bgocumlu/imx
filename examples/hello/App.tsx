@@ -188,7 +188,7 @@ export default function App(props: AppState) {
       </Window>
       <Window title="Phase 13">
         <Column gap={8}>
-          <Font name="jetbrains-mono">
+          <Font name="jetbrains-mono" src="JetBrainsMono-Regular.ttf" size={15} embed>
             <Text>Phase 13 showcase: expanded inputs and advanced canvas drawing.</Text>
           </Font>
           <Text>Custom font loaded from `public/JetBrainsMono-Regular.ttf`.</Text>
