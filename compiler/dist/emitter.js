@@ -1055,6 +1055,8 @@ function emitBeginContainer(node, lines, indent) {
                 flagParts.push('ImGuiWindowFlags_AlwaysVerticalScrollbar');
             if (node.props['alwaysHorizontalScrollbar'] === 'true')
                 flagParts.push('ImGuiWindowFlags_AlwaysHorizontalScrollbar');
+            if (node.props['hasMenuBar'] === 'true')
+                flagParts.push('ImGuiWindowFlags_MenuBar');
             const flags = flagParts.length > 0 ? flagParts.join(' | ') : '0';
             // Window positioning
             const xExpr = node.props['x'];

@@ -653,8 +653,8 @@ function lowerJsxElement(node: ts.JsxElement, body: IRNode[], ctx: LoweringConte
                 body.push({ kind: 'end_container', tag: containerTag });
                 return;
             }
-            // DockSpace: detect if any child is a MenuBar
-            if (containerTag === 'DockSpace') {
+            // DockSpace / Window: detect if any child is a MenuBar
+            if (containerTag === 'DockSpace' || containerTag === 'Window') {
                 const hasMenuBar = node.children.some(c =>
                     ts.isJsxElement(c) && ts.isIdentifier(c.openingElement.tagName) && c.openingElement.tagName.text === 'MenuBar'
                 );
