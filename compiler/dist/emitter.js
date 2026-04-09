@@ -293,12 +293,37 @@ export function emitComponent(comp, imports, sourceFile, boundProps, boundPropsM
     lines.push('');
     return lines.join('\n');
 }
-export function emitRoot(rootName, stateCount, bufferCount, sourceFile, propsType, namedPropsType) {
+export function emitRoot(rootName, stateCount, bufferCount, sourceFile, propsType, namedPropsType, fontDeclarations) {
     const lines = [];
+    const fonts = fontDeclarations ?? [];
     if (sourceFile) {
         lines.push(`// Generated from ${sourceFile} by imxc`);
     }
     lines.push('#include <imx/runtime.h>');
+    // Font embed includes and init function
+    if (fonts.length > 0) {
+        lines.push('#include <imx/renderer.h>');
+        for (const f of fonts) {
+            if (f.embed && f.embedKey) {
+                lines.push(`#include "${f.embedKey}.embed.h"`);
+            }
+        }
+        lines.push('');
+        lines.push('void _imx_load_fonts() {');
+        lines.push(`${INDENT}static bool done = false;`);
+        lines.push(`${INDENT}if (done) return;`);
+        lines.push(`${INDENT}done = true;`);
+        for (const f of fonts) {
+            if (f.embed && f.embedKey) {
+                lines.push(`${INDENT}imx::load_font_embedded("${f.name}", ${f.embedKey}_data, ${f.embedKey}_size, ${f.size});`);
+            }
+            else {
+                lines.push(`${INDENT}imx::load_font("${f.name}", "${f.src}", ${f.size});`);
+            }
+        }
+        lines.push('}');
+        lines.push('');
+    }
     if (propsType) {
         if (namedPropsType) {
             // Named interface type (e.g. AppState defined in user code).
@@ -323,6 +348,9 @@ export function emitRoot(rootName, stateCount, bufferCount, sourceFile, propsTyp
             lines.push(`void render_root(Runtime& runtime, ${propsType}& state) {`);
         }
         lines.push(`${INDENT}auto& ctx = runtime.begin_frame();`);
+        if (fonts.length > 0) {
+            lines.push(`${INDENT}_imx_load_fonts();`);
+        }
         lines.push(`${INDENT}ctx.begin_instance("${rootName}", 0, ${stateCount}, ${bufferCount});`);
         lines.push(`${INDENT}${rootName}_render(ctx, state);`);
         lines.push(`${INDENT}ctx.end_instance();`);
@@ -337,6 +365,9 @@ export function emitRoot(rootName, stateCount, bufferCount, sourceFile, propsTyp
         lines.push('namespace imx {');
         lines.push('void render_root(Runtime& runtime) {');
         lines.push(`${INDENT}auto& ctx = runtime.begin_frame();`);
+        if (fonts.length > 0) {
+            lines.push(`${INDENT}_imx_load_fonts();`);
+        }
         lines.push(`${INDENT}ctx.begin_instance("${rootName}", 0, ${stateCount}, ${bufferCount});`);
         lines.push(`${INDENT}${rootName}_render(ctx);`);
         lines.push(`${INDENT}ctx.end_instance();`);

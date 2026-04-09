@@ -1,4 +1,5 @@
 import type { IRComponent } from './ir.js';
+import type { FontDeclaration } from './compile.js';
 /**
  * Emit a .gen.h header for a component that has props.
  * Contains the props struct and function forward declaration.
@@ -9,4 +10,4 @@ export interface ImportInfo {
     headerFile: string;
 }
 export declare function emitComponent(comp: IRComponent, imports?: ImportInfo[], sourceFile?: string, boundProps?: Set<string>, boundPropsMap?: Map<string, Set<string>>): string;
-export declare function emitRoot(rootName: string, stateCount: number, bufferCount: number, sourceFile?: string, propsType?: string, namedPropsType?: boolean): string;
+export declare function emitRoot(rootName: string, stateCount: number, bufferCount: number, sourceFile?: string, propsType?: string, namedPropsType?: boolean, fontDeclarations?: FontDeclaration[]): string;

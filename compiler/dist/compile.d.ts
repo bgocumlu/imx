@@ -10,3 +10,10 @@ export interface CompileResult {
  */
 export declare function compile(files: string[], outputDir: string): CompileResult;
 export declare function resolveDragDropTypes(nodes: IRNode[]): void;
+export interface FontDeclaration {
+    name: string;
+    src: string;
+    size: string;
+    embed: boolean;
+    embedKey?: string;
+}
