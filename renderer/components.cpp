@@ -22,6 +22,7 @@ namespace imx {
 
 static std::unordered_map<std::string, WidgetFunc> g_widget_registry;
 static std::unordered_map<std::string, ThemeFunc> g_theme_registry;
+static std::unordered_map<std::string, ImFont*> g_font_registry;
 
 void register_widget(const std::string& name, WidgetFunc func) {
     g_widget_registry[name] = std::move(func);
@@ -37,6 +38,23 @@ void call_widget(const std::string& name, WidgetArgs& args) {
 
 void register_theme(const std::string& name, ThemeFunc func) {
     g_theme_registry[name] = std::move(func);
+}
+
+void load_font(const char* name, const char* path, float size) {
+    ImFont* font = ImGui::GetIO().Fonts->AddFontFromFileTTF(path, size);
+    if (font) {
+        g_font_registry[name] = font;
+    }
+}
+
+void load_font_embedded(const char* name, const unsigned char* data, int data_size, float size) {
+    ImFontConfig cfg;
+    cfg.FontDataOwnedByAtlas = false;
+    ImFont* font = ImGui::GetIO().Fonts->AddFontFromMemoryTTF(
+        const_cast<void*>(static_cast<const void*>(data)), data_size, size, &cfg);
+    if (font) {
+        g_font_registry[name] = font;
+    }
 }
 
 } // namespace imx
@@ -708,6 +726,20 @@ void draw_text(float x, float y, ImVec4 color, const char* text) {
     ImVec2 o = canvas_origin();
     ImGui::GetWindowDrawList()->AddText(ImVec2(o.x + x, o.y + y),
         ImGui::ColorConvertFloat4ToU32(color), text);
+}
+
+void begin_font(const char* name) {
+    before_child();
+    auto it = g_font_registry.find(name);
+    if (it != g_font_registry.end()) {
+        ImGui::PushFont(it->second);
+    } else {
+        ImGui::PushFont(nullptr);
+    }
+}
+
+void end_font() {
+    ImGui::PopFont();
 }
 
 } // namespace imx::renderer

@@ -128,6 +128,10 @@ void call_widget(const std::string& name, WidgetArgs& args);
 using ThemeFunc = std::function<void()>;
 void register_theme(const std::string& name, ThemeFunc func);
 
+// Font loading — call before first frame, after ImGui context created
+void load_font(const char* name, const char* path, float size);
+void load_font_embedded(const char* name, const unsigned char* data, int data_size, float size);
+
 namespace renderer {
 
 void before_child();
@@ -230,6 +234,9 @@ void draw_line(float x1, float y1, float x2, float y2, ImVec4 color, float thick
 void draw_rect(float x1, float y1, float x2, float y2, ImVec4 color, bool filled = false, float thickness = 1.0f, float rounding = 0.0f);
 void draw_circle(float cx, float cy, float radius, ImVec4 color, bool filled = false, float thickness = 1.0f);
 void draw_text(float x, float y, ImVec4 color, const char* text);
+
+void begin_font(const char* name);
+void end_font();
 
 } // namespace renderer
 } // namespace imx
