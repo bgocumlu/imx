@@ -110,30 +110,100 @@ endif()
 
 # --- Examples ---
 if(IMX_BUILD_EXAMPLES)
-    # --- hello_app: codegen + native binary ---
+    # --- hello_app: minimal getting-started ---
     include(ImxCompile)
 
     imx_compile_tsx(HELLO_GENERATED
         SOURCES
-            examples/hello/App.tsx
-            examples/hello/TodoItem.tsx
-        OUTPUT_DIR ${CMAKE_BINARY_DIR}/generated
+            examples/hello/src/App.tsx
+        OUTPUT_DIR ${CMAKE_BINARY_DIR}/generated_hello
     )
 
     add_executable(hello_app
-        examples/hello/main.cpp
+        examples/hello/src/main.cpp
         ${HELLO_GENERATED}
     )
+    set_target_properties(hello_app PROPERTIES WIN32_EXECUTABLE $<CONFIG:Release>)
     target_link_libraries(hello_app PRIVATE imx_renderer)
-    target_include_directories(hello_app PRIVATE ${CMAKE_BINARY_DIR}/generated ${CMAKE_CURRENT_SOURCE_DIR}/examples/hello)
-
-    # Copy public/ assets to output directory
-    add_custom_command(TARGET hello_app POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_directory
-            ${CMAKE_CURRENT_SOURCE_DIR}/examples/hello/public
-            $<TARGET_FILE_DIR:hello_app>
-        COMMENT "Copying hello public/ assets"
+    target_include_directories(hello_app PRIVATE
+        ${CMAKE_BINARY_DIR}/generated_hello
+        ${CMAKE_CURRENT_SOURCE_DIR}/examples/hello/src
     )
+
+    if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/examples/hello/public)
+        add_custom_command(TARGET hello_app POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_directory
+                ${CMAKE_CURRENT_SOURCE_DIR}/examples/hello/public
+                $<TARGET_FILE_DIR:hello_app>
+            COMMENT "Copying hello public/ assets"
+        )
+    endif()
+
+    # --- demo_app: component-organized demo (like imgui_demo) ---
+    imx_compile_tsx(DEMO_GENERATED
+        SOURCES
+            examples/demo/src/App.tsx
+            examples/demo/src/LayoutDemo.tsx
+            examples/demo/src/TextDemo.tsx
+            examples/demo/src/InputsDemo.tsx
+            examples/demo/src/SlidersDemo.tsx
+            examples/demo/src/ButtonsDemo.tsx
+            examples/demo/src/ColorDemo.tsx
+            examples/demo/src/TablesDemo.tsx
+            examples/demo/src/TreesDemo.tsx
+            examples/demo/src/MenusDemo.tsx
+            examples/demo/src/DragDropDemo.tsx
+            examples/demo/src/CanvasDemo.tsx
+            examples/demo/src/ThemingDemo.tsx
+            examples/demo/src/ImagesDemo.tsx
+            examples/demo/src/AdvancedDemo.tsx
+        OUTPUT_DIR ${CMAKE_BINARY_DIR}/generated_demo
+    )
+
+    add_executable(demo_app
+        examples/demo/src/main.cpp
+        ${DEMO_GENERATED}
+    )
+    set_target_properties(demo_app PROPERTIES WIN32_EXECUTABLE $<CONFIG:Release>)
+    target_link_libraries(demo_app PRIVATE imx_renderer)
+    target_include_directories(demo_app PRIVATE
+        ${CMAKE_BINARY_DIR}/generated_demo
+        ${CMAKE_CURRENT_SOURCE_DIR}/examples/demo/src
+    )
+
+    add_custom_command(TARGET demo_app POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+            ${CMAKE_CURRENT_SOURCE_DIR}/examples/demo/public
+            $<TARGET_FILE_DIR:demo_app>
+        COMMENT "Copying demo public/ assets"
+    )
+
+    # --- phases_app: phase showcase (content added incrementally) ---
+    imx_compile_tsx(PHASES_GENERATED
+        SOURCES
+            examples/phases/src/App.tsx
+        OUTPUT_DIR ${CMAKE_BINARY_DIR}/generated_phases
+    )
+
+    add_executable(phases_app
+        examples/phases/src/main.cpp
+        ${PHASES_GENERATED}
+    )
+    set_target_properties(phases_app PROPERTIES WIN32_EXECUTABLE $<CONFIG:Release>)
+    target_link_libraries(phases_app PRIVATE imx_renderer)
+    target_include_directories(phases_app PRIVATE
+        ${CMAKE_BINARY_DIR}/generated_phases
+        ${CMAKE_CURRENT_SOURCE_DIR}/examples/phases/src
+    )
+
+    if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/examples/phases/public)
+        add_custom_command(TARGET phases_app POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_directory
+                ${CMAKE_CURRENT_SOURCE_DIR}/examples/phases/public
+                $<TARGET_FILE_DIR:phases_app>
+            COMMENT "Copying phases public/ assets"
+        )
+    endif()
 
     # --- todo_app: struct binding example ---
     imx_compile_tsx(TODO_GENERATED
