@@ -38,6 +38,11 @@ export function AdvancedDemo(props: { onClose: () => void }) {
           <Text>Status: {status}</Text>
         </CollapsingHeader>
 
+        <CollapsingHeader label="Window Flags" defaultOpen>
+          <Text disabled>Sub-windows with various flags:</Text>
+          <Text>Auto-resize window (cannot resize manually):</Text>
+        </CollapsingHeader>
+
       </Column>
     </Window>
   );

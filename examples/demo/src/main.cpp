@@ -82,10 +82,13 @@ int main() {
     ImGui_ImplOpenGL3_Init(glsl_version);
 
     // Register custom widget for AdvancedDemo
+    // Types must match what the TSX emitter generates:
+    //   value prop (boolean) → stored as bool in WidgetArgs
+    //   onToggle callback (boolean param) → receives bool via std::any
     imx::register_widget("ToggleSwitch", [](imx::WidgetArgs& a) {
-        bool val = a.get<float>("value") > 0.5F;
+        bool val = a.get<bool>("value");
         if (ImGui::Checkbox("##toggle", &val)) {
-            a.call("onToggle", val ? 1.0F : 0.0F);
+            a.call("onToggle", val);
         }
     });
 
