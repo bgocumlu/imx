@@ -72,7 +72,12 @@ export const HOST_COMPONENTS = {
         hasChildren: true, isContainer: true,
     },
     Text: {
-        props: { style: { type: 'style', required: false } },
+        props: {
+            color: { type: 'number', required: false },
+            disabled: { type: 'boolean', required: false },
+            wrapped: { type: 'boolean', required: false },
+            style: { type: 'style', required: false },
+        },
         hasChildren: true, isContainer: false,
     },
     Button: {
@@ -291,13 +296,14 @@ export const HOST_COMPONENTS = {
     ListBox: {
         props: withItemInteractionProps({
             label: { type: 'string', required: true },
-            value: { type: 'number', required: true },
+            value: { type: 'number', required: false },
             onChange: { type: 'callback', required: false },
-            items: { type: 'string', required: true },
+            items: { type: 'string', required: false },
             width: { type: 'number', required: false },
+            height: { type: 'number', required: false },
             style: { type: 'style', required: false },
         }),
-        hasChildren: false, isContainer: false,
+        hasChildren: true, isContainer: true,
     },
     ProgressBar: {
         props: {
@@ -346,6 +352,10 @@ export const HOST_COMPONENTS = {
         props: { style: { type: 'style', required: false } },
         hasChildren: true, isContainer: false,
     },
+    Bullet: {
+        props: { style: { type: 'style', required: false } },
+        hasChildren: false, isContainer: false,
+    },
     LabelText: {
         props: {
             label: { type: 'string', required: true },
@@ -359,6 +369,9 @@ export const HOST_COMPONENTS = {
             selected: { type: 'boolean', required: false },
             onSelect: { type: 'callback', required: false },
             selectionIndex: { type: 'number', required: false },
+            spanAllColumns: { type: 'boolean', required: false },
+            allowDoubleClick: { type: 'boolean', required: false },
+            dontClosePopups: { type: 'boolean', required: false },
             style: { type: 'style', required: false },
         }),
         hasChildren: false, isContainer: false,

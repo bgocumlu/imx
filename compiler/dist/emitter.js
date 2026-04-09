@@ -486,6 +486,19 @@ function emitNode(node, lines, depth) {
             lines.push(`${indent}imx::renderer::end_combo();`);
             lines.push(`${indent}}`);
             break;
+        case 'begin_list_box': {
+            const n = node;
+            emitLocComment(n.loc, 'ListBox (manual)', lines, indent);
+            const label = asCharPtr(n.label);
+            const w = n.width ?? '0.0f';
+            const h = n.height ?? '0.0f';
+            lines.push(`${indent}if (imx::renderer::begin_list_box(${label}, ${w}, ${h})) {`);
+            break;
+        }
+        case 'end_list_box':
+            lines.push(`${indent}imx::renderer::end_list_box();`);
+            lines.push(`${indent}}`);
+            break;
         case 'combo':
             emitCombo(node, lines, indent);
             break;
@@ -515,6 +528,10 @@ function emitNode(node, lines, depth) {
             break;
         case 'bullet_text':
             emitBulletText(node, lines, indent);
+            break;
+        case 'bullet':
+            emitLocComment(node.loc, 'Bullet', lines, indent);
+            lines.push(`${indent}imx::renderer::bullet();`);
             break;
         case 'label_text':
             emitLabelText(node, lines, indent);
@@ -1536,12 +1553,34 @@ function emitEndContainer(node, lines, indent) {
 }
 function emitText(node, lines, indent) {
     emitLocComment(node.loc, 'Text', lines, indent);
-    if (node.args.length === 0) {
-        lines.push(`${indent}imx::renderer::text(${JSON.stringify(node.format)});`);
+    const fmtStr = JSON.stringify(node.format);
+    const argsStr = node.args.length > 0 ? ', ' + node.args.join(', ') : '';
+    if (node.disabled) {
+        // disabled takes priority — ImGui::TextDisabled has its own grayed style
+        lines.push(`${indent}imx::renderer::text_disabled(${fmtStr}${argsStr});`);
+    }
+    else if (node.color && node.wrapped) {
+        // color + wrapped: PushStyleColor + TextWrapped + PopStyleColor
+        lines.push(`${indent}ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(${node.color}));`);
+        lines.push(`${indent}imx::renderer::text_wrapped(${fmtStr}${argsStr});`);
+        lines.push(`${indent}ImGui::PopStyleColor();`);
+    }
+    else if (node.color) {
+        // color only: inline ImGui::TextColored
+        lines.push(`${indent}ImGui::TextColored(ImVec4(${node.color}), ${fmtStr}${argsStr});`);
+    }
+    else if (node.wrapped) {
+        // wrapped only
+        lines.push(`${indent}imx::renderer::text_wrapped(${fmtStr}${argsStr});`);
     }
     else {
-        const argsStr = node.args.join(', ');
-        lines.push(`${indent}imx::renderer::text(${JSON.stringify(node.format)}, ${argsStr});`);
+        // plain text (current behavior)
+        if (node.args.length === 0) {
+            lines.push(`${indent}imx::renderer::text(${fmtStr});`);
+        }
+        else {
+            lines.push(`${indent}imx::renderer::text(${fmtStr}${argsStr});`);
+        }
     }
 }
 function emitButton(node, lines, indent, depth) {
@@ -2364,8 +2403,9 @@ function emitSelectable(node, lines, indent) {
         lines.push(`${indent}imx::renderer::set_next_item_selection_data(${node.selectionIndex});`);
     }
     const label = asCharPtr(node.label);
+    const flagsArg = node.flags ? `, ${node.flags}` : '';
     const pressedVar = node.action.length > 0 ? nextWidgetTemp('selectable_pressed') : undefined;
-    const resultVar = emitBoolWidgetCall(`imx::renderer::selectable(${label}, ${node.selected})`, node.item, lines, indent, pressedVar);
+    const resultVar = emitBoolWidgetCall(`imx::renderer::selectable(${label}, ${node.selected}${flagsArg})`, node.item, lines, indent, pressedVar);
     if (node.action.length > 0 && resultVar) {
         lines.push(`${indent}if (${resultVar}) {`);
         emitActionStatements(node.action, lines, indent + INDENT);

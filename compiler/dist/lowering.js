@@ -512,6 +512,17 @@ function lowerJsxElement(node, body, ctx) {
             body.push({ kind: 'end_combo' });
             return;
         }
+        if (name === 'ListBox') {
+            // Manual ListBox mode — has children, no items prop
+            const label = attrs['label'] ?? '""';
+            const item = lowerItemInteraction(attrs, rawAttrs, ctx);
+            body.push({ kind: 'begin_list_box', label, width: attrs['width'], height: attrs['height'], style: attrs['style'], item, loc: getLoc(node, ctx) });
+            for (const child of node.children) {
+                lowerJsxChild(child, body, ctx);
+            }
+            body.push({ kind: 'end_list_box' });
+            return;
+        }
         if (def.isContainer) {
             const containerTag = name;
             // Special handling for DragDropTarget — lower onDrop callback with type info
@@ -734,10 +745,17 @@ function lowerJsxSelfClosing(node, body, ctx) {
         case 'Separator':
             body.push({ kind: 'separator', loc });
             break;
-        case 'Text':
-            // Self-closing <Text /> - empty text
-            body.push({ kind: 'text', format: '', args: [], loc });
+        case 'Bullet':
+            body.push({ kind: 'bullet', loc });
             break;
+        case 'Text': {
+            // Self-closing <Text /> — may have disabled/wrapped/color props
+            const disabled = attrs['disabled'] === 'true';
+            const wrapped = attrs['wrapped'] === 'true';
+            const color = attrs['color'];
+            body.push({ kind: 'text', format: '', args: [], color, disabled: disabled || undefined, wrapped: wrapped || undefined, loc });
+            break;
+        }
         case 'BulletText':
             // Self-closing <BulletText /> - empty bullet
             body.push({ kind: 'bullet_text', format: '', args: [], loc });
@@ -1084,6 +1102,11 @@ function lowerShortcut(attrs, rawAttrs, body, ctx, loc) {
 function lowerTextElement(node, body, ctx, loc) {
     let format = '';
     const args = [];
+    // Extract Text props
+    const attrs = getAttributes(node.openingElement.attributes, ctx);
+    const color = attrs['color'];
+    const disabled = attrs['disabled'] === 'true';
+    const wrapped = attrs['wrapped'] === 'true';
     for (const child of node.children) {
         if (ts.isJsxText(child)) {
             // Collapse whitespace (newlines, tabs, runs of spaces) into single spaces,
@@ -1140,7 +1163,7 @@ function lowerTextElement(node, body, ctx, loc) {
             }
         }
     }
-    body.push({ kind: 'text', format, args, loc });
+    body.push({ kind: 'text', format, args, color, disabled: disabled || undefined, wrapped: wrapped || undefined, loc });
 }
 /**
  * Check if an expression will produce a const char* in C++ (not std::string).
@@ -1527,8 +1550,16 @@ function lowerSelectable(attrs, rawAttrs, body, ctx, loc) {
     }
     const style = attrs['style'];
     const selectionIndex = attrs['selectionIndex'];
+    const flagParts = [];
+    if (attrs['spanAllColumns'] === 'true')
+        flagParts.push('ImGuiSelectableFlags_SpanAllColumns');
+    if (attrs['allowDoubleClick'] === 'true')
+        flagParts.push('ImGuiSelectableFlags_AllowDoubleClick');
+    if (attrs['dontClosePopups'] === 'true')
+        flagParts.push('ImGuiSelectableFlags_DontClosePopups');
+    const flags = flagParts.length > 0 ? flagParts.join(' | ') : undefined;
     const item = lowerItemInteraction(attrs, rawAttrs, ctx);
-    body.push({ kind: 'selectable', label, selected, action, selectionIndex, style, item, loc });
+    body.push({ kind: 'selectable', label, selected, action, selectionIndex, flags, style, item, loc });
 }
 function lowerRadio(attrs, rawAttrs, body, ctx, loc) {
     const label = attrs['label'] ?? '""';
