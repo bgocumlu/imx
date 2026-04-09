@@ -42,6 +42,10 @@ export default function App() {
   const [phase16JumpToNotes, setPhase16JumpToNotes] = useState(false);
   const [phase16ContextMessage, setPhase16ContextMessage] = useState("Right-click the target button or this window.");
   const [phase17ComboIdx, setPhase17ComboIdx] = useState(0);
+  const [phase17CtxMsg, setPhase17CtxMsg] = useState("Left-click the button below.");
+  const [phase17Sel0, setPhase17Sel0] = useState(false);
+  const [phase17Sel1, setPhase17Sel1] = useState(false);
+  const [phase17Sel2, setPhase17Sel2] = useState(false);
 
   return (
     <Theme preset="dark" accentColor={[0.9, 0.2, 0.2, 1.0]} backgroundColor={[0.12, 0.12, 0.15, 1.0]} textColor={[0.95, 0.95, 0.95, 1.0]} borderColor={[0.3, 0.3, 0.35, 1.0]} surfaceColor={[0.18, 0.18, 0.22, 1.0]} rounding={6}>
@@ -513,12 +517,17 @@ export default function App() {
           </Combo>
           <Separator />
           <Text>Left-click context menu:</Text>
-          <Button title="Left-click for menu" onPress={() => {}}>
-            <ContextMenu mouseButton="left">
-              <MenuItem label="Option A" />
-              <MenuItem label="Option B" />
-            </ContextMenu>
-          </Button>
+          <Button title="Left-click for menu" onPress={() => {}} />
+          <ContextMenu id="phase17-left-ctx" mouseButton="left">
+            <MenuItem label="Option A" onPress={() => setPhase17CtxMsg("Option A selected")} />
+            <MenuItem label="Option B" onPress={() => setPhase17CtxMsg("Option B selected")} />
+          </ContextMenu>
+          <Text>{phase17CtxMsg}</Text>
+          <Separator />
+          <Text>MultiSelect (click, Ctrl+click, Shift+click):</Text>
+          <Selectable label="Item Alpha" selected={phase17Sel0} onSelect={() => setPhase17Sel0(!phase17Sel0)} />
+          <Selectable label="Item Beta" selected={phase17Sel1} onSelect={() => setPhase17Sel1(!phase17Sel1)} />
+          <Selectable label="Item Gamma" selected={phase17Sel2} onSelect={() => setPhase17Sel2(!phase17Sel2)} />
         </Column>
       </Window>
       <Modal title="Confirm Action" open={showConfirm} onClose={() => setShowConfirm(false)}>
