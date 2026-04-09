@@ -11,6 +11,7 @@ namespace imx::renderer {
 // Per-frame ID counters — reset in begin_dockspace() each frame
 static int g_table_id = 0;
 static int g_tabbar_id = 0;
+static std::vector<bool> g_window_item_width_pushed;
 
 struct ThemeState {
     int color_count;
@@ -225,6 +226,12 @@ static std::optional<ImGuiKeyChord> parse_key_chord(const char* keys) {
 void begin_window(const char* title, int flags, bool* p_open, bool viewport_always_on_top, const Style& style) {
     before_child();
     ImGui::Begin(title, p_open, flags);
+    if (flags & ImGuiWindowFlags_HorizontalScrollbar) {
+        ImGui::PushItemWidth(ImGui::GetWindowWidth() * 0.65f);
+        g_window_item_width_pushed.push_back(true);
+    } else {
+        g_window_item_width_pushed.push_back(false);
+    }
     if (viewport_always_on_top) {
         ImGuiViewport* vp = ImGui::GetWindowViewport();
         if (vp) vp->Flags |= ImGuiViewportFlags_TopMost;
@@ -236,6 +243,12 @@ void begin_window(const char* title, int flags, bool* p_open, bool viewport_alwa
 }
 
 void end_window() {
+    if (!g_window_item_width_pushed.empty()) {
+        if (g_window_item_width_pushed.back()) {
+            ImGui::PopItemWidth();
+        }
+        g_window_item_width_pushed.pop_back();
+    }
     ImGui::End();
 }
 
