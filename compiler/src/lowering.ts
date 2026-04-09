@@ -23,6 +23,7 @@ import type {
     IRInputFloatN, IRInputIntN, IRDragFloatN, IRDragIntN, IRSliderFloatN, IRSliderIntN,
     IRSmallButton, IRArrowButton, IRInvisibleButton, IRImageButton, IRVSliderFloat, IRVSliderInt, IRSliderAngle,
     IRItemInteraction, IRShortcut,
+    IRBeginCombo, IREndCombo,
 } from './ir.js';
 
 interface LoweringContext {
@@ -567,6 +568,25 @@ function lowerJsxElement(node: ts.JsxElement, body: IRNode[], ctx: LoweringConte
                 lowerJsxChild(child, body, ctx);
             }
             body.push({ kind: 'end_collapsing_header', closable: attrs['closable'] } as IREndCollapsingHeader);
+            return;
+        }
+
+        if (name === 'Combo') {
+            // Manual combo mode — has children, no items prop
+            const label = attrs['label'] ?? '""';
+            const preview = attrs['preview'] ?? '""';
+            const flagNames: string[] = [];
+            if (attrs['noArrowButton'] === 'true') flagNames.push('ImGuiComboFlags_NoArrowButton');
+            if (attrs['noPreview'] === 'true') flagNames.push('ImGuiComboFlags_NoPreview');
+            if (attrs['heightSmall'] === 'true') flagNames.push('ImGuiComboFlags_HeightSmall');
+            if (attrs['heightLarge'] === 'true') flagNames.push('ImGuiComboFlags_HeightLarge');
+            if (attrs['heightRegular'] === 'true') flagNames.push('ImGuiComboFlags_HeightRegular');
+            const item = lowerItemInteraction(attrs, rawAttrs, ctx);
+            body.push({ kind: 'begin_combo', label, preview, flags: flagNames, width: attrs['width'], style: attrs['style'], item, loc: getLoc(node, ctx) } as IRBeginCombo);
+            for (const child of node.children) {
+                lowerJsxChild(child, body, ctx);
+            }
+            body.push({ kind: 'end_combo' } as IREndCombo);
             return;
         }
 
@@ -1547,8 +1567,9 @@ function lowerSelectable(attrs: Record<string, string>, rawAttrs: Map<string, ts
         action = extractActionStatements(onSelectExpr, ctx);
     }
     const style = attrs['style'];
+    const selectionIndex = attrs['selectionIndex'];
     const item = lowerItemInteraction(attrs, rawAttrs, ctx);
-    body.push({ kind: 'selectable', label, selected, action, style, item, loc });
+    body.push({ kind: 'selectable', label, selected, action, selectionIndex, style, item, loc });
 }
 
 function lowerRadio(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext, loc: SourceLoc): void {

@@ -312,6 +312,19 @@ void end_context_menu() {
     ImGui::EndPopup();
 }
 
+ImGuiMultiSelectIO* begin_multi_select(int flags, int selection_size, int items_count) {
+    before_child();
+    return ImGui::BeginMultiSelect(flags, selection_size, items_count);
+}
+
+ImGuiMultiSelectIO* end_multi_select() {
+    return ImGui::EndMultiSelect();
+}
+
+void set_next_item_selection_data(int index) {
+    ImGui::SetNextItemSelectionUserData(static_cast<ImGuiSelectionUserData>(index));
+}
+
 void begin_dockspace(const Style& style, bool has_menu_bar) {
     g_table_id = 0;
     g_tabbar_id = 0;
@@ -577,6 +590,15 @@ bool combo(const char* label, int* current_item, const char* const items[], int 
     bool r = ImGui::Combo(label, current_item, items, items_count);
     if (style.width) ImGui::PopItemWidth();
     return r;
+}
+
+bool begin_combo(const char* label, const char* preview, int flags, const Style& style) {
+    before_child();
+    return ImGui::BeginCombo(label, preview, flags);
+}
+
+void end_combo() {
+    ImGui::EndCombo();
 }
 
 bool input_int(const char* label, int* value, const Style& style) {

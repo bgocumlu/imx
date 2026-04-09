@@ -114,7 +114,7 @@ interface SliderFloatProps extends ItemInteractionProps { label: string; value: 
 interface SliderIntProps extends ItemInteractionProps { label: string; value: number; onChange?: (v: number) => void; min: number; max: number; width?: number; style?: Style; }
 interface DragFloatProps extends ItemInteractionProps { label: string; value: number; onChange?: (v: number) => void; speed?: number; width?: number; style?: Style; }
 interface DragIntProps extends ItemInteractionProps { label: string; value: number; onChange?: (v: number) => void; speed?: number; width?: number; style?: Style; }
-interface ComboProps extends ItemInteractionProps { label: string; value: number; onChange?: (v: number) => void; items: string[]; width?: number; style?: Style; }
+interface ComboProps extends ItemInteractionProps { label: string; value?: number; onChange?: (v: number) => void; items?: string[]; preview?: string; noArrowButton?: boolean; noPreview?: boolean; heightSmall?: boolean; heightLarge?: boolean; heightRegular?: boolean; width?: number; style?: Style; children?: any; }
 interface InputIntProps extends ItemInteractionProps { label: string; value: number; onChange?: (v: number) => void; width?: number; style?: Style; }
 interface InputFloatProps extends ItemInteractionProps { label: string; value: number; onChange?: (v: number) => void; width?: number; style?: Style; }
 interface InputFloat2Props extends ItemInteractionProps { label: string; value: [number, number]; onChange?: (v: [number, number]) => void; width?: number; style?: Style; }

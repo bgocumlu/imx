@@ -489,6 +489,29 @@ function lowerJsxElement(node, body, ctx) {
             body.push({ kind: 'end_collapsing_header', closable: attrs['closable'] });
             return;
         }
+        if (name === 'Combo') {
+            // Manual combo mode — has children, no items prop
+            const label = attrs['label'] ?? '""';
+            const preview = attrs['preview'] ?? '""';
+            const flagNames = [];
+            if (attrs['noArrowButton'] === 'true')
+                flagNames.push('ImGuiComboFlags_NoArrowButton');
+            if (attrs['noPreview'] === 'true')
+                flagNames.push('ImGuiComboFlags_NoPreview');
+            if (attrs['heightSmall'] === 'true')
+                flagNames.push('ImGuiComboFlags_HeightSmall');
+            if (attrs['heightLarge'] === 'true')
+                flagNames.push('ImGuiComboFlags_HeightLarge');
+            if (attrs['heightRegular'] === 'true')
+                flagNames.push('ImGuiComboFlags_HeightRegular');
+            const item = lowerItemInteraction(attrs, rawAttrs, ctx);
+            body.push({ kind: 'begin_combo', label, preview, flags: flagNames, width: attrs['width'], style: attrs['style'], item, loc: getLoc(node, ctx) });
+            for (const child of node.children) {
+                lowerJsxChild(child, body, ctx);
+            }
+            body.push({ kind: 'end_combo' });
+            return;
+        }
         if (def.isContainer) {
             const containerTag = name;
             // Special handling for DragDropTarget — lower onDrop callback with type info
@@ -1503,8 +1526,9 @@ function lowerSelectable(attrs, rawAttrs, body, ctx, loc) {
         action = extractActionStatements(onSelectExpr, ctx);
     }
     const style = attrs['style'];
+    const selectionIndex = attrs['selectionIndex'];
     const item = lowerItemInteraction(attrs, rawAttrs, ctx);
-    body.push({ kind: 'selectable', label, selected, action, style, item, loc });
+    body.push({ kind: 'selectable', label, selected, action, selectionIndex, style, item, loc });
 }
 function lowerRadio(attrs, rawAttrs, body, ctx, loc) {
     const label = attrs['label'] ?? '""';

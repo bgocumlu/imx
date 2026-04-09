@@ -210,6 +210,10 @@ bool begin_context_menu_item(const char* id = nullptr, int mouse_button = 1);
 bool begin_context_menu_window(const char* id = nullptr, int mouse_button = 1);
 void end_context_menu();
 
+ImGuiMultiSelectIO* begin_multi_select(int flags, int selection_size, int items_count);
+ImGuiMultiSelectIO* end_multi_select();
+void set_next_item_selection_data(int index);
+
 void begin_dockspace(const Style& style = {}, bool has_menu_bar = false);
 void end_dockspace();
 
@@ -257,6 +261,8 @@ bool slider_float_n(const char* label, float* values, int count, float min, floa
 bool slider_int_n(const char* label, int* values, int count, int min, int max, const Style& style = {});
 
 bool combo(const char* label, int* current_item, const char* const items[], int items_count, const Style& style = {});
+bool begin_combo(const char* label, const char* preview, int flags = 0, const Style& style = {});
+void end_combo();
 
 bool input_int(const char* label, int* value, const Style& style = {});
 bool input_float(const char* label, float* value, const Style& style = {});

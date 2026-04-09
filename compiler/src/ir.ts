@@ -64,14 +64,15 @@ export type IRNode =
     | IRDrawNgon | IRDrawNgonFilled | IRDrawTriangle
     | IRInputFloatN | IRInputIntN | IRDragFloatN | IRDragIntN | IRSliderFloatN | IRSliderIntN
     | IRSmallButton | IRArrowButton | IRInvisibleButton | IRImageButton
-    | IRVSliderFloat | IRVSliderInt | IRSliderAngle;
+    | IRVSliderFloat | IRVSliderInt | IRSliderAngle
+    | IRBeginCombo | IREndCombo;
 
 export interface IRBeginContainer {
     kind: 'begin_container';
     tag: 'Window' | 'View' | 'Indent' | 'TextWrap' | 'Row' | 'Column' | 'DockSpace' | 'MainMenuBar' | 'MenuBar' | 'Menu'
        | 'TabBar' | 'TabItem'
        | 'Theme' | 'DockLayout' | 'DockSplit' | 'DockPanel' | 'Modal'
-       | 'Group' | 'ID' | 'StyleColor' | 'StyleVar' | 'DragDropSource' | 'DragDropTarget' | 'Canvas' | 'Disabled' | 'Child' | 'Font' | 'ContextMenu';
+       | 'Group' | 'ID' | 'StyleColor' | 'StyleVar' | 'DragDropSource' | 'DragDropTarget' | 'Canvas' | 'Disabled' | 'Child' | 'Font' | 'ContextMenu' | 'MultiSelect';
     props: Record<string, string>;
     style?: string;
     loc?: SourceLoc;
@@ -81,7 +82,7 @@ export interface IREndContainer {
     tag: 'Window' | 'View' | 'Indent' | 'TextWrap' | 'Row' | 'Column' | 'DockSpace' | 'MainMenuBar' | 'MenuBar' | 'Menu'
        | 'TabBar' | 'TabItem'
        | 'Theme' | 'DockLayout' | 'DockSplit' | 'DockPanel' | 'Modal'
-       | 'Group' | 'ID' | 'StyleColor' | 'StyleVar' | 'DragDropSource' | 'DragDropTarget' | 'Canvas' | 'Disabled' | 'Child' | 'Font' | 'ContextMenu';
+       | 'Group' | 'ID' | 'StyleColor' | 'StyleVar' | 'DragDropSource' | 'DragDropTarget' | 'Canvas' | 'Disabled' | 'Child' | 'Font' | 'ContextMenu' | 'MultiSelect';
 }
 export interface IRTableColumn {
     label: string;
@@ -179,7 +180,7 @@ export interface IRNativeWidget {
 
 export interface IRBulletText { kind: 'bullet_text'; format: string; args: string[]; loc?: SourceLoc; }
 export interface IRLabelText { kind: 'label_text'; label: string; value: string; loc?: SourceLoc; }
-export interface IRSelectable { kind: 'selectable'; label: string; selected: string; action: string[]; style?: string; item?: IRItemInteraction; loc?: SourceLoc; }
+export interface IRSelectable { kind: 'selectable'; label: string; selected: string; action: string[]; selectionIndex?: string; style?: string; item?: IRItemInteraction; loc?: SourceLoc; }
 export interface IRRadio { kind: 'radio'; label: string; stateVar: string; valueExpr?: string; onChangeExpr?: string; directBind?: boolean; index: string; style?: string; item?: IRItemInteraction; loc?: SourceLoc; }
 export interface IRInputTextMultiline { kind: 'input_text_multiline'; label: string; bufferIndex: number; stateVar: string; valueExpr?: string; onChangeExpr?: string; directBind?: boolean; width?: string; style?: string; item?: IRItemInteraction; loc?: SourceLoc; }
 export interface IRColorPicker { kind: 'color_picker'; label: string; stateVar: string; valueExpr?: string; onChangeExpr?: string; directBind?: boolean; style?: string; item?: IRItemInteraction; loc?: SourceLoc; }
@@ -220,6 +221,18 @@ export interface IRSliderIntN { kind: 'slider_int_n'; label: string; count: numb
 export interface IRVSliderFloat { kind: 'vslider_float'; label: string; stateVar: string; valueExpr?: string; onChangeExpr?: string; directBind?: boolean; width: string; height: string; min: string; max: string; style?: string; item?: IRItemInteraction; loc?: SourceLoc; }
 export interface IRVSliderInt { kind: 'vslider_int'; label: string; stateVar: string; valueExpr?: string; onChangeExpr?: string; directBind?: boolean; width: string; height: string; min: string; max: string; style?: string; item?: IRItemInteraction; loc?: SourceLoc; }
 export interface IRSliderAngle { kind: 'slider_angle'; label: string; stateVar: string; valueExpr?: string; onChangeExpr?: string; directBind?: boolean; min: string; max: string; width?: string; style?: string; item?: IRItemInteraction; loc?: SourceLoc; }
+
+export interface IRBeginCombo {
+    kind: 'begin_combo';
+    label: string;
+    preview: string;
+    flags: string[];
+    width?: string;
+    style?: string;
+    item?: IRItemInteraction;
+    loc?: SourceLoc;
+}
+export interface IREndCombo { kind: 'end_combo'; }
 
 export interface IRSmallButton { kind: 'small_button'; label: string; action: string[]; item?: IRItemInteraction; loc?: SourceLoc; }
 export interface IRArrowButton { kind: 'arrow_button'; id: string; direction: string; action: string[]; item?: IRItemInteraction; loc?: SourceLoc; }

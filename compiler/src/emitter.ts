@@ -15,6 +15,7 @@ import type {
     IRImage,
     IRSmallButton, IRArrowButton, IRInvisibleButton, IRImageButton,
     IRVSliderFloat, IRVSliderInt, IRSliderAngle, IRItemInteraction, IRShortcut,
+    IRBeginCombo, IREndCombo,
 } from './ir.js';
 
 const INDENT = '    ';
@@ -523,6 +524,22 @@ function emitNode(node: IRNode, lines: string[], depth: number): void {
         case 'drag_int':
             emitDragInt(node, lines, indent);
             break;
+        case 'begin_combo': {
+            const n = node as IRBeginCombo;
+            emitLocComment(n.loc, 'Combo (manual)', lines, indent);
+            const label = asCharPtr(n.label);
+            const preview = asCharPtr(n.preview);
+            const flagStr = n.flags.length > 0 ? n.flags.join(' | ') : '0';
+            if (n.width) {
+                lines.push(`${indent}ImGui::PushItemWidth(${n.width});`);
+            }
+            lines.push(`${indent}if (imx::renderer::begin_combo(${label}, ${preview}, ${flagStr})) {`);
+            break;
+        }
+        case 'end_combo':
+            lines.push(`${indent}imx::renderer::end_combo();`);
+            lines.push(`${indent}}`);
+            break;
         case 'combo':
             emitCombo(node, lines, indent);
             break;
@@ -669,6 +686,7 @@ const modalOnCloseStack: (string | null)[] = []; // tracks modal onClose express
 const collapsingHeaderOnCloseStack: (string | null)[] = [];
 const dragDropSourceStack: Record<string, string>[] = [];
 const dragDropTargetStack: Record<string, string>[] = [];
+const multiSelectCallbackStack: (string | null)[] = [];
 
 /**
  * Build a Style variable from a raw style expression string for self-closing components.
@@ -1316,6 +1334,22 @@ function emitBeginContainer(node: IRBeginContainer, lines: string[], indent: str
             }
             break;
         }
+        case 'MultiSelect': {
+            const flagParts: string[] = [];
+            if (node.props['singleSelect'] === 'true') flagParts.push('ImGuiMultiSelectFlags_SingleSelect');
+            if (node.props['noSelectAll'] === 'true') flagParts.push('ImGuiMultiSelectFlags_NoSelectAll');
+            if (node.props['noRangeSelect'] === 'true') flagParts.push('ImGuiMultiSelectFlags_NoRangeSelect');
+            if (node.props['noAutoSelect'] === 'true') flagParts.push('ImGuiMultiSelectFlags_NoAutoSelect');
+            if (node.props['noAutoClear'] === 'true') flagParts.push('ImGuiMultiSelectFlags_NoAutoClear');
+            const flags = flagParts.length > 0 ? flagParts.join(' | ') : '0';
+            const selSize = node.props['selectionSize'] ?? '-1';
+            const itemCount = node.props['itemsCount'] ?? '-1';
+            lines.push(`${indent}{`);
+            lines.push(`${indent}    auto* ms_io = imx::renderer::begin_multi_select(${flags}, ${selSize}, ${itemCount});`);
+            const onChangeExpr = node.props['onSelectionChange'];
+            multiSelectCallbackStack.push(onChangeExpr ?? null);
+            break;
+        }
         case 'DockLayout':
         case 'DockSplit':
         case 'DockPanel':
@@ -1432,6 +1466,15 @@ function emitEndContainer(node: IREndContainer, lines: string[], indent: string)
             lines.push(`${indent}imx::renderer::end_context_menu();`);
             lines.push(`${indent}}`);
             break;
+        case 'MultiSelect': {
+            lines.push(`${indent}    auto* ms_io_end = imx::renderer::end_multi_select();`);
+            const onChangeExpr = multiSelectCallbackStack.pop() ?? null;
+            if (onChangeExpr) {
+                lines.push(`${indent}    if (ms_io_end) { ${onChangeExpr}(ms_io_end); }`);
+            }
+            lines.push(`${indent}}`);
+            break;
+        }
         case 'DragDropTarget': {
             const props = dragDropTargetStack.pop() ?? {};
             const typeStr = asCharPtr(props['type'] ?? '""');
@@ -2294,6 +2337,9 @@ function emitLabelText(node: IRLabelText, lines: string[], indent: string): void
 
 function emitSelectable(node: IRSelectable, lines: string[], indent: string): void {
     emitLocComment(node.loc, 'Selectable', lines, indent);
+    if (node.selectionIndex) {
+        lines.push(`${indent}imx::renderer::set_next_item_selection_data(${node.selectionIndex});`);
+    }
     const label = asCharPtr(node.label);
     const pressedVar = node.action.length > 0 ? nextWidgetTemp('selectable_pressed') : undefined;
     const resultVar = emitBoolWidgetCall(`imx::renderer::selectable(${label}, ${node.selected})`, node.item, lines, indent, pressedVar);

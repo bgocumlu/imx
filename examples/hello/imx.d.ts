@@ -64,6 +64,7 @@ interface CheckboxProps extends ItemInteractionProps { value: boolean; onChange?
 interface SeparatorProps {}
 interface PopupProps { id: string; style?: Style; children?: any; }
 interface ContextMenuProps { id?: string; target?: "item" | "window"; mouseButton?: "left" | "right" | "middle"; children?: any; }
+interface MultiSelectProps { singleSelect?: boolean; noSelectAll?: boolean; noRangeSelect?: boolean; noAutoSelect?: boolean; noAutoClear?: boolean; selectionSize?: number; itemsCount?: number; onSelectionChange?: (io: any) => void; children?: any; }
 interface DockSpaceProps { style?: Style; children?: any; }
 interface DockLayoutProps { children?: any; }
 interface DockSplitProps { direction: "horizontal" | "vertical"; size: number; children?: any; }
@@ -98,7 +99,7 @@ interface SliderFloatProps extends ItemInteractionProps { label: string; value: 
 interface SliderIntProps extends ItemInteractionProps { label: string; value: number; onChange?: (v: number) => void; min: number; max: number; width?: number; style?: Style; }
 interface DragFloatProps extends ItemInteractionProps { label: string; value: number; onChange?: (v: number) => void; speed?: number; width?: number; style?: Style; }
 interface DragIntProps extends ItemInteractionProps { label: string; value: number; onChange?: (v: number) => void; speed?: number; width?: number; style?: Style; }
-interface ComboProps extends ItemInteractionProps { label: string; value: number; onChange?: (v: number) => void; items: string[]; width?: number; style?: Style; }
+interface ComboProps extends ItemInteractionProps { label: string; value?: number; onChange?: (v: number) => void; items?: string[]; preview?: string; noArrowButton?: boolean; noPreview?: boolean; heightSmall?: boolean; heightLarge?: boolean; heightRegular?: boolean; width?: number; style?: Style; children?: any; }
 interface InputIntProps extends ItemInteractionProps { label: string; value: number; onChange?: (v: number) => void; width?: number; style?: Style; }
 interface InputFloatProps extends ItemInteractionProps { label: string; value: number; onChange?: (v: number) => void; width?: number; style?: Style; }
 interface InputFloat2Props extends ItemInteractionProps { label: string; value: [number, number]; onChange?: (v: [number, number]) => void; width?: number; style?: Style; }
@@ -135,7 +136,7 @@ interface TooltipProps { text: string; }
 interface ShortcutProps { keys: string; onPress: () => void; }
 interface BulletTextProps { style?: Style; children?: any; }
 interface LabelTextProps { label: string; value: string; }
-interface SelectableProps extends ItemInteractionProps { label: string; selected?: boolean; onSelect?: () => void; style?: Style; }
+interface SelectableProps extends ItemInteractionProps { label: string; selected?: boolean; onSelect?: () => void; selectionIndex?: number; style?: Style; }
 interface RadioProps extends ItemInteractionProps { label: string; value: number; index: number; onChange?: (v: number) => void; style?: Style; }
 interface InputTextMultilineProps extends ItemInteractionProps { label: string; value: string; width?: number; style?: Style; }
 interface ColorPickerProps extends ItemInteractionProps { label: string; value: number[]; style?: Style; }
@@ -204,6 +205,7 @@ declare function Checkbox(props: CheckboxProps): any;
 declare function Separator(props: SeparatorProps): any;
 declare function Popup(props: PopupProps): any;
 declare function ContextMenu(props: ContextMenuProps): any;
+declare function MultiSelect(props: MultiSelectProps): any;
 declare function DockSpace(props: DockSpaceProps): any;
 declare function DockLayout(props: DockLayoutProps): any;
 declare function DockSplit(props: DockSplitProps): any;
