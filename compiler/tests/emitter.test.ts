@@ -512,7 +512,7 @@ function App() {
   );
 }
         `);
-        expect(output).toContain('imx::renderer::begin_modal("Confirm", show.get(), &modal_closed)');
+        expect(output).toContain('imx::renderer::begin_modal("Confirm", show.get(), &modal_closed, 0)');
         expect(output).toContain('if (modal_closed)');
         expect(output).toContain('show.set(false)');
         expect(output).toContain('imx::renderer::end_modal()');
