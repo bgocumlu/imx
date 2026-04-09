@@ -67,11 +67,12 @@ CollapsingHeader: label(string, required) | defaultOpen?(boolean) | forceOpen?(b
 
 ### Text & Display
 ```
-Text: style?(Style) | children — display text, content as children
+Text: color?(number[]) | disabled?(boolean) | wrapped?(boolean) | style?(Style) | children — text display with optional color, disabled, or wrapped mode
 Separator: (no props) — horizontal line
 ProgressBar: value(number, required) | overlay?(string) | style?(Style) — progress 0.0-1.0
 Tooltip: text(string, required) — tooltip on previous item hover
 BulletText: style?(Style) | children — bulleted text item
+Bullet: style?(Style) — standalone bullet point, use with SameLine for text
 LabelText: label(string, required) | value(string, required) — label with value display
 PlotLines: label(string, required) | values(number[], required) | overlay?(string) | style?(Style) — line graph
 PlotHistogram: label(string, required) | values(number[], required) | overlay?(string) | style?(Style) — histogram
@@ -90,13 +91,13 @@ DragInt: label(string, required) | value(number, required) | onChange((v: number
 InputInt: label(string, required) | value(number, required) | onChange((v: number) => void, required) | style?(Style)
 InputFloat: label(string, required) | value(number, required) | onChange((v: number) => void, required) | style?(Style)
 Radio: label(string, required) | value(number, required) | index(number, required) | onChange?((v: number) => void) | style?(Style)
-Selectable: label(string, required) | selected?(boolean) | onSelect?(() => void) | selectionIndex?(number) | style?(Style) — selectionIndex for use inside MultiSelect
+Selectable: label(string, required) | selected?(boolean) | onSelect?(() => void) | selectionIndex?(number) | spanAllColumns? | allowDoubleClick? | dontClosePopups? | style?(Style) — clickable list item with optional flags
 ColorEdit: label(string, required) | value(number[], required) | onChange((v: number[]) => void, required) | style?(Style)
 ColorEdit3: label(string, required) | value([number,number,number], required) | onChange?((v) => void) | style?(Style) — RGB only
 ColorPicker: label(string, required) | value(number[], required) | onChange((v: number[]) => void, required) | style?(Style)
 ColorPicker3: label(string, required) | value([number,number,number], required) | onChange?((v) => void) | style?(Style) — RGB only
 Combo: label(string, required) | value?(number) | onChange?((v: number) => void) | items?(string[]) | preview?(string) | noArrowButton? | noPreview? | heightSmall? | heightLarge? | heightRegular? | width?(number) | style?(Style) | children? — simple mode (items) or manual mode (children)
-ListBox: label(string, required) | value(number, required) | onChange((v: number) => void, required) | items(string[], required) | style?(Style)
+ListBox: label(string, required) | value?(number) | onChange?((v: number) => void) | items?(string[]) | width?(number) | height?(number) | style?(Style) | children? — simple mode with items array, or manual mode with children (BeginListBox/EndListBox)
 SmallButton: label(string, required) | onPress(() => void, required) — compact button
 ArrowButton: id(string, required) | direction("left"|"right"|"up"|"down", required) | onPress(() => void, required)
 InvisibleButton: id(string, required) | width(number, required) | height(number, required) | onPress(() => void, required) — invisible hitbox

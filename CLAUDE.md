@@ -93,8 +93,9 @@ React-Native-like authoring model for Dear ImGui. Write .tsx, compile to native 
 - Don't call `before_child()` in modal/popup begin functions — overlays don't participate in layout
 - Don't work around compiler bugs by modifying example code — fix the pipeline
 
-## Current status (Phases 1-17 complete)
-- ~97 host components covering all ImGui widgets + input expansion
+## Current status (Phases 1-18 complete)
+- ~98 host components covering all ImGui widgets + input expansion
+- Text & Display Variants (Phase 18): `color`, `disabled`, `wrapped` props on `<Text>`, `<Bullet />` standalone, Selectable `spanAllColumns`/`allowDoubleClick`/`dontClosePopups` flags, ListBox manual mode (BeginListBox/EndListBox with children), horizontalScrollbar bug fix
 - Window & Popup Control (Phase 17): all `ImGuiWindowFlags` as boolean props, `x`/`y`/`width`/`height` positioning with `forcePosition`/`forceSize`, `minWidth`/`minHeight`/`maxWidth`/`maxHeight` size constraints, `bgAlpha`, `mouseButton` on `<ContextMenu>`, window flags on `<Modal>`, manual `<Combo>` Begin/End mode with children, `<MultiSelect>` with `boxSelect`/`boxSelect2d` drag selection + `onSelectionChange` callback + `apply_multi_select_requests()` C++ helper (requires struct binding), `selectionIndex` on `<Selectable>`, `noViewport`/`viewportAlwaysOnTop` viewport hints, `get_main_viewport_*()` C++ helpers. Hello example now uses `render_root<AppState>` for MultiSelect demo.
 - Interaction & item queries (Phase 16): `onHover`, `onActive`, `onFocused`, `onClicked`, `onDoubleClicked`, `tooltip`, `autoFocus`, `scrollToHere`, `cursor`, `<ContextMenu>`, `<Shortcut>`, plus `imx::clipboard_get()` / `imx::clipboard_set()`
 - Layout & positioning (Phase 14): MainMenuBar, Indent, TextWrap, Spacing, Dummy, SameLine, NewLine, Cursor, explicit `width` prop on input-like widgets
@@ -121,4 +122,4 @@ React-Native-like authoring model for Dear ImGui. Write .tsx, compile to native 
 - API documentation + LLM prompt reference complete
 - Packaging: `imxc@0.5.5` on npm, FetchContent for C++ (compiler/dist/ committed)
 - Release builds hide console on Windows (WIN32_EXECUTABLE), Debug shows it
-- Next: Phase 18 candidates (Text & Display Variants)
+- Next: Phase 19 candidates

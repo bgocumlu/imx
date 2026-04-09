@@ -387,7 +387,7 @@ Exit criteria:
 
 - full control over window behavior and popup triggers from TSX
 
-## Phase 18: Text & Display Variants
+## Phase 18: Text & Display Variants (DONE)
 
 Goal:
 

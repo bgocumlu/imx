@@ -470,6 +470,9 @@ Displays text content. Text content is passed as children.
 | Prop | Type | Required | Description |
 |------|------|----------|-------------|
 | style | Style | No | Layout and appearance styles |
+| color | number[] | No | RGBA color array [r,g,b,a] — emits TextColored |
+| disabled | boolean | No | Grayed-out text — emits TextDisabled |
+| wrapped | boolean | No | Auto-wrapping text — emits TextWrapped |
 
 ```tsx
 <Text>Hello, world!</Text>
@@ -873,6 +876,17 @@ const [selected, setSelected] = useState(0);
 <ListBox label="Items" value={selected} onChange={setSelected} items={["Apple", "Banana", "Cherry"]} />
 ```
 
+**Manual mode** (children instead of items):
+
+When `<ListBox>` has children instead of `items`, it uses `BeginListBox`/`EndListBox` mode:
+
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| label | string | Yes | Widget label |
+| width | number | No | ListBox width (0 = auto) |
+| height | number | No | ListBox height (0 = auto) |
+| children | any | Yes | Custom content (e.g., Selectable elements) |
+
 ---
 
 #### Radio
@@ -907,6 +921,9 @@ A clickable item that can be selected or deselected.
 | selected | boolean | No | Whether the item is currently selected |
 | onSelect | () => void | No | Called when the item is clicked |
 | selectionIndex | number | No | Selection index for use inside `<MultiSelect>` |
+| spanAllColumns | boolean | No | Span across all table columns |
+| allowDoubleClick | boolean | No | React to double-click in addition to single-click |
+| dontClosePopups | boolean | No | Don't close parent popup on click |
 | style | Style | No | Layout and appearance styles |
 
 ```tsx
@@ -1058,6 +1075,16 @@ A text item prefixed with a bullet point.
 <BulletText>This is a bullet point</BulletText>
 <BulletText>Another item in the list</BulletText>
 ```
+
+---
+
+#### Bullet
+
+Standalone bullet point (no text). Use with `<SameLine>` to place text after.
+
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| style | Style | No | Style overrides |
 
 ---
 

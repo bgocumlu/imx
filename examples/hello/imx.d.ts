@@ -59,7 +59,7 @@ interface IndentProps { width?: number; children?: any; }
 interface TextWrapProps { width: number; children?: any; }
 interface RowProps { gap?: number; style?: Style; children?: any; }
 interface ColumnProps { gap?: number; style?: Style; children?: any; }
-interface TextProps { style?: Style; children?: any; }
+interface TextProps { color?: number[]; disabled?: boolean; wrapped?: boolean; style?: Style; children?: any; }
 interface ButtonProps extends ItemInteractionProps { title: string; onPress: () => void; disabled?: boolean; style?: Style; }
 interface SmallButtonProps extends ItemInteractionProps { label: string; onPress: () => void; }
 interface ArrowButtonProps extends ItemInteractionProps { id: string; direction: "left" | "right" | "up" | "down"; onPress: () => void; }
@@ -131,7 +131,7 @@ interface VSliderIntProps extends ItemInteractionProps { label: string; value: n
 interface SliderAngleProps extends ItemInteractionProps { label: string; value: number; onChange?: (v: number) => void; min?: number; max?: number; width?: number; style?: Style; }
 interface ColorEditProps extends ItemInteractionProps { label: string; value: number[]; onChange?: (v: number[]) => void; width?: number; style?: Style; }
 interface ColorEdit3Props extends ItemInteractionProps { label: string; value: [number, number, number]; onChange?: (v: [number, number, number]) => void; width?: number; style?: Style; }
-interface ListBoxProps extends ItemInteractionProps { label: string; value: number; onChange?: (v: number) => void; items: string[]; width?: number; style?: Style; }
+interface ListBoxProps extends ItemInteractionProps { label: string; value?: number; onChange?: (v: number) => void; items?: string[]; width?: number; height?: number; style?: Style; children?: any; }
 interface ProgressBarProps { value: number; overlay?: string; style?: Style; }
 interface SpacingProps {}
 interface DummyProps { width: number; height: number; }
@@ -141,8 +141,9 @@ interface CursorProps { x: number; y: number; }
 interface TooltipProps { text: string; }
 interface ShortcutProps { keys: string; onPress: () => void; }
 interface BulletTextProps { style?: Style; children?: any; }
+interface BulletProps { style?: Style; }
 interface LabelTextProps { label: string; value: string; }
-interface SelectableProps extends ItemInteractionProps { label: string; selected?: boolean; onSelect?: () => void; selectionIndex?: number; style?: Style; }
+interface SelectableProps extends ItemInteractionProps { label: string; selected?: boolean; onSelect?: () => void; selectionIndex?: number; spanAllColumns?: boolean; allowDoubleClick?: boolean; dontClosePopups?: boolean; style?: Style; }
 interface RadioProps extends ItemInteractionProps { label: string; value: number; index: number; onChange?: (v: number) => void; style?: Style; }
 interface InputTextMultilineProps extends ItemInteractionProps { label: string; value: string; width?: number; style?: Style; }
 interface ColorPickerProps extends ItemInteractionProps { label: string; value: number[]; style?: Style; }
@@ -268,6 +269,7 @@ declare function Cursor(props: CursorProps): any;
 declare function Tooltip(props: TooltipProps): any;
 declare function Shortcut(props: ShortcutProps): any;
 declare function BulletText(props: BulletTextProps): any;
+declare function Bullet(props: BulletProps): any;
 declare function LabelText(props: LabelTextProps): any;
 declare function Selectable(props: SelectableProps): any;
 declare function Radio(props: RadioProps): any;
