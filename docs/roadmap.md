@@ -338,7 +338,7 @@ Exit criteria:
 - sortable tables, advanced tree nodes, and full column control from TSX
 - child components can receive sub-struct references as bound props
 
-## Phase 16: Interaction & State Queries
+## Phase 16: Interaction & State Queries (DONE)
 
 Goal:
 

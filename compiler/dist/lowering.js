@@ -333,6 +333,31 @@ function extractActionStatements(expr, ctx) {
     }
     return [code + ';'];
 }
+function lowerItemInteraction(attrs, rawAttrs, ctx) {
+    const item = {};
+    if (attrs['autoFocus'])
+        item.autoFocus = attrs['autoFocus'];
+    if (attrs['tooltip'])
+        item.tooltip = attrs['tooltip'];
+    if (attrs['scrollToHere'])
+        item.scrollToHere = attrs['scrollToHere'];
+    if (attrs['cursor'])
+        item.cursor = attrs['cursor'];
+    const callbackAttrs = [
+        ['onHover', 'onHover'],
+        ['onActive', 'onActive'],
+        ['onFocused', 'onFocused'],
+        ['onClicked', 'onClicked'],
+        ['onDoubleClicked', 'onDoubleClicked'],
+    ];
+    for (const [field, attrName] of callbackAttrs) {
+        const expr = rawAttrs.get(attrName);
+        if (expr) {
+            item[field] = extractActionStatements(expr, ctx);
+        }
+    }
+    return Object.keys(item).length > 0 ? item : undefined;
+}
 /**
  * Lower a JSX expression (possibly wrapped in parenthesized expr) into IR nodes.
  */
@@ -436,6 +461,7 @@ function lowerJsxElement(node, body, ctx) {
                 leaf: attrs['leaf'],
                 bullet: attrs['bullet'],
                 noTreePushOnOpen: attrs['noTreePushOnOpen'],
+                item: lowerItemInteraction(attrs, rawAttrs, ctx),
                 loc: getLoc(node, ctx),
             });
             for (const child of node.children) {
@@ -454,6 +480,7 @@ function lowerJsxElement(node, body, ctx) {
                 forceOpen: attrs['forceOpen'],
                 closable: attrs['closable'],
                 onCloseBody: closeInfo?.bodyCode,
+                item: lowerItemInteraction(attrs, rawAttrs, ctx),
                 loc: getLoc(node, ctx),
             });
             for (const child of node.children) {
@@ -580,6 +607,7 @@ function lowerJsxSelfClosing(node, body, ctx) {
                 leaf: attrs['leaf'],
                 bullet: attrs['bullet'],
                 noTreePushOnOpen: attrs['noTreePushOnOpen'],
+                item: lowerItemInteraction(attrs, rawAttrs, ctx),
                 loc,
             });
             body.push({ kind: 'end_tree_node', noTreePushOnOpen: attrs['noTreePushOnOpen'] });
@@ -593,11 +621,15 @@ function lowerJsxSelfClosing(node, body, ctx) {
                 forceOpen: attrs['forceOpen'],
                 closable: attrs['closable'],
                 onCloseBody: closeInfo?.bodyCode,
+                item: lowerItemInteraction(attrs, rawAttrs, ctx),
                 loc,
             });
             body.push({ kind: 'end_collapsing_header', closable: attrs['closable'] });
             break;
         }
+        case 'Shortcut':
+            lowerShortcut(attrs, rawAttrs, body, ctx, loc);
+            break;
         case 'Button':
             lowerButton(attrs, rawAttrs, body, ctx, loc);
             break;
@@ -904,7 +936,8 @@ function lowerButton(attrs, rawAttrs, body, ctx, loc) {
     }
     const disabled = attrs['disabled'] === 'true' ? true : undefined;
     const style = attrs['style'];
-    body.push({ kind: 'button', title, action, disabled, style, loc });
+    const item = lowerItemInteraction(attrs, rawAttrs, ctx);
+    body.push({ kind: 'button', title, action, disabled, style, item, loc });
 }
 function lowerSmallButton(attrs, rawAttrs, body, ctx, loc) {
     const label = attrs['label'] ?? '""';
@@ -913,7 +946,8 @@ function lowerSmallButton(attrs, rawAttrs, body, ctx, loc) {
     if (onPressExpr) {
         action = extractActionStatements(onPressExpr, ctx);
     }
-    body.push({ kind: 'small_button', label, action, loc });
+    const item = lowerItemInteraction(attrs, rawAttrs, ctx);
+    body.push({ kind: 'small_button', label, action, item, loc });
 }
 function lowerArrowButton(attrs, rawAttrs, body, ctx, loc) {
     const id = attrs['id'] ?? '""';
@@ -923,7 +957,8 @@ function lowerArrowButton(attrs, rawAttrs, body, ctx, loc) {
     if (onPressExpr) {
         action = extractActionStatements(onPressExpr, ctx);
     }
-    body.push({ kind: 'arrow_button', id, direction, action, loc });
+    const item = lowerItemInteraction(attrs, rawAttrs, ctx);
+    body.push({ kind: 'arrow_button', id, direction, action, item, loc });
 }
 function lowerInvisibleButton(attrs, rawAttrs, body, ctx, loc) {
     const id = attrs['id'] ?? '""';
@@ -934,7 +969,8 @@ function lowerInvisibleButton(attrs, rawAttrs, body, ctx, loc) {
     if (onPressExpr) {
         action = extractActionStatements(onPressExpr, ctx);
     }
-    body.push({ kind: 'invisible_button', id, width, height, action, loc });
+    const item = lowerItemInteraction(attrs, rawAttrs, ctx);
+    body.push({ kind: 'invisible_button', id, width, height, action, item, loc });
 }
 function lowerImageButton(attrs, rawAttrs, body, ctx, loc) {
     const id = attrs['id'] ?? '""';
@@ -946,7 +982,8 @@ function lowerImageButton(attrs, rawAttrs, body, ctx, loc) {
     if (onPressExpr) {
         action = extractActionStatements(onPressExpr, ctx);
     }
-    body.push({ kind: 'image_button', id, src, width, height, action, loc });
+    const item = lowerItemInteraction(attrs, rawAttrs, ctx);
+    body.push({ kind: 'image_button', id, src, width, height, action, item, loc });
 }
 function lowerTextInput(attrs, rawAttrs, body, ctx, loc) {
     const label = attrs['label'] ?? '""';
@@ -954,7 +991,8 @@ function lowerTextInput(attrs, rawAttrs, body, ctx, loc) {
     const width = attrs['width'];
     const style = attrs['style'];
     const { stateVar, valueExpr, onChangeExpr, directBind } = lowerValueOnChange(rawAttrs, ctx);
-    body.push({ kind: 'text_input', label, bufferIndex, stateVar: stateVar, valueExpr, onChangeExpr, directBind, width, style, loc });
+    const item = lowerItemInteraction(attrs, rawAttrs, ctx);
+    body.push({ kind: 'text_input', label, bufferIndex, stateVar: stateVar, valueExpr, onChangeExpr, directBind, width, style, item, loc });
 }
 function lowerCheckbox(attrs, rawAttrs, body, ctx, loc) {
     const label = attrs['label'] ?? '""';
@@ -997,7 +1035,8 @@ function lowerCheckbox(attrs, rawAttrs, body, ctx, loc) {
         }
     }
     const style = attrs['style'];
-    body.push({ kind: 'checkbox', label, stateVar, valueExpr: valueExprStr, onChangeExpr: onChangeExprStr, directBind, style, loc });
+    const item = lowerItemInteraction(attrs, rawAttrs, ctx);
+    body.push({ kind: 'checkbox', label, stateVar, valueExpr: valueExprStr, onChangeExpr: onChangeExprStr, directBind, style, item, loc });
 }
 function lowerMenuItem(attrs, rawAttrs, body, ctx, loc) {
     const label = attrs['label'] ?? '""';
@@ -1007,7 +1046,17 @@ function lowerMenuItem(attrs, rawAttrs, body, ctx, loc) {
     if (onPressExpr) {
         action = extractActionStatements(onPressExpr, ctx);
     }
-    body.push({ kind: 'menu_item', label, shortcut, action, loc });
+    const item = lowerItemInteraction(attrs, rawAttrs, ctx);
+    body.push({ kind: 'menu_item', label, shortcut, action, item, loc });
+}
+function lowerShortcut(attrs, rawAttrs, body, ctx, loc) {
+    const keys = attrs['keys'] ?? '""';
+    const onPressExpr = rawAttrs.get('onPress');
+    let action = [];
+    if (onPressExpr) {
+        action = extractActionStatements(onPressExpr, ctx);
+    }
+    body.push({ kind: 'shortcut', keys, action, loc });
 }
 function lowerTextElement(node, body, ctx, loc) {
     let format = '';
@@ -1454,14 +1503,16 @@ function lowerSelectable(attrs, rawAttrs, body, ctx, loc) {
         action = extractActionStatements(onSelectExpr, ctx);
     }
     const style = attrs['style'];
-    body.push({ kind: 'selectable', label, selected, action, style, loc });
+    const item = lowerItemInteraction(attrs, rawAttrs, ctx);
+    body.push({ kind: 'selectable', label, selected, action, style, item, loc });
 }
 function lowerRadio(attrs, rawAttrs, body, ctx, loc) {
     const label = attrs['label'] ?? '""';
     const index = attrs['index'] ?? '0';
     const style = attrs['style'];
     const { stateVar, valueExpr, onChangeExpr, directBind } = lowerValueOnChange(rawAttrs, ctx);
-    body.push({ kind: 'radio', label, stateVar, valueExpr, onChangeExpr, directBind, index, style, loc });
+    const item = lowerItemInteraction(attrs, rawAttrs, ctx);
+    body.push({ kind: 'radio', label, stateVar, valueExpr, onChangeExpr, directBind, index, style, item, loc });
 }
 function lowerInputTextMultiline(attrs, rawAttrs, body, ctx, loc) {
     const label = attrs['label'] ?? '""';
@@ -1469,7 +1520,8 @@ function lowerInputTextMultiline(attrs, rawAttrs, body, ctx, loc) {
     const width = attrs['width'];
     const style = attrs['style'];
     const { stateVar, valueExpr, onChangeExpr, directBind } = lowerValueOnChange(rawAttrs, ctx);
-    body.push({ kind: 'input_text_multiline', label, bufferIndex, stateVar, valueExpr, onChangeExpr, directBind, width, style, loc });
+    const item = lowerItemInteraction(attrs, rawAttrs, ctx);
+    body.push({ kind: 'input_text_multiline', label, bufferIndex, stateVar, valueExpr, onChangeExpr, directBind, width, style, item, loc });
 }
 function lowerColorPicker(attrs, rawAttrs, body, ctx, loc) {
     const label = attrs['label'] ?? '""';
@@ -1498,7 +1550,8 @@ function lowerColorPicker(attrs, rawAttrs, body, ctx, loc) {
             directBind = true;
         }
     }
-    body.push({ kind: 'color_picker', label, stateVar, valueExpr, onChangeExpr, directBind, style, loc });
+    const item = lowerItemInteraction(attrs, rawAttrs, ctx);
+    body.push({ kind: 'color_picker', label, stateVar, valueExpr, onChangeExpr, directBind, style, item, loc });
 }
 function lowerColorPicker3(attrs, rawAttrs, body, ctx, loc) {
     const label = attrs['label'] ?? '""';
@@ -1528,7 +1581,8 @@ function lowerColorPicker3(attrs, rawAttrs, body, ctx, loc) {
             directBind = true;
         }
     }
-    body.push({ kind: 'color_picker3', label, stateVar, valueExpr, onChangeExpr, directBind, width, style, loc });
+    const item = lowerItemInteraction(attrs, rawAttrs, ctx);
+    body.push({ kind: 'color_picker3', label, stateVar, valueExpr, onChangeExpr, directBind, width, style, item, loc });
 }
 function lowerPlotLines(attrs, body, ctx, loc) {
     const label = attrs['label'] ?? '""';
@@ -1624,7 +1678,8 @@ function lowerVectorInput(family, count, attrs, rawAttrs, body, ctx, loc) {
             directBind = true;
         }
     }
-    const base = { kind: family, label, count, stateVar, valueExpr, directBind, onChangeExpr, width, style, loc };
+    const item = lowerItemInteraction(attrs, rawAttrs, ctx);
+    const base = { kind: family, label, count, stateVar, valueExpr, directBind, onChangeExpr, width, style, item, loc };
     if (family === 'drag_float_n' || family === 'drag_int_n') {
         base.speed = attrs['speed'] ?? '1.0f';
     }
@@ -1676,7 +1731,8 @@ function lowerSliderFloat(attrs, rawAttrs, body, ctx, loc) {
     const width = attrs['width'];
     const style = attrs['style'];
     const { stateVar, valueExpr, onChangeExpr, directBind } = lowerValueOnChange(rawAttrs, ctx);
-    body.push({ kind: 'slider_float', label, stateVar, valueExpr, onChangeExpr, directBind, min, max, width, style, loc });
+    const item = lowerItemInteraction(attrs, rawAttrs, ctx);
+    body.push({ kind: 'slider_float', label, stateVar, valueExpr, onChangeExpr, directBind, min, max, width, style, item, loc });
 }
 function lowerSliderInt(attrs, rawAttrs, body, ctx, loc) {
     const label = attrs['label'] ?? '""';
@@ -1685,7 +1741,8 @@ function lowerSliderInt(attrs, rawAttrs, body, ctx, loc) {
     const width = attrs['width'];
     const style = attrs['style'];
     const { stateVar, valueExpr, onChangeExpr, directBind } = lowerValueOnChange(rawAttrs, ctx);
-    body.push({ kind: 'slider_int', label, stateVar, valueExpr, onChangeExpr, directBind, min, max, width, style, loc });
+    const item = lowerItemInteraction(attrs, rawAttrs, ctx);
+    body.push({ kind: 'slider_int', label, stateVar, valueExpr, onChangeExpr, directBind, min, max, width, style, item, loc });
 }
 function lowerVSliderFloat(attrs, rawAttrs, body, ctx, loc) {
     const label = attrs['label'] ?? '""';
@@ -1695,7 +1752,8 @@ function lowerVSliderFloat(attrs, rawAttrs, body, ctx, loc) {
     const max = attrs['max'] ?? '1.0f';
     const style = attrs['style'];
     const { stateVar, valueExpr, onChangeExpr, directBind } = lowerValueOnChange(rawAttrs, ctx);
-    body.push({ kind: 'vslider_float', label, stateVar, valueExpr, onChangeExpr, directBind, width, height, min, max, style, loc });
+    const item = lowerItemInteraction(attrs, rawAttrs, ctx);
+    body.push({ kind: 'vslider_float', label, stateVar, valueExpr, onChangeExpr, directBind, width, height, min, max, style, item, loc });
 }
 function lowerVSliderInt(attrs, rawAttrs, body, ctx, loc) {
     const label = attrs['label'] ?? '""';
@@ -1705,7 +1763,8 @@ function lowerVSliderInt(attrs, rawAttrs, body, ctx, loc) {
     const max = attrs['max'] ?? '100';
     const style = attrs['style'];
     const { stateVar, valueExpr, onChangeExpr, directBind } = lowerValueOnChange(rawAttrs, ctx);
-    body.push({ kind: 'vslider_int', label, stateVar, valueExpr, onChangeExpr, directBind, width, height, min, max, style, loc });
+    const item = lowerItemInteraction(attrs, rawAttrs, ctx);
+    body.push({ kind: 'vslider_int', label, stateVar, valueExpr, onChangeExpr, directBind, width, height, min, max, style, item, loc });
 }
 function lowerSliderAngle(attrs, rawAttrs, body, ctx, loc) {
     const label = attrs['label'] ?? '""';
@@ -1714,7 +1773,8 @@ function lowerSliderAngle(attrs, rawAttrs, body, ctx, loc) {
     const width = attrs['width'];
     const style = attrs['style'];
     const { stateVar, valueExpr, onChangeExpr, directBind } = lowerValueOnChange(rawAttrs, ctx);
-    body.push({ kind: 'slider_angle', label, stateVar, valueExpr, onChangeExpr, directBind, min, max, width, style, loc });
+    const item = lowerItemInteraction(attrs, rawAttrs, ctx);
+    body.push({ kind: 'slider_angle', label, stateVar, valueExpr, onChangeExpr, directBind, min, max, width, style, item, loc });
 }
 function lowerDragFloat(attrs, rawAttrs, body, ctx, loc) {
     const label = attrs['label'] ?? '""';
@@ -1722,7 +1782,8 @@ function lowerDragFloat(attrs, rawAttrs, body, ctx, loc) {
     const width = attrs['width'];
     const style = attrs['style'];
     const { stateVar, valueExpr, onChangeExpr, directBind } = lowerValueOnChange(rawAttrs, ctx);
-    body.push({ kind: 'drag_float', label, stateVar, valueExpr, onChangeExpr, directBind, speed, width, style, loc });
+    const item = lowerItemInteraction(attrs, rawAttrs, ctx);
+    body.push({ kind: 'drag_float', label, stateVar, valueExpr, onChangeExpr, directBind, speed, width, style, item, loc });
 }
 function lowerDragInt(attrs, rawAttrs, body, ctx, loc) {
     const label = attrs['label'] ?? '""';
@@ -1730,7 +1791,8 @@ function lowerDragInt(attrs, rawAttrs, body, ctx, loc) {
     const width = attrs['width'];
     const style = attrs['style'];
     const { stateVar, valueExpr, onChangeExpr, directBind } = lowerValueOnChange(rawAttrs, ctx);
-    body.push({ kind: 'drag_int', label, stateVar, valueExpr, onChangeExpr, directBind, speed, width, style, loc });
+    const item = lowerItemInteraction(attrs, rawAttrs, ctx);
+    body.push({ kind: 'drag_int', label, stateVar, valueExpr, onChangeExpr, directBind, speed, width, style, item, loc });
 }
 function lowerCombo(attrs, rawAttrs, body, ctx, loc) {
     const label = attrs['label'] ?? '""';
@@ -1738,21 +1800,24 @@ function lowerCombo(attrs, rawAttrs, body, ctx, loc) {
     const width = attrs['width'];
     const style = attrs['style'];
     const { stateVar, valueExpr, onChangeExpr, directBind } = lowerValueOnChange(rawAttrs, ctx);
-    body.push({ kind: 'combo', label, stateVar, valueExpr, onChangeExpr, directBind, items, width, style, loc });
+    const item = lowerItemInteraction(attrs, rawAttrs, ctx);
+    body.push({ kind: 'combo', label, stateVar, valueExpr, onChangeExpr, directBind, items, width, style, item, loc });
 }
 function lowerInputInt(attrs, rawAttrs, body, ctx, loc) {
     const label = attrs['label'] ?? '""';
     const width = attrs['width'];
     const style = attrs['style'];
     const { stateVar, valueExpr, onChangeExpr, directBind } = lowerValueOnChange(rawAttrs, ctx);
-    body.push({ kind: 'input_int', label, stateVar, valueExpr, onChangeExpr, directBind, width, style, loc });
+    const item = lowerItemInteraction(attrs, rawAttrs, ctx);
+    body.push({ kind: 'input_int', label, stateVar, valueExpr, onChangeExpr, directBind, width, style, item, loc });
 }
 function lowerInputFloat(attrs, rawAttrs, body, ctx, loc) {
     const label = attrs['label'] ?? '""';
     const width = attrs['width'];
     const style = attrs['style'];
     const { stateVar, valueExpr, onChangeExpr, directBind } = lowerValueOnChange(rawAttrs, ctx);
-    body.push({ kind: 'input_float', label, stateVar, valueExpr, onChangeExpr, directBind, width, style, loc });
+    const item = lowerItemInteraction(attrs, rawAttrs, ctx);
+    body.push({ kind: 'input_float', label, stateVar, valueExpr, onChangeExpr, directBind, width, style, item, loc });
 }
 function lowerColorEdit(attrs, rawAttrs, body, ctx, loc) {
     const label = attrs['label'] ?? '""';
@@ -1782,7 +1847,8 @@ function lowerColorEdit(attrs, rawAttrs, body, ctx, loc) {
             directBind = true;
         }
     }
-    body.push({ kind: 'color_edit', label, stateVar, valueExpr, onChangeExpr, directBind, width, style, loc });
+    const item = lowerItemInteraction(attrs, rawAttrs, ctx);
+    body.push({ kind: 'color_edit', label, stateVar, valueExpr, onChangeExpr, directBind, width, style, item, loc });
 }
 function lowerColorEdit3(attrs, rawAttrs, body, ctx, loc) {
     const label = attrs['label'] ?? '""';
@@ -1812,7 +1878,8 @@ function lowerColorEdit3(attrs, rawAttrs, body, ctx, loc) {
             directBind = true;
         }
     }
-    body.push({ kind: 'color_edit3', label, stateVar, valueExpr, onChangeExpr, directBind, width, style, loc });
+    const item = lowerItemInteraction(attrs, rawAttrs, ctx);
+    body.push({ kind: 'color_edit3', label, stateVar, valueExpr, onChangeExpr, directBind, width, style, item, loc });
 }
 function lowerListBox(attrs, rawAttrs, body, ctx, loc) {
     const label = attrs['label'] ?? '""';
@@ -1820,7 +1887,8 @@ function lowerListBox(attrs, rawAttrs, body, ctx, loc) {
     const width = attrs['width'];
     const style = attrs['style'];
     const { stateVar, valueExpr, onChangeExpr, directBind } = lowerValueOnChange(rawAttrs, ctx);
-    body.push({ kind: 'list_box', label, stateVar, valueExpr, onChangeExpr, directBind, items, width, style, loc });
+    const item = lowerItemInteraction(attrs, rawAttrs, ctx);
+    body.push({ kind: 'list_box', label, stateVar, valueExpr, onChangeExpr, directBind, items, width, style, item, loc });
 }
 function lowerProgressBar(attrs, rawAttrs, body, ctx, loc) {
     const value = attrs['value'] ?? '0.0f';

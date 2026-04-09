@@ -233,6 +233,24 @@ A clickable item inside a Menu.
 <MenuItem label="Save" shortcut="Ctrl+S" onPress={() => setSaved(true)} />
 ```
 
+> **Note:** `MenuItem.shortcut` only renders the shortcut label. Use `<Shortcut keys="Ctrl+S" onPress={...} />` when you need actual keyboard handling.
+
+---
+
+#### Shortcut
+
+Global keyboard chord handler. Wraps ImGui's key-chord detection and runs its callback when the chord is pressed.
+
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| keys | string | Yes | Chord string such as `"Ctrl+S"` or `"Ctrl+Shift+P"` |
+| onPress | () => void | Yes | Callback when the chord is pressed |
+
+```tsx
+<Shortcut keys="Ctrl+S" onPress={props.onSave} />
+<Shortcut keys="Ctrl+F" onPress={() => setFocusSearch(true)} />
+```
+
 ---
 
 #### TabBar
@@ -567,6 +585,8 @@ Displays a tooltip. Typically shown when the previous item is hovered.
 ### Inputs
 
 > **Note:** Phase 14 adds an explicit top-level `width` prop to input-like widgets. This maps to ImGui's per-item width handling and works alongside `style`.
+>
+> **Phase 16 shared interaction props:** interactive widgets also accept `tooltip`, `autoFocus`, `scrollToHere`, `cursor`, `onHover`, `onActive`, `onFocused`, `onClicked`, and `onDoubleClicked`. These are evaluated against ImGui's "last item" model, so they apply to the widget that just rendered.
 
 #### Button
 
@@ -947,6 +967,29 @@ A label paired with a text value display.
 ---
 
 ### Overlay
+
+#### ContextMenu
+
+Context-menu popup container. By default it attaches to the previous item; set `target="window"` to attach to the current window instead.
+
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| id | string | No | Optional popup ID override |
+| target | `"item" \| "window"` | No | Context target. Defaults to `"item"` |
+
+```tsx
+<Button title="Actions" onPress={() => {}} />
+<ContextMenu id="item-actions">
+  <MenuItem label="Rename" onPress={renameItem} />
+  <MenuItem label="Delete" onPress={deleteItem} />
+</ContextMenu>
+
+<ContextMenu id="window-actions" target="window">
+  <MenuItem label="Reset Layout" onPress={resetLayout} />
+</ContextMenu>
+```
+
+---
 
 #### Modal
 
@@ -1423,6 +1466,17 @@ ImFont* mono = imx::find_font("jetbrains-mono");
 ```
 
 `load_font()` / `load_font_embedded()` return the loaded `ImFont*`. `set_default_font()` makes a previously loaded font the app-wide default, while `<Font>` in TSX is still the scoped per-subtree override.
+
+#### Clipboard
+
+IMX also exposes clipboard access through the native C++ API:
+
+```cpp
+std::string current = imx::clipboard_get();
+imx::clipboard_set("Copied from IMX");
+```
+
+Use this from your C++ host code or registered native widgets when you need direct access to the platform clipboard.
 
 #### FontOptions
 

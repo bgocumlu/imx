@@ -22,6 +22,7 @@ import type {
     IRDrawNgon, IRDrawNgonFilled, IRDrawTriangle,
     IRInputFloatN, IRInputIntN, IRDragFloatN, IRDragIntN, IRSliderFloatN, IRSliderIntN,
     IRSmallButton, IRArrowButton, IRInvisibleButton, IRImageButton, IRVSliderFloat, IRVSliderInt, IRSliderAngle,
+    IRItemInteraction, IRShortcut,
 } from './ir.js';
 
 interface LoweringContext {
@@ -388,6 +389,39 @@ function extractActionStatements(expr: ts.Expression, ctx: LoweringContext): str
     return [code + ';'];
 }
 
+function lowerItemInteraction(
+    attrs: Record<string, string>,
+    rawAttrs: Map<string, ts.Expression | null>,
+    ctx: LoweringContext
+): IRItemInteraction | undefined {
+    const item: IRItemInteraction = {};
+
+    if (attrs['autoFocus']) item.autoFocus = attrs['autoFocus'];
+    if (attrs['tooltip']) item.tooltip = attrs['tooltip'];
+    if (attrs['scrollToHere']) item.scrollToHere = attrs['scrollToHere'];
+    if (attrs['cursor']) item.cursor = attrs['cursor'];
+
+    const callbackAttrs: Array<[
+        'onHover' | 'onActive' | 'onFocused' | 'onClicked' | 'onDoubleClicked',
+        string
+    ]> = [
+        ['onHover', 'onHover'],
+        ['onActive', 'onActive'],
+        ['onFocused', 'onFocused'],
+        ['onClicked', 'onClicked'],
+        ['onDoubleClicked', 'onDoubleClicked'],
+    ];
+
+    for (const [field, attrName] of callbackAttrs) {
+        const expr = rawAttrs.get(attrName);
+        if (expr) {
+            item[field] = extractActionStatements(expr, ctx);
+        }
+    }
+
+    return Object.keys(item).length > 0 ? item : undefined;
+}
+
 /**
  * Lower a JSX expression (possibly wrapped in parenthesized expr) into IR nodes.
  */
@@ -506,6 +540,7 @@ function lowerJsxElement(node: ts.JsxElement, body: IRNode[], ctx: LoweringConte
                 leaf: attrs['leaf'],
                 bullet: attrs['bullet'],
                 noTreePushOnOpen: attrs['noTreePushOnOpen'],
+                item: lowerItemInteraction(attrs, rawAttrs, ctx),
                 loc: getLoc(node, ctx),
             } as IRBeginTreeNode);
             for (const child of node.children) {
@@ -525,6 +560,7 @@ function lowerJsxElement(node: ts.JsxElement, body: IRNode[], ctx: LoweringConte
                 forceOpen: attrs['forceOpen'],
                 closable: attrs['closable'],
                 onCloseBody: closeInfo?.bodyCode,
+                item: lowerItemInteraction(attrs, rawAttrs, ctx),
                 loc: getLoc(node, ctx),
             } as IRBeginCollapsingHeader);
             for (const child of node.children) {
@@ -652,6 +688,7 @@ function lowerJsxSelfClosing(node: ts.JsxSelfClosingElement, body: IRNode[], ctx
                 leaf: attrs['leaf'],
                 bullet: attrs['bullet'],
                 noTreePushOnOpen: attrs['noTreePushOnOpen'],
+                item: lowerItemInteraction(attrs, rawAttrs, ctx),
                 loc,
             } as IRBeginTreeNode);
             body.push({ kind: 'end_tree_node', noTreePushOnOpen: attrs['noTreePushOnOpen'] } as IREndTreeNode);
@@ -665,11 +702,15 @@ function lowerJsxSelfClosing(node: ts.JsxSelfClosingElement, body: IRNode[], ctx
                 forceOpen: attrs['forceOpen'],
                 closable: attrs['closable'],
                 onCloseBody: closeInfo?.bodyCode,
+                item: lowerItemInteraction(attrs, rawAttrs, ctx),
                 loc,
             } as IRBeginCollapsingHeader);
             body.push({ kind: 'end_collapsing_header', closable: attrs['closable'] } as IREndCollapsingHeader);
             break;
         }
+        case 'Shortcut':
+            lowerShortcut(attrs, rawAttrs, body, ctx, loc);
+            break;
         case 'Button':
             lowerButton(attrs, rawAttrs, body, ctx, loc);
             break;
@@ -927,7 +968,8 @@ function lowerButton(attrs: Record<string, string>, rawAttrs: Map<string, ts.Exp
     }
     const disabled = attrs['disabled'] === 'true' ? true : undefined;
     const style = attrs['style'];
-    body.push({ kind: 'button', title, action, disabled, style, loc });
+    const item = lowerItemInteraction(attrs, rawAttrs, ctx);
+    body.push({ kind: 'button', title, action, disabled, style, item, loc });
 }
 
 function lowerSmallButton(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext, loc: SourceLoc): void {
@@ -937,7 +979,8 @@ function lowerSmallButton(attrs: Record<string, string>, rawAttrs: Map<string, t
     if (onPressExpr) {
         action = extractActionStatements(onPressExpr, ctx);
     }
-    body.push({ kind: 'small_button', label, action, loc });
+    const item = lowerItemInteraction(attrs, rawAttrs, ctx);
+    body.push({ kind: 'small_button', label, action, item, loc });
 }
 
 function lowerArrowButton(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext, loc: SourceLoc): void {
@@ -948,7 +991,8 @@ function lowerArrowButton(attrs: Record<string, string>, rawAttrs: Map<string, t
     if (onPressExpr) {
         action = extractActionStatements(onPressExpr, ctx);
     }
-    body.push({ kind: 'arrow_button', id, direction, action, loc });
+    const item = lowerItemInteraction(attrs, rawAttrs, ctx);
+    body.push({ kind: 'arrow_button', id, direction, action, item, loc });
 }
 
 function lowerInvisibleButton(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext, loc: SourceLoc): void {
@@ -960,7 +1004,8 @@ function lowerInvisibleButton(attrs: Record<string, string>, rawAttrs: Map<strin
     if (onPressExpr) {
         action = extractActionStatements(onPressExpr, ctx);
     }
-    body.push({ kind: 'invisible_button', id, width, height, action, loc });
+    const item = lowerItemInteraction(attrs, rawAttrs, ctx);
+    body.push({ kind: 'invisible_button', id, width, height, action, item, loc });
 }
 
 function lowerImageButton(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext, loc: SourceLoc): void {
@@ -973,7 +1018,8 @@ function lowerImageButton(attrs: Record<string, string>, rawAttrs: Map<string, t
     if (onPressExpr) {
         action = extractActionStatements(onPressExpr, ctx);
     }
-    body.push({ kind: 'image_button', id, src, width, height, action, loc });
+    const item = lowerItemInteraction(attrs, rawAttrs, ctx);
+    body.push({ kind: 'image_button', id, src, width, height, action, item, loc });
 }
 
 function lowerTextInput(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext, loc: SourceLoc): void {
@@ -982,7 +1028,8 @@ function lowerTextInput(attrs: Record<string, string>, rawAttrs: Map<string, ts.
     const width = attrs['width'];
     const style = attrs['style'];
     const { stateVar, valueExpr, onChangeExpr, directBind } = lowerValueOnChange(rawAttrs, ctx);
-    body.push({ kind: 'text_input', label, bufferIndex, stateVar: stateVar, valueExpr, onChangeExpr, directBind, width, style, loc });
+    const item = lowerItemInteraction(attrs, rawAttrs, ctx);
+    body.push({ kind: 'text_input', label, bufferIndex, stateVar: stateVar, valueExpr, onChangeExpr, directBind, width, style, item, loc });
 }
 
 function lowerCheckbox(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext, loc: SourceLoc): void {
@@ -1025,7 +1072,8 @@ function lowerCheckbox(attrs: Record<string, string>, rawAttrs: Map<string, ts.E
     }
 
     const style = attrs['style'];
-    body.push({ kind: 'checkbox', label, stateVar, valueExpr: valueExprStr, onChangeExpr: onChangeExprStr, directBind, style, loc });
+    const item = lowerItemInteraction(attrs, rawAttrs, ctx);
+    body.push({ kind: 'checkbox', label, stateVar, valueExpr: valueExprStr, onChangeExpr: onChangeExprStr, directBind, style, item, loc });
 }
 
 function lowerMenuItem(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext, loc: SourceLoc): void {
@@ -1036,7 +1084,18 @@ function lowerMenuItem(attrs: Record<string, string>, rawAttrs: Map<string, ts.E
     if (onPressExpr) {
         action = extractActionStatements(onPressExpr, ctx);
     }
-    body.push({ kind: 'menu_item', label, shortcut, action, loc });
+    const item = lowerItemInteraction(attrs, rawAttrs, ctx);
+    body.push({ kind: 'menu_item', label, shortcut, action, item, loc });
+}
+
+function lowerShortcut(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext, loc: SourceLoc): void {
+    const keys = attrs['keys'] ?? '""';
+    const onPressExpr = rawAttrs.get('onPress');
+    let action: string[] = [];
+    if (onPressExpr) {
+        action = extractActionStatements(onPressExpr, ctx);
+    }
+    body.push({ kind: 'shortcut', keys, action, loc } as IRShortcut);
 }
 
 function lowerTextElement(node: ts.JsxElement, body: IRNode[], ctx: LoweringContext, loc?: SourceLoc): void {
@@ -1488,7 +1547,8 @@ function lowerSelectable(attrs: Record<string, string>, rawAttrs: Map<string, ts
         action = extractActionStatements(onSelectExpr, ctx);
     }
     const style = attrs['style'];
-    body.push({ kind: 'selectable', label, selected, action, style, loc });
+    const item = lowerItemInteraction(attrs, rawAttrs, ctx);
+    body.push({ kind: 'selectable', label, selected, action, style, item, loc });
 }
 
 function lowerRadio(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext, loc: SourceLoc): void {
@@ -1496,7 +1556,8 @@ function lowerRadio(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expr
     const index = attrs['index'] ?? '0';
     const style = attrs['style'];
     const { stateVar, valueExpr, onChangeExpr, directBind } = lowerValueOnChange(rawAttrs, ctx);
-    body.push({ kind: 'radio', label, stateVar, valueExpr, onChangeExpr, directBind, index, style, loc });
+    const item = lowerItemInteraction(attrs, rawAttrs, ctx);
+    body.push({ kind: 'radio', label, stateVar, valueExpr, onChangeExpr, directBind, index, style, item, loc });
 }
 
 function lowerInputTextMultiline(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext, loc: SourceLoc): void {
@@ -1505,7 +1566,8 @@ function lowerInputTextMultiline(attrs: Record<string, string>, rawAttrs: Map<st
     const width = attrs['width'];
     const style = attrs['style'];
     const { stateVar, valueExpr, onChangeExpr, directBind } = lowerValueOnChange(rawAttrs, ctx);
-    body.push({ kind: 'input_text_multiline', label, bufferIndex, stateVar, valueExpr, onChangeExpr, directBind, width, style, loc });
+    const item = lowerItemInteraction(attrs, rawAttrs, ctx);
+    body.push({ kind: 'input_text_multiline', label, bufferIndex, stateVar, valueExpr, onChangeExpr, directBind, width, style, item, loc });
 }
 
 function lowerColorPicker(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext, loc: SourceLoc): void {
@@ -1532,7 +1594,8 @@ function lowerColorPicker(attrs: Record<string, string>, rawAttrs: Map<string, t
             directBind = true;
         }
     }
-    body.push({ kind: 'color_picker', label, stateVar, valueExpr, onChangeExpr, directBind, style, loc });
+    const item = lowerItemInteraction(attrs, rawAttrs, ctx);
+    body.push({ kind: 'color_picker', label, stateVar, valueExpr, onChangeExpr, directBind, style, item, loc });
 }
 
 function lowerColorPicker3(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext, loc: SourceLoc): void {
@@ -1560,7 +1623,8 @@ function lowerColorPicker3(attrs: Record<string, string>, rawAttrs: Map<string, 
             directBind = true;
         }
     }
-    body.push({ kind: 'color_picker3', label, stateVar, valueExpr, onChangeExpr, directBind, width, style, loc });
+    const item = lowerItemInteraction(attrs, rawAttrs, ctx);
+    body.push({ kind: 'color_picker3', label, stateVar, valueExpr, onChangeExpr, directBind, width, style, item, loc });
 }
 
 function lowerPlotLines(attrs: Record<string, string>, body: IRNode[], ctx: LoweringContext, loc: SourceLoc): void {
@@ -1667,7 +1731,8 @@ function lowerVectorInput(
         }
     }
 
-    const base: any = { kind: family, label, count, stateVar, valueExpr, directBind, onChangeExpr, width, style, loc };
+    const item = lowerItemInteraction(attrs, rawAttrs, ctx);
+    const base: any = { kind: family, label, count, stateVar, valueExpr, directBind, onChangeExpr, width, style, item, loc };
 
     if (family === 'drag_float_n' || family === 'drag_int_n') {
         base.speed = attrs['speed'] ?? '1.0f';
@@ -1720,7 +1785,8 @@ function lowerSliderFloat(attrs: Record<string, string>, rawAttrs: Map<string, t
     const width = attrs['width'];
     const style = attrs['style'];
     const { stateVar, valueExpr, onChangeExpr, directBind } = lowerValueOnChange(rawAttrs, ctx);
-    body.push({ kind: 'slider_float', label, stateVar, valueExpr, onChangeExpr, directBind, min, max, width, style, loc });
+    const item = lowerItemInteraction(attrs, rawAttrs, ctx);
+    body.push({ kind: 'slider_float', label, stateVar, valueExpr, onChangeExpr, directBind, min, max, width, style, item, loc });
 }
 
 function lowerSliderInt(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext, loc: SourceLoc): void {
@@ -1730,7 +1796,8 @@ function lowerSliderInt(attrs: Record<string, string>, rawAttrs: Map<string, ts.
     const width = attrs['width'];
     const style = attrs['style'];
     const { stateVar, valueExpr, onChangeExpr, directBind } = lowerValueOnChange(rawAttrs, ctx);
-    body.push({ kind: 'slider_int', label, stateVar, valueExpr, onChangeExpr, directBind, min, max, width, style, loc });
+    const item = lowerItemInteraction(attrs, rawAttrs, ctx);
+    body.push({ kind: 'slider_int', label, stateVar, valueExpr, onChangeExpr, directBind, min, max, width, style, item, loc });
 }
 
 function lowerVSliderFloat(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext, loc: SourceLoc): void {
@@ -1741,7 +1808,8 @@ function lowerVSliderFloat(attrs: Record<string, string>, rawAttrs: Map<string, 
     const max = attrs['max'] ?? '1.0f';
     const style = attrs['style'];
     const { stateVar, valueExpr, onChangeExpr, directBind } = lowerValueOnChange(rawAttrs, ctx);
-    body.push({ kind: 'vslider_float', label, stateVar, valueExpr, onChangeExpr, directBind, width, height, min, max, style, loc });
+    const item = lowerItemInteraction(attrs, rawAttrs, ctx);
+    body.push({ kind: 'vslider_float', label, stateVar, valueExpr, onChangeExpr, directBind, width, height, min, max, style, item, loc });
 }
 
 function lowerVSliderInt(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext, loc: SourceLoc): void {
@@ -1752,7 +1820,8 @@ function lowerVSliderInt(attrs: Record<string, string>, rawAttrs: Map<string, ts
     const max = attrs['max'] ?? '100';
     const style = attrs['style'];
     const { stateVar, valueExpr, onChangeExpr, directBind } = lowerValueOnChange(rawAttrs, ctx);
-    body.push({ kind: 'vslider_int', label, stateVar, valueExpr, onChangeExpr, directBind, width, height, min, max, style, loc });
+    const item = lowerItemInteraction(attrs, rawAttrs, ctx);
+    body.push({ kind: 'vslider_int', label, stateVar, valueExpr, onChangeExpr, directBind, width, height, min, max, style, item, loc });
 }
 
 function lowerSliderAngle(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext, loc: SourceLoc): void {
@@ -1762,7 +1831,8 @@ function lowerSliderAngle(attrs: Record<string, string>, rawAttrs: Map<string, t
     const width = attrs['width'];
     const style = attrs['style'];
     const { stateVar, valueExpr, onChangeExpr, directBind } = lowerValueOnChange(rawAttrs, ctx);
-    body.push({ kind: 'slider_angle', label, stateVar, valueExpr, onChangeExpr, directBind, min, max, width, style, loc });
+    const item = lowerItemInteraction(attrs, rawAttrs, ctx);
+    body.push({ kind: 'slider_angle', label, stateVar, valueExpr, onChangeExpr, directBind, min, max, width, style, item, loc });
 }
 
 function lowerDragFloat(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext, loc: SourceLoc): void {
@@ -1771,7 +1841,8 @@ function lowerDragFloat(attrs: Record<string, string>, rawAttrs: Map<string, ts.
     const width = attrs['width'];
     const style = attrs['style'];
     const { stateVar, valueExpr, onChangeExpr, directBind } = lowerValueOnChange(rawAttrs, ctx);
-    body.push({ kind: 'drag_float', label, stateVar, valueExpr, onChangeExpr, directBind, speed, width, style, loc });
+    const item = lowerItemInteraction(attrs, rawAttrs, ctx);
+    body.push({ kind: 'drag_float', label, stateVar, valueExpr, onChangeExpr, directBind, speed, width, style, item, loc });
 }
 
 function lowerDragInt(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext, loc: SourceLoc): void {
@@ -1780,7 +1851,8 @@ function lowerDragInt(attrs: Record<string, string>, rawAttrs: Map<string, ts.Ex
     const width = attrs['width'];
     const style = attrs['style'];
     const { stateVar, valueExpr, onChangeExpr, directBind } = lowerValueOnChange(rawAttrs, ctx);
-    body.push({ kind: 'drag_int', label, stateVar, valueExpr, onChangeExpr, directBind, speed, width, style, loc });
+    const item = lowerItemInteraction(attrs, rawAttrs, ctx);
+    body.push({ kind: 'drag_int', label, stateVar, valueExpr, onChangeExpr, directBind, speed, width, style, item, loc });
 }
 
 function lowerCombo(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext, loc: SourceLoc): void {
@@ -1789,7 +1861,8 @@ function lowerCombo(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expr
     const width = attrs['width'];
     const style = attrs['style'];
     const { stateVar, valueExpr, onChangeExpr, directBind } = lowerValueOnChange(rawAttrs, ctx);
-    body.push({ kind: 'combo', label, stateVar, valueExpr, onChangeExpr, directBind, items, width, style, loc });
+    const item = lowerItemInteraction(attrs, rawAttrs, ctx);
+    body.push({ kind: 'combo', label, stateVar, valueExpr, onChangeExpr, directBind, items, width, style, item, loc });
 }
 
 function lowerInputInt(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext, loc: SourceLoc): void {
@@ -1797,7 +1870,8 @@ function lowerInputInt(attrs: Record<string, string>, rawAttrs: Map<string, ts.E
     const width = attrs['width'];
     const style = attrs['style'];
     const { stateVar, valueExpr, onChangeExpr, directBind } = lowerValueOnChange(rawAttrs, ctx);
-    body.push({ kind: 'input_int', label, stateVar, valueExpr, onChangeExpr, directBind, width, style, loc });
+    const item = lowerItemInteraction(attrs, rawAttrs, ctx);
+    body.push({ kind: 'input_int', label, stateVar, valueExpr, onChangeExpr, directBind, width, style, item, loc });
 }
 
 function lowerInputFloat(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext, loc: SourceLoc): void {
@@ -1805,7 +1879,8 @@ function lowerInputFloat(attrs: Record<string, string>, rawAttrs: Map<string, ts
     const width = attrs['width'];
     const style = attrs['style'];
     const { stateVar, valueExpr, onChangeExpr, directBind } = lowerValueOnChange(rawAttrs, ctx);
-    body.push({ kind: 'input_float', label, stateVar, valueExpr, onChangeExpr, directBind, width, style, loc });
+    const item = lowerItemInteraction(attrs, rawAttrs, ctx);
+    body.push({ kind: 'input_float', label, stateVar, valueExpr, onChangeExpr, directBind, width, style, item, loc });
 }
 
 function lowerColorEdit(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext, loc: SourceLoc): void {
@@ -1833,7 +1908,8 @@ function lowerColorEdit(attrs: Record<string, string>, rawAttrs: Map<string, ts.
             directBind = true;
         }
     }
-    body.push({ kind: 'color_edit', label, stateVar, valueExpr, onChangeExpr, directBind, width, style, loc });
+    const item = lowerItemInteraction(attrs, rawAttrs, ctx);
+    body.push({ kind: 'color_edit', label, stateVar, valueExpr, onChangeExpr, directBind, width, style, item, loc });
 }
 
 function lowerColorEdit3(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext, loc: SourceLoc): void {
@@ -1861,7 +1937,8 @@ function lowerColorEdit3(attrs: Record<string, string>, rawAttrs: Map<string, ts
             directBind = true;
         }
     }
-    body.push({ kind: 'color_edit3', label, stateVar, valueExpr, onChangeExpr, directBind, width, style, loc });
+    const item = lowerItemInteraction(attrs, rawAttrs, ctx);
+    body.push({ kind: 'color_edit3', label, stateVar, valueExpr, onChangeExpr, directBind, width, style, item, loc });
 }
 
 function lowerListBox(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext, loc: SourceLoc): void {
@@ -1870,7 +1947,8 @@ function lowerListBox(attrs: Record<string, string>, rawAttrs: Map<string, ts.Ex
     const width = attrs['width'];
     const style = attrs['style'];
     const { stateVar, valueExpr, onChangeExpr, directBind } = lowerValueOnChange(rawAttrs, ctx);
-    body.push({ kind: 'list_box', label, stateVar, valueExpr, onChangeExpr, directBind, items, width, style, loc });
+    const item = lowerItemInteraction(attrs, rawAttrs, ctx);
+    body.push({ kind: 'list_box', label, stateVar, valueExpr, onChangeExpr, directBind, items, width, style, item, loc });
 }
 
 function lowerProgressBar(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext, loc: SourceLoc): void {

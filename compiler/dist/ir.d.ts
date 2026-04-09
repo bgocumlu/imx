@@ -7,6 +7,17 @@ export interface IRExpr {
     code: string;
     type: IRType;
 }
+export interface IRItemInteraction {
+    autoFocus?: string;
+    tooltip?: string;
+    scrollToHere?: string;
+    cursor?: string;
+    onHover?: string[];
+    onActive?: string[];
+    onFocused?: string[];
+    onClicked?: string[];
+    onDoubleClicked?: string[];
+}
 export interface IRComponent {
     name: string;
     stateSlots: IRStateSlot[];
@@ -26,17 +37,17 @@ export interface IRPropParam {
     name: string;
     type: string | 'callback';
 }
-export type IRNode = IRBeginContainer | IREndContainer | IRText | IRButton | IRTextInput | IRCheckbox | IRSeparator | IRSpacing | IRDummy | IRSameLine | IRNewLine | IRCursor | IRBeginPopup | IREndPopup | IROpenPopup | IRConditional | IRListMap | IRCustomComponent | IRMenuItem | IRBeginTable | IREndTable | IRBeginTableRow | IREndTableRow | IRBeginTableCell | IREndTableCell | IRBeginTreeNode | IREndTreeNode | IRBeginCollapsingHeader | IREndCollapsingHeader | IRSliderFloat | IRSliderInt | IRDragFloat | IRDragInt | IRCombo | IRInputInt | IRInputFloat | IRColorEdit | IRListBox | IRProgressBar | IRTooltip | IRDockLayout | IRNativeWidget | IRBulletText | IRLabelText | IRSelectable | IRRadio | IRInputTextMultiline | IRColorPicker | IRColorEdit3 | IRColorPicker3 | IRPlotLines | IRPlotHistogram | IRImage | IRDrawLine | IRDrawRect | IRDrawCircle | IRDrawText | IRDrawBezierCubic | IRDrawBezierQuadratic | IRDrawPolyline | IRDrawConvexPolyFilled | IRDrawNgon | IRDrawNgonFilled | IRDrawTriangle | IRInputFloatN | IRInputIntN | IRDragFloatN | IRDragIntN | IRSliderFloatN | IRSliderIntN | IRSmallButton | IRArrowButton | IRInvisibleButton | IRImageButton | IRVSliderFloat | IRVSliderInt | IRSliderAngle;
+export type IRNode = IRBeginContainer | IREndContainer | IRText | IRButton | IRTextInput | IRCheckbox | IRSeparator | IRSpacing | IRDummy | IRSameLine | IRNewLine | IRCursor | IRBeginPopup | IREndPopup | IROpenPopup | IRConditional | IRListMap | IRCustomComponent | IRMenuItem | IRBeginTable | IREndTable | IRBeginTableRow | IREndTableRow | IRBeginTableCell | IREndTableCell | IRBeginTreeNode | IREndTreeNode | IRBeginCollapsingHeader | IREndCollapsingHeader | IRSliderFloat | IRSliderInt | IRDragFloat | IRDragInt | IRCombo | IRInputInt | IRInputFloat | IRColorEdit | IRListBox | IRProgressBar | IRTooltip | IRShortcut | IRDockLayout | IRNativeWidget | IRBulletText | IRLabelText | IRSelectable | IRRadio | IRInputTextMultiline | IRColorPicker | IRColorEdit3 | IRColorPicker3 | IRPlotLines | IRPlotHistogram | IRImage | IRDrawLine | IRDrawRect | IRDrawCircle | IRDrawText | IRDrawBezierCubic | IRDrawBezierQuadratic | IRDrawPolyline | IRDrawConvexPolyFilled | IRDrawNgon | IRDrawNgonFilled | IRDrawTriangle | IRInputFloatN | IRInputIntN | IRDragFloatN | IRDragIntN | IRSliderFloatN | IRSliderIntN | IRSmallButton | IRArrowButton | IRInvisibleButton | IRImageButton | IRVSliderFloat | IRVSliderInt | IRSliderAngle;
 export interface IRBeginContainer {
     kind: 'begin_container';
-    tag: 'Window' | 'View' | 'Indent' | 'TextWrap' | 'Row' | 'Column' | 'DockSpace' | 'MainMenuBar' | 'MenuBar' | 'Menu' | 'TabBar' | 'TabItem' | 'Theme' | 'DockLayout' | 'DockSplit' | 'DockPanel' | 'Modal' | 'Group' | 'ID' | 'StyleColor' | 'StyleVar' | 'DragDropSource' | 'DragDropTarget' | 'Canvas' | 'Disabled' | 'Child' | 'Font';
+    tag: 'Window' | 'View' | 'Indent' | 'TextWrap' | 'Row' | 'Column' | 'DockSpace' | 'MainMenuBar' | 'MenuBar' | 'Menu' | 'TabBar' | 'TabItem' | 'Theme' | 'DockLayout' | 'DockSplit' | 'DockPanel' | 'Modal' | 'Group' | 'ID' | 'StyleColor' | 'StyleVar' | 'DragDropSource' | 'DragDropTarget' | 'Canvas' | 'Disabled' | 'Child' | 'Font' | 'ContextMenu';
     props: Record<string, string>;
     style?: string;
     loc?: SourceLoc;
 }
 export interface IREndContainer {
     kind: 'end_container';
-    tag: 'Window' | 'View' | 'Indent' | 'TextWrap' | 'Row' | 'Column' | 'DockSpace' | 'MainMenuBar' | 'MenuBar' | 'Menu' | 'TabBar' | 'TabItem' | 'Theme' | 'DockLayout' | 'DockSplit' | 'DockPanel' | 'Modal' | 'Group' | 'ID' | 'StyleColor' | 'StyleVar' | 'DragDropSource' | 'DragDropTarget' | 'Canvas' | 'Disabled' | 'Child' | 'Font';
+    tag: 'Window' | 'View' | 'Indent' | 'TextWrap' | 'Row' | 'Column' | 'DockSpace' | 'MainMenuBar' | 'MenuBar' | 'Menu' | 'TabBar' | 'TabItem' | 'Theme' | 'DockLayout' | 'DockSplit' | 'DockPanel' | 'Modal' | 'Group' | 'ID' | 'StyleColor' | 'StyleVar' | 'DragDropSource' | 'DragDropTarget' | 'Canvas' | 'Disabled' | 'Child' | 'Font' | 'ContextMenu';
 }
 export interface IRTableColumn {
     label: string;
@@ -93,6 +104,7 @@ export interface IRBeginTreeNode {
     leaf?: string;
     bullet?: string;
     noTreePushOnOpen?: string;
+    item?: IRItemInteraction;
     loc?: SourceLoc;
 }
 export interface IREndTreeNode {
@@ -106,6 +118,7 @@ export interface IRBeginCollapsingHeader {
     forceOpen?: string;
     closable?: string;
     onCloseBody?: string;
+    item?: IRItemInteraction;
     loc?: SourceLoc;
 }
 export interface IREndCollapsingHeader {
@@ -124,6 +137,7 @@ export interface IRButton {
     action: string[];
     disabled?: boolean;
     style?: string;
+    item?: IRItemInteraction;
     loc?: SourceLoc;
 }
 export interface IRTextInput {
@@ -136,6 +150,7 @@ export interface IRTextInput {
     directBind?: boolean;
     width?: string;
     style?: string;
+    item?: IRItemInteraction;
     loc?: SourceLoc;
 }
 export interface IRCheckbox {
@@ -146,6 +161,7 @@ export interface IRCheckbox {
     onChangeExpr?: string;
     directBind?: boolean;
     style?: string;
+    item?: IRItemInteraction;
     loc?: SourceLoc;
 }
 export interface IRSeparator {
@@ -226,6 +242,7 @@ export interface IRMenuItem {
     label: string;
     shortcut?: string;
     action: string[];
+    item?: IRItemInteraction;
     loc?: SourceLoc;
 }
 export interface IRSliderFloat {
@@ -239,6 +256,7 @@ export interface IRSliderFloat {
     max: string;
     width?: string;
     style?: string;
+    item?: IRItemInteraction;
     loc?: SourceLoc;
 }
 export interface IRSliderInt {
@@ -252,6 +270,7 @@ export interface IRSliderInt {
     max: string;
     width?: string;
     style?: string;
+    item?: IRItemInteraction;
     loc?: SourceLoc;
 }
 export interface IRDragFloat {
@@ -264,6 +283,7 @@ export interface IRDragFloat {
     speed: string;
     width?: string;
     style?: string;
+    item?: IRItemInteraction;
     loc?: SourceLoc;
 }
 export interface IRDragInt {
@@ -276,6 +296,7 @@ export interface IRDragInt {
     speed: string;
     width?: string;
     style?: string;
+    item?: IRItemInteraction;
     loc?: SourceLoc;
 }
 export interface IRCombo {
@@ -288,6 +309,7 @@ export interface IRCombo {
     items: string;
     width?: string;
     style?: string;
+    item?: IRItemInteraction;
     loc?: SourceLoc;
 }
 export interface IRInputInt {
@@ -299,6 +321,7 @@ export interface IRInputInt {
     directBind?: boolean;
     width?: string;
     style?: string;
+    item?: IRItemInteraction;
     loc?: SourceLoc;
 }
 export interface IRInputFloat {
@@ -310,6 +333,7 @@ export interface IRInputFloat {
     directBind?: boolean;
     width?: string;
     style?: string;
+    item?: IRItemInteraction;
     loc?: SourceLoc;
 }
 export interface IRColorEdit {
@@ -321,6 +345,7 @@ export interface IRColorEdit {
     directBind?: boolean;
     width?: string;
     style?: string;
+    item?: IRItemInteraction;
     loc?: SourceLoc;
 }
 export interface IRListBox {
@@ -333,6 +358,7 @@ export interface IRListBox {
     items: string;
     width?: string;
     style?: string;
+    item?: IRItemInteraction;
     loc?: SourceLoc;
 }
 export interface IRProgressBar {
@@ -345,6 +371,12 @@ export interface IRProgressBar {
 export interface IRTooltip {
     kind: 'tooltip';
     text: string;
+    loc?: SourceLoc;
+}
+export interface IRShortcut {
+    kind: 'shortcut';
+    keys: string;
+    action: string[];
     loc?: SourceLoc;
 }
 export interface IRNativeWidget {
@@ -373,6 +405,7 @@ export interface IRSelectable {
     selected: string;
     action: string[];
     style?: string;
+    item?: IRItemInteraction;
     loc?: SourceLoc;
 }
 export interface IRRadio {
@@ -384,6 +417,7 @@ export interface IRRadio {
     directBind?: boolean;
     index: string;
     style?: string;
+    item?: IRItemInteraction;
     loc?: SourceLoc;
 }
 export interface IRInputTextMultiline {
@@ -396,6 +430,7 @@ export interface IRInputTextMultiline {
     directBind?: boolean;
     width?: string;
     style?: string;
+    item?: IRItemInteraction;
     loc?: SourceLoc;
 }
 export interface IRColorPicker {
@@ -406,6 +441,7 @@ export interface IRColorPicker {
     onChangeExpr?: string;
     directBind?: boolean;
     style?: string;
+    item?: IRItemInteraction;
     loc?: SourceLoc;
 }
 export interface IRColorEdit3 {
@@ -417,6 +453,7 @@ export interface IRColorEdit3 {
     directBind?: boolean;
     width?: string;
     style?: string;
+    item?: IRItemInteraction;
     loc?: SourceLoc;
 }
 export interface IRColorPicker3 {
@@ -428,6 +465,7 @@ export interface IRColorPicker3 {
     directBind?: boolean;
     width?: string;
     style?: string;
+    item?: IRItemInteraction;
     loc?: SourceLoc;
 }
 export interface IRPlotLines {
@@ -561,6 +599,7 @@ export interface IRInputFloatN {
     onChangeExpr?: string;
     width?: string;
     style?: string;
+    item?: IRItemInteraction;
     loc?: SourceLoc;
 }
 export interface IRInputIntN {
@@ -573,6 +612,7 @@ export interface IRInputIntN {
     onChangeExpr?: string;
     width?: string;
     style?: string;
+    item?: IRItemInteraction;
     loc?: SourceLoc;
 }
 export interface IRDragFloatN {
@@ -586,6 +626,7 @@ export interface IRDragFloatN {
     speed: string;
     width?: string;
     style?: string;
+    item?: IRItemInteraction;
     loc?: SourceLoc;
 }
 export interface IRDragIntN {
@@ -599,6 +640,7 @@ export interface IRDragIntN {
     speed: string;
     width?: string;
     style?: string;
+    item?: IRItemInteraction;
     loc?: SourceLoc;
 }
 export interface IRSliderFloatN {
@@ -613,6 +655,7 @@ export interface IRSliderFloatN {
     max: string;
     width?: string;
     style?: string;
+    item?: IRItemInteraction;
     loc?: SourceLoc;
 }
 export interface IRSliderIntN {
@@ -627,6 +670,7 @@ export interface IRSliderIntN {
     max: string;
     width?: string;
     style?: string;
+    item?: IRItemInteraction;
     loc?: SourceLoc;
 }
 export interface IRVSliderFloat {
@@ -641,6 +685,7 @@ export interface IRVSliderFloat {
     min: string;
     max: string;
     style?: string;
+    item?: IRItemInteraction;
     loc?: SourceLoc;
 }
 export interface IRVSliderInt {
@@ -655,6 +700,7 @@ export interface IRVSliderInt {
     min: string;
     max: string;
     style?: string;
+    item?: IRItemInteraction;
     loc?: SourceLoc;
 }
 export interface IRSliderAngle {
@@ -668,12 +714,14 @@ export interface IRSliderAngle {
     max: string;
     width?: string;
     style?: string;
+    item?: IRItemInteraction;
     loc?: SourceLoc;
 }
 export interface IRSmallButton {
     kind: 'small_button';
     label: string;
     action: string[];
+    item?: IRItemInteraction;
     loc?: SourceLoc;
 }
 export interface IRArrowButton {
@@ -681,6 +729,7 @@ export interface IRArrowButton {
     id: string;
     direction: string;
     action: string[];
+    item?: IRItemInteraction;
     loc?: SourceLoc;
 }
 export interface IRInvisibleButton {
@@ -689,6 +738,7 @@ export interface IRInvisibleButton {
     width: string;
     height: string;
     action: string[];
+    item?: IRItemInteraction;
     loc?: SourceLoc;
 }
 export interface IRImageButton {
@@ -698,6 +748,7 @@ export interface IRImageButton {
     width?: string;
     height?: string;
     action: string[];
+    item?: IRItemInteraction;
     loc?: SourceLoc;
 }
 export interface IRDockLayout {

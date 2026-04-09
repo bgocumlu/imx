@@ -333,4 +333,49 @@ function App() {
         expect(ir.body[9]).toMatchObject({ kind: 'begin_tree_node', leaf: 'true', bullet: 'true', noTreePushOnOpen: 'true' });
         expect(ir.body[12]).toMatchObject({ kind: 'begin_collapsing_header', closable: 'true', forceOpen: 'true' });
     });
+
+    it('lowers Phase 16 item interactions, context menus, and shortcuts', () => {
+        const ir = lower(`
+function App() {
+  return (
+    <Window title="Phase16">
+      <Button
+        title="Target"
+        onPress={() => {}}
+        tooltip="Hover me"
+        autoFocus
+        scrollToHere
+        cursor="hand"
+        onHover={() => {}}
+        onClicked={() => {}}
+        onDoubleClicked={() => {}}
+      />
+      <ContextMenu id="actions" target="window">
+        <MenuItem label="Inspect" />
+      </ContextMenu>
+      <Shortcut keys="Ctrl+S" onPress={() => {}} />
+    </Window>
+  );
+}
+        `);
+
+        const button = ir.body[1];
+        expect(button.kind).toBe('button');
+        if (button.kind === 'button') {
+            expect(button.item).toMatchObject({
+                tooltip: '"Hover me"',
+                autoFocus: 'true',
+                scrollToHere: 'true',
+                cursor: '"hand"',
+            });
+            expect(button.item?.onHover).toBeDefined();
+            expect(button.item?.onClicked).toBeDefined();
+            expect(button.item?.onDoubleClicked).toBeDefined();
+        }
+
+        expect(ir.body[2]).toMatchObject({ kind: 'begin_container', tag: 'ContextMenu', props: { id: '"actions"', target: '"window"' } });
+        expect(ir.body[3]).toMatchObject({ kind: 'menu_item', label: '"Inspect"' });
+        expect(ir.body[4]).toMatchObject({ kind: 'end_container', tag: 'ContextMenu' });
+        expect(ir.body[5]).toMatchObject({ kind: 'shortcut', keys: '"Ctrl+S"' });
+    });
 });

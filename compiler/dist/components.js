@@ -1,3 +1,17 @@
+const ITEM_INTERACTION_PROPS = {
+    onHover: { type: 'callback', required: false },
+    onActive: { type: 'callback', required: false },
+    onFocused: { type: 'callback', required: false },
+    onClicked: { type: 'callback', required: false },
+    onDoubleClicked: { type: 'callback', required: false },
+    tooltip: { type: 'string', required: false },
+    autoFocus: { type: 'boolean', required: false },
+    scrollToHere: { type: 'boolean', required: false },
+    cursor: { type: 'string', required: false },
+};
+function withItemInteractionProps(props) {
+    return { ...props, ...ITEM_INTERACTION_PROPS };
+}
 export const HOST_COMPONENTS = {
     Window: {
         props: {
@@ -39,32 +53,32 @@ export const HOST_COMPONENTS = {
         hasChildren: true, isContainer: false,
     },
     Button: {
-        props: {
+        props: withItemInteractionProps({
             title: { type: 'string', required: true },
             onPress: { type: 'callback', required: true },
             disabled: { type: 'boolean', required: false },
             style: { type: 'style', required: false },
-        },
+        }),
         hasChildren: false, isContainer: false,
     },
     TextInput: {
-        props: {
+        props: withItemInteractionProps({
             value: { type: 'string', required: true },
             onChange: { type: 'callback', required: false },
             label: { type: 'string', required: false },
             placeholder: { type: 'string', required: false },
             width: { type: 'number', required: false },
             style: { type: 'style', required: false },
-        },
+        }),
         hasChildren: false, isContainer: false,
     },
     Checkbox: {
-        props: {
+        props: withItemInteractionProps({
             value: { type: 'boolean', required: true },
             onChange: { type: 'callback', required: false },
             label: { type: 'string', required: false },
             style: { type: 'style', required: false },
-        },
+        }),
         hasChildren: false, isContainer: false,
     },
     Separator: {
@@ -92,11 +106,11 @@ export const HOST_COMPONENTS = {
         hasChildren: true, isContainer: true,
     },
     MenuItem: {
-        props: {
+        props: withItemInteractionProps({
             label: { type: 'string', required: true },
             onPress: { type: 'callback', required: false },
             shortcut: { type: 'string', required: false },
-        },
+        }),
         hasChildren: false, isContainer: false,
     },
     Table: {
@@ -136,7 +150,7 @@ export const HOST_COMPONENTS = {
         hasChildren: true, isContainer: true,
     },
     TreeNode: {
-        props: {
+        props: withItemInteractionProps({
             label: { type: 'string', required: true },
             defaultOpen: { type: 'boolean', required: false },
             forceOpen: { type: 'boolean', required: false },
@@ -145,21 +159,21 @@ export const HOST_COMPONENTS = {
             leaf: { type: 'boolean', required: false },
             bullet: { type: 'boolean', required: false },
             noTreePushOnOpen: { type: 'boolean', required: false },
-        },
+        }),
         hasChildren: true, isContainer: true,
     },
     CollapsingHeader: {
-        props: {
+        props: withItemInteractionProps({
             label: { type: 'string', required: true },
             defaultOpen: { type: 'boolean', required: false },
             forceOpen: { type: 'boolean', required: false },
             closable: { type: 'boolean', required: false },
             onClose: { type: 'callback', required: false },
-        },
+        }),
         hasChildren: true, isContainer: true,
     },
     SliderFloat: {
-        props: {
+        props: withItemInteractionProps({
             label: { type: 'string', required: true },
             value: { type: 'number', required: true },
             onChange: { type: 'callback', required: false },
@@ -167,11 +181,11 @@ export const HOST_COMPONENTS = {
             max: { type: 'number', required: true },
             width: { type: 'number', required: false },
             style: { type: 'style', required: false },
-        },
+        }),
         hasChildren: false, isContainer: false,
     },
     SliderInt: {
-        props: {
+        props: withItemInteractionProps({
             label: { type: 'string', required: true },
             value: { type: 'number', required: true },
             onChange: { type: 'callback', required: false },
@@ -179,81 +193,81 @@ export const HOST_COMPONENTS = {
             max: { type: 'number', required: true },
             width: { type: 'number', required: false },
             style: { type: 'style', required: false },
-        },
+        }),
         hasChildren: false, isContainer: false,
     },
     DragFloat: {
-        props: {
+        props: withItemInteractionProps({
             label: { type: 'string', required: true },
             value: { type: 'number', required: true },
             onChange: { type: 'callback', required: false },
             speed: { type: 'number', required: false },
             width: { type: 'number', required: false },
             style: { type: 'style', required: false },
-        },
+        }),
         hasChildren: false, isContainer: false,
     },
     DragInt: {
-        props: {
+        props: withItemInteractionProps({
             label: { type: 'string', required: true },
             value: { type: 'number', required: true },
             onChange: { type: 'callback', required: false },
             speed: { type: 'number', required: false },
             width: { type: 'number', required: false },
             style: { type: 'style', required: false },
-        },
+        }),
         hasChildren: false, isContainer: false,
     },
     Combo: {
-        props: {
+        props: withItemInteractionProps({
             label: { type: 'string', required: true },
             value: { type: 'number', required: true },
             onChange: { type: 'callback', required: false },
             items: { type: 'string', required: true },
             width: { type: 'number', required: false },
             style: { type: 'style', required: false },
-        },
+        }),
         hasChildren: false, isContainer: false,
     },
     InputInt: {
-        props: {
+        props: withItemInteractionProps({
             label: { type: 'string', required: true },
             value: { type: 'number', required: true },
             onChange: { type: 'callback', required: false },
             width: { type: 'number', required: false },
             style: { type: 'style', required: false },
-        },
+        }),
         hasChildren: false, isContainer: false,
     },
     InputFloat: {
-        props: {
+        props: withItemInteractionProps({
             label: { type: 'string', required: true },
             value: { type: 'number', required: true },
             onChange: { type: 'callback', required: false },
             width: { type: 'number', required: false },
             style: { type: 'style', required: false },
-        },
+        }),
         hasChildren: false, isContainer: false,
     },
     ColorEdit: {
-        props: {
+        props: withItemInteractionProps({
             label: { type: 'string', required: true },
             value: { type: 'string', required: true },
             onChange: { type: 'callback', required: false },
             width: { type: 'number', required: false },
             style: { type: 'style', required: false },
-        },
+        }),
         hasChildren: false, isContainer: false,
     },
     ListBox: {
-        props: {
+        props: withItemInteractionProps({
             label: { type: 'string', required: true },
             value: { type: 'number', required: true },
             onChange: { type: 'callback', required: false },
             items: { type: 'string', required: true },
             width: { type: 'number', required: false },
             style: { type: 'style', required: false },
-        },
+        }),
         hasChildren: false, isContainer: false,
     },
     ProgressBar: {
@@ -311,59 +325,59 @@ export const HOST_COMPONENTS = {
         hasChildren: false, isContainer: false,
     },
     Selectable: {
-        props: {
+        props: withItemInteractionProps({
             label: { type: 'string', required: true },
             selected: { type: 'boolean', required: false },
             onSelect: { type: 'callback', required: false },
             style: { type: 'style', required: false },
-        },
+        }),
         hasChildren: false, isContainer: false,
     },
     Radio: {
-        props: {
+        props: withItemInteractionProps({
             label: { type: 'string', required: true },
             value: { type: 'number', required: true },
             index: { type: 'number', required: true },
             onChange: { type: 'callback', required: false },
             style: { type: 'style', required: false },
-        },
+        }),
         hasChildren: false, isContainer: false,
     },
     InputTextMultiline: {
-        props: {
+        props: withItemInteractionProps({
             label: { type: 'string', required: true },
             value: { type: 'string', required: true },
             width: { type: 'number', required: false },
             style: { type: 'style', required: false },
-        },
+        }),
         hasChildren: false, isContainer: false,
     },
     ColorEdit3: {
-        props: {
+        props: withItemInteractionProps({
             label: { type: 'string', required: true },
             value: { type: 'string', required: true },
             onChange: { type: 'callback', required: false },
             width: { type: 'number', required: false },
             style: { type: 'style', required: false },
-        },
+        }),
         hasChildren: false, isContainer: false,
     },
     ColorPicker: {
-        props: {
+        props: withItemInteractionProps({
             label: { type: 'string', required: true },
             value: { type: 'string', required: true },
             style: { type: 'style', required: false },
-        },
+        }),
         hasChildren: false, isContainer: false,
     },
     ColorPicker3: {
-        props: {
+        props: withItemInteractionProps({
             label: { type: 'string', required: true },
             value: { type: 'string', required: true },
             onChange: { type: 'callback', required: false },
             width: { type: 'number', required: false },
             style: { type: 'style', required: false },
-        },
+        }),
         hasChildren: false, isContainer: false,
     },
     PlotLines: {
@@ -633,167 +647,167 @@ export const HOST_COMPONENTS = {
         hasChildren: true, isContainer: true,
     },
     InputFloat2: {
-        props: {
+        props: withItemInteractionProps({
             label: { type: 'string', required: true },
             value: { type: 'string', required: true },
             onChange: { type: 'callback', required: false },
             width: { type: 'number', required: false },
             style: { type: 'style', required: false },
-        },
+        }),
         hasChildren: false, isContainer: false,
     },
     InputFloat3: {
-        props: {
+        props: withItemInteractionProps({
             label: { type: 'string', required: true },
             value: { type: 'string', required: true },
             onChange: { type: 'callback', required: false },
             width: { type: 'number', required: false },
             style: { type: 'style', required: false },
-        },
+        }),
         hasChildren: false, isContainer: false,
     },
     InputFloat4: {
-        props: {
+        props: withItemInteractionProps({
             label: { type: 'string', required: true },
             value: { type: 'string', required: true },
             onChange: { type: 'callback', required: false },
             width: { type: 'number', required: false },
             style: { type: 'style', required: false },
-        },
+        }),
         hasChildren: false, isContainer: false,
     },
     InputInt2: {
-        props: {
+        props: withItemInteractionProps({
             label: { type: 'string', required: true },
             value: { type: 'string', required: true },
             onChange: { type: 'callback', required: false },
             width: { type: 'number', required: false },
             style: { type: 'style', required: false },
-        },
+        }),
         hasChildren: false, isContainer: false,
     },
     InputInt3: {
-        props: {
+        props: withItemInteractionProps({
             label: { type: 'string', required: true },
             value: { type: 'string', required: true },
             onChange: { type: 'callback', required: false },
             width: { type: 'number', required: false },
             style: { type: 'style', required: false },
-        },
+        }),
         hasChildren: false, isContainer: false,
     },
     InputInt4: {
-        props: {
+        props: withItemInteractionProps({
             label: { type: 'string', required: true },
             value: { type: 'string', required: true },
             onChange: { type: 'callback', required: false },
             width: { type: 'number', required: false },
             style: { type: 'style', required: false },
-        },
+        }),
         hasChildren: false, isContainer: false,
     },
     DragFloat2: {
-        props: {
+        props: withItemInteractionProps({
             label: { type: 'string', required: true },
             value: { type: 'string', required: true },
             onChange: { type: 'callback', required: false },
             speed: { type: 'number', required: false },
             width: { type: 'number', required: false },
             style: { type: 'style', required: false },
-        },
+        }),
         hasChildren: false, isContainer: false,
     },
     DragFloat3: {
-        props: {
+        props: withItemInteractionProps({
             label: { type: 'string', required: true },
             value: { type: 'string', required: true },
             onChange: { type: 'callback', required: false },
             speed: { type: 'number', required: false },
             width: { type: 'number', required: false },
             style: { type: 'style', required: false },
-        },
+        }),
         hasChildren: false, isContainer: false,
     },
     DragFloat4: {
-        props: {
+        props: withItemInteractionProps({
             label: { type: 'string', required: true },
             value: { type: 'string', required: true },
             onChange: { type: 'callback', required: false },
             speed: { type: 'number', required: false },
             width: { type: 'number', required: false },
             style: { type: 'style', required: false },
-        },
+        }),
         hasChildren: false, isContainer: false,
     },
     DragInt2: {
-        props: {
+        props: withItemInteractionProps({
             label: { type: 'string', required: true },
             value: { type: 'string', required: true },
             onChange: { type: 'callback', required: false },
             speed: { type: 'number', required: false },
             width: { type: 'number', required: false },
             style: { type: 'style', required: false },
-        },
+        }),
         hasChildren: false, isContainer: false,
     },
     DragInt3: {
-        props: {
+        props: withItemInteractionProps({
             label: { type: 'string', required: true },
             value: { type: 'string', required: true },
             onChange: { type: 'callback', required: false },
             speed: { type: 'number', required: false },
             width: { type: 'number', required: false },
             style: { type: 'style', required: false },
-        },
+        }),
         hasChildren: false, isContainer: false,
     },
     DragInt4: {
-        props: {
+        props: withItemInteractionProps({
             label: { type: 'string', required: true },
             value: { type: 'string', required: true },
             onChange: { type: 'callback', required: false },
             speed: { type: 'number', required: false },
             width: { type: 'number', required: false },
             style: { type: 'style', required: false },
-        },
+        }),
         hasChildren: false, isContainer: false,
     },
     SmallButton: {
-        props: {
+        props: withItemInteractionProps({
             label: { type: 'string', required: true },
             onPress: { type: 'callback', required: true },
-        },
+        }),
         hasChildren: false, isContainer: false,
     },
     ArrowButton: {
-        props: {
+        props: withItemInteractionProps({
             id: { type: 'string', required: true },
             direction: { type: 'string', required: true },
             onPress: { type: 'callback', required: true },
-        },
+        }),
         hasChildren: false, isContainer: false,
     },
     InvisibleButton: {
-        props: {
+        props: withItemInteractionProps({
             id: { type: 'string', required: true },
             width: { type: 'number', required: true },
             height: { type: 'number', required: true },
             onPress: { type: 'callback', required: true },
-        },
+        }),
         hasChildren: false, isContainer: false,
     },
     ImageButton: {
-        props: {
+        props: withItemInteractionProps({
             id: { type: 'string', required: true },
             src: { type: 'string', required: true },
             width: { type: 'number', required: false },
             height: { type: 'number', required: false },
             onPress: { type: 'callback', required: true },
-        },
+        }),
         hasChildren: false, isContainer: false,
     },
     SliderFloat2: {
-        props: {
+        props: withItemInteractionProps({
             label: { type: 'string', required: true },
             value: { type: 'string', required: true },
             onChange: { type: 'callback', required: false },
@@ -801,11 +815,11 @@ export const HOST_COMPONENTS = {
             max: { type: 'number', required: true },
             width: { type: 'number', required: false },
             style: { type: 'style', required: false },
-        },
+        }),
         hasChildren: false, isContainer: false,
     },
     SliderFloat3: {
-        props: {
+        props: withItemInteractionProps({
             label: { type: 'string', required: true },
             value: { type: 'string', required: true },
             onChange: { type: 'callback', required: false },
@@ -813,11 +827,11 @@ export const HOST_COMPONENTS = {
             max: { type: 'number', required: true },
             width: { type: 'number', required: false },
             style: { type: 'style', required: false },
-        },
+        }),
         hasChildren: false, isContainer: false,
     },
     SliderFloat4: {
-        props: {
+        props: withItemInteractionProps({
             label: { type: 'string', required: true },
             value: { type: 'string', required: true },
             onChange: { type: 'callback', required: false },
@@ -825,11 +839,11 @@ export const HOST_COMPONENTS = {
             max: { type: 'number', required: true },
             width: { type: 'number', required: false },
             style: { type: 'style', required: false },
-        },
+        }),
         hasChildren: false, isContainer: false,
     },
     SliderInt2: {
-        props: {
+        props: withItemInteractionProps({
             label: { type: 'string', required: true },
             value: { type: 'string', required: true },
             onChange: { type: 'callback', required: false },
@@ -837,11 +851,11 @@ export const HOST_COMPONENTS = {
             max: { type: 'number', required: true },
             width: { type: 'number', required: false },
             style: { type: 'style', required: false },
-        },
+        }),
         hasChildren: false, isContainer: false,
     },
     SliderInt3: {
-        props: {
+        props: withItemInteractionProps({
             label: { type: 'string', required: true },
             value: { type: 'string', required: true },
             onChange: { type: 'callback', required: false },
@@ -849,11 +863,11 @@ export const HOST_COMPONENTS = {
             max: { type: 'number', required: true },
             width: { type: 'number', required: false },
             style: { type: 'style', required: false },
-        },
+        }),
         hasChildren: false, isContainer: false,
     },
     SliderInt4: {
-        props: {
+        props: withItemInteractionProps({
             label: { type: 'string', required: true },
             value: { type: 'string', required: true },
             onChange: { type: 'callback', required: false },
@@ -861,11 +875,11 @@ export const HOST_COMPONENTS = {
             max: { type: 'number', required: true },
             width: { type: 'number', required: false },
             style: { type: 'style', required: false },
-        },
+        }),
         hasChildren: false, isContainer: false,
     },
     VSliderFloat: {
-        props: {
+        props: withItemInteractionProps({
             label: { type: 'string', required: true },
             value: { type: 'number', required: true },
             onChange: { type: 'callback', required: false },
@@ -874,11 +888,11 @@ export const HOST_COMPONENTS = {
             min: { type: 'number', required: true },
             max: { type: 'number', required: true },
             style: { type: 'style', required: false },
-        },
+        }),
         hasChildren: false, isContainer: false,
     },
     VSliderInt: {
-        props: {
+        props: withItemInteractionProps({
             label: { type: 'string', required: true },
             value: { type: 'number', required: true },
             onChange: { type: 'callback', required: false },
@@ -887,11 +901,11 @@ export const HOST_COMPONENTS = {
             min: { type: 'number', required: true },
             max: { type: 'number', required: true },
             style: { type: 'style', required: false },
-        },
+        }),
         hasChildren: false, isContainer: false,
     },
     SliderAngle: {
-        props: {
+        props: withItemInteractionProps({
             label: { type: 'string', required: true },
             value: { type: 'number', required: true },
             onChange: { type: 'callback', required: false },
@@ -899,6 +913,20 @@ export const HOST_COMPONENTS = {
             max: { type: 'number', required: false },
             width: { type: 'number', required: false },
             style: { type: 'style', required: false },
+        }),
+        hasChildren: false, isContainer: false,
+    },
+    ContextMenu: {
+        props: {
+            id: { type: 'string', required: false },
+            target: { type: 'string', required: false },
+        },
+        hasChildren: true, isContainer: true,
+    },
+    Shortcut: {
+        props: {
+            keys: { type: 'string', required: true },
+            onPress: { type: 'callback', required: true },
         },
         hasChildren: false, isContainer: false,
     },

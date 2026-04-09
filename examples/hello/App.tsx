@@ -34,6 +34,13 @@ export default function App() {
   const [phaseSortEvents, setPhaseSortEvents] = useState(0);
   const [phaseTreeForcedOpen, setPhaseTreeForcedOpen] = useState(true);
   const [phaseShowClosableHeader, setPhaseShowClosableHeader] = useState(true);
+  const [phase16Status, setPhase16Status] = useState("Idle");
+  const [phase16Clicks, setPhase16Clicks] = useState(0);
+  const [phase16DoubleClicks, setPhase16DoubleClicks] = useState(0);
+  const [phase16ShortcutCount, setPhase16ShortcutCount] = useState(0);
+  const [phase16Notes, setPhase16Notes] = useState("Use Ctrl+F or the jump button to focus this field.");
+  const [phase16JumpToNotes, setPhase16JumpToNotes] = useState(false);
+  const [phase16ContextMessage, setPhase16ContextMessage] = useState("Right-click the target button or this window.");
 
   return (
     <Theme preset="dark" accentColor={[0.9, 0.2, 0.2, 1.0]} backgroundColor={[0.12, 0.12, 0.15, 1.0]} textColor={[0.95, 0.95, 0.95, 1.0]} borderColor={[0.3, 0.3, 0.35, 1.0]} surfaceColor={[0.18, 0.18, 0.22, 1.0]} rounding={6}>
@@ -335,6 +342,116 @@ export default function App() {
           {!phaseShowClosableHeader && (
             <Button title="Restore Closable Header" onPress={() => setPhaseShowClosableHeader(true)} />
           )}
+        </Column>
+      </Window>
+      <Window title="Phase 16">
+        <Shortcut
+          keys="Ctrl+S"
+          onPress={() => {
+            setPhase16ShortcutCount(phase16ShortcutCount + 1);
+            setPhase16Status("Shortcut pressed: Ctrl+S");
+          }}
+        />
+        <Shortcut
+          keys="Ctrl+F"
+          onPress={() => {
+            setPhase16JumpToNotes(true);
+            setPhase16Status("Shortcut pressed: Ctrl+F");
+          }}
+        />
+        <Column gap={8}>
+          <Font name="jetbrains-mono">
+            <Text>Phase 16 showcase: item-state callbacks, context menus, hover tooltip, focus/scroll control, shortcuts, and cursor changes.</Text>
+          </Font>
+          <Text>Ctrl+S increments the shortcut counter. Ctrl+F scrolls to and focuses the notes field.</Text>
+          <CollapsingHeader label="Item Callbacks + Cursor" defaultOpen>
+            <Button
+              title="Interaction Target"
+              onPress={() => setPhase16Status("Pressed target button")}
+              tooltip="Hover, focus, click, or double-click this item."
+              cursor="hand"
+              onHover={() => setPhase16Status("Hovering target button")}
+              onFocused={() => setPhase16Status("Target button focused")}
+              onClicked={() => {
+                setPhase16Clicks(phase16Clicks + 1);
+                setPhase16Status("Target button clicked");
+              }}
+              onDoubleClicked={() => {
+                setPhase16DoubleClicks(phase16DoubleClicks + 1);
+                setPhase16Status("Target button double-clicked");
+              }}
+            />
+            <ContextMenu id="phase16-item-menu">
+              <MenuItem
+                label="Reset Counters"
+                onPress={() => {
+                  setPhase16Clicks(0);
+                  setPhase16DoubleClicks(0);
+                  setPhase16Status("Reset from item context menu");
+                }}
+              />
+              <MenuItem
+                label="Jump to Notes"
+                onPress={() => {
+                  setPhase16JumpToNotes(true);
+                  setPhase16ContextMessage("Item context menu requested notes focus.");
+                }}
+              />
+            </ContextMenu>
+            <SliderFloat
+              label="Active Blend"
+              value={phaseBlend}
+              onChange={setPhaseBlend}
+              min={0}
+              max={1}
+              width={220}
+              tooltip="Drag to trigger onActive."
+              onActive={() => setPhase16Status("Dragging blend slider")}
+            />
+            <Text>Status: {phase16Status}</Text>
+            <Text>Clicks: {phase16Clicks} | Double clicks: {phase16DoubleClicks} | Ctrl+S count: {phase16ShortcutCount}</Text>
+          </CollapsingHeader>
+          <CollapsingHeader label="Focus + Scroll" defaultOpen>
+            <Button title="Jump to Notes" onPress={() => setPhase16JumpToNotes(true)} />
+            <Child id="phase16-scroll" width={0} height={160} border>
+              <Text>Line 1: scroll helper target is near the bottom.</Text>
+              <Text>Line 2: this keeps enough content above the target.</Text>
+              <Text>Line 3: autoFocus is armed by the button or Ctrl+F.</Text>
+              <Text>Line 4: scrollToHere uses the same one-shot flag.</Text>
+              <Text>Line 5: onFocused clears the pending focus request.</Text>
+              <TextInput
+                label="Notes"
+                value={phase16Notes}
+                onChange={setPhase16Notes}
+                width={260}
+                autoFocus={phase16JumpToNotes}
+                scrollToHere={phase16JumpToNotes}
+                tooltip="This field is targeted by autoFocus and scrollToHere."
+                cursor="textInput"
+                onFocused={() => {
+                  setPhase16JumpToNotes(false);
+                  setPhase16Status("Focused notes input");
+                }}
+              />
+            </Child>
+          </CollapsingHeader>
+          <Text>Context menu: {phase16ContextMessage}</Text>
+          <ContextMenu id="phase16-window-menu" target="window">
+            <MenuItem
+              label="Set Window Menu Status"
+              onPress={() => {
+                setPhase16Status("Window context menu used");
+                setPhase16ContextMessage("Window context menu action fired.");
+              }}
+            />
+            <MenuItem
+              label="Prime Focus"
+              onPress={() => {
+                setPhase16JumpToNotes(true);
+                setPhase16ContextMessage("Window context menu queued notes focus.");
+              }}
+            />
+          </ContextMenu>
         </Column>
       </Window>
       <Window title="Batch 3 Demo">

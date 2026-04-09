@@ -1377,4 +1377,42 @@ export function App(props: AppState) {
         `);
         expect(output).toContain('slider_angle("Rot"');
     });
+
+    it('emits Phase 16 item interactions, context menus, and shortcuts', () => {
+        const output = compile(`
+function App() {
+  const [count, setCount] = useState(0);
+  return (
+    <Window title="Phase16">
+      <Button
+        title="Target"
+        onPress={() => setCount(count + 1)}
+        tooltip="Hover me"
+        autoFocus
+        scrollToHere
+        cursor="hand"
+        onHover={() => setCount(count + 1)}
+        onClicked={() => setCount(count + 1)}
+        onDoubleClicked={() => setCount(count + 1)}
+      />
+      <ContextMenu id="actions" target="window">
+        <MenuItem label="Inspect" />
+      </ContextMenu>
+      <Shortcut keys="Ctrl+S" onPress={() => setCount(count + 1)} />
+    </Window>
+  );
+}
+        `);
+
+        expect(output).toContain('if (true) imx::renderer::request_keyboard_focus();');
+        expect(output).toContain('imx::renderer::tooltip("Hover me");');
+        expect(output).toContain('if (true) imx::renderer::item_scroll_to_here();');
+        expect(output).toContain('imx::renderer::item_cursor("hand");');
+        expect(output).toContain('if (imx::renderer::item_hovered()) {');
+        expect(output).toContain('if (imx::renderer::item_clicked()) {');
+        expect(output).toContain('if (imx::renderer::item_double_clicked()) {');
+        expect(output).toContain('if (imx::renderer::begin_context_menu_window("actions")) {');
+        expect(output).toContain('imx::renderer::end_context_menu();');
+        expect(output).toContain('if (imx::renderer::shortcut_pressed("Ctrl+S")) {');
+    });
 });

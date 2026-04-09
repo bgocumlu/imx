@@ -158,6 +158,8 @@ ImFont* load_font(const char* name, const char* path, float size, const FontOpti
 ImFont* load_font_embedded(const char* name, const unsigned char* data, int data_size, float size, const FontOptions& options = {});
 ImFont* find_font(const char* name);
 bool set_default_font(const char* name);
+std::string clipboard_get();
+void clipboard_set(const char* text);
 
 namespace renderer {
 
@@ -204,6 +206,9 @@ void set_cursor_pos(float x, float y);
 bool begin_popup(const char* id, const Style& style = {});
 void end_popup();
 void open_popup(const char* id);
+bool begin_context_menu_item(const char* id = nullptr);
+bool begin_context_menu_window(const char* id = nullptr);
+void end_context_menu();
 
 void begin_dockspace(const Style& style = {}, bool has_menu_bar = false);
 void end_dockspace();
@@ -260,6 +265,15 @@ bool color_edit3(const char* label, float color[3], const Style& style = {});
 bool list_box(const char* label, int* current_item, const char* const items[], int items_count, const Style& style = {});
 void progress_bar(float fraction, const char* overlay = nullptr, const Style& style = {});
 void tooltip(const char* text);
+void request_keyboard_focus();
+bool item_hovered();
+bool item_active();
+bool item_focused();
+bool item_clicked();
+bool item_double_clicked();
+void item_scroll_to_here();
+void item_cursor(const char* cursor);
+bool shortcut_pressed(const char* keys);
 
 void bullet_text(const char* fmt, ...) IM_FMTARGS(1);
 void label_text(const char* label, const char* text);

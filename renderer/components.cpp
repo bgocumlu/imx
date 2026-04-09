@@ -1,4 +1,6 @@
 #include <imx/renderer.h>
+#include <algorithm>
+#include <cctype>
 #include <cstdarg>
 #include <cfloat>
 #include <cstring>
@@ -84,9 +86,141 @@ bool set_default_font(const char* name) {
     return true;
 }
 
+std::string clipboard_get() {
+    const char* text = ImGui::GetClipboardText();
+    return text ? std::string(text) : std::string();
+}
+
+void clipboard_set(const char* text) {
+    ImGui::SetClipboardText(text ? text : "");
+}
+
 } // namespace imx
 
 namespace imx::renderer {
+
+static std::string trim_and_upper(const char* value) {
+    if (!value) {
+        return {};
+    }
+
+    std::string result(value);
+    result.erase(result.begin(), std::find_if(result.begin(), result.end(), [](unsigned char ch) {
+        return !std::isspace(ch);
+    }));
+    result.erase(std::find_if(result.rbegin(), result.rend(), [](unsigned char ch) {
+        return !std::isspace(ch);
+    }).base(), result.end());
+    std::transform(result.begin(), result.end(), result.begin(), [](unsigned char ch) {
+        return static_cast<char>(std::toupper(ch));
+    });
+    return result;
+}
+
+static ImGuiMouseCursor parse_mouse_cursor(const char* cursor) {
+    const std::string value = trim_and_upper(cursor);
+    if (value == "NONE") return ImGuiMouseCursor_None;
+    if (value == "ARROW") return ImGuiMouseCursor_Arrow;
+    if (value == "TEXTINPUT" || value == "TEXT") return ImGuiMouseCursor_TextInput;
+    if (value == "RESIZEALL") return ImGuiMouseCursor_ResizeAll;
+    if (value == "RESIZENS") return ImGuiMouseCursor_ResizeNS;
+    if (value == "RESIZEEW") return ImGuiMouseCursor_ResizeEW;
+    if (value == "RESIZENESW") return ImGuiMouseCursor_ResizeNESW;
+    if (value == "RESIZENWSE") return ImGuiMouseCursor_ResizeNWSE;
+    if (value == "HAND") return ImGuiMouseCursor_Hand;
+    if (value == "WAIT") return ImGuiMouseCursor_Wait;
+    if (value == "PROGRESS") return ImGuiMouseCursor_Progress;
+    if (value == "NOTALLOWED") return ImGuiMouseCursor_NotAllowed;
+    return ImGuiMouseCursor_Arrow;
+}
+
+static std::optional<ImGuiKey> parse_named_key(const std::string& value) {
+    if (value.size() == 1) {
+        const char ch = value[0];
+        if (ch >= 'A' && ch <= 'Z') return static_cast<ImGuiKey>(ImGuiKey_A + (ch - 'A'));
+        if (ch >= '0' && ch <= '9') return static_cast<ImGuiKey>(ImGuiKey_0 + (ch - '0'));
+    }
+
+    if (value.size() >= 2 && value[0] == 'F') {
+        const int number = std::atoi(value.c_str() + 1);
+        if (number >= 1 && number <= 24) return static_cast<ImGuiKey>(ImGuiKey_F1 + (number - 1));
+    }
+
+    if (value == "ENTER" || value == "RETURN") return ImGuiKey_Enter;
+    if (value == "ESC" || value == "ESCAPE") return ImGuiKey_Escape;
+    if (value == "SPACE") return ImGuiKey_Space;
+    if (value == "TAB") return ImGuiKey_Tab;
+    if (value == "BACKSPACE") return ImGuiKey_Backspace;
+    if (value == "DELETE" || value == "DEL") return ImGuiKey_Delete;
+    if (value == "INSERT" || value == "INS") return ImGuiKey_Insert;
+    if (value == "HOME") return ImGuiKey_Home;
+    if (value == "END") return ImGuiKey_End;
+    if (value == "PAGEUP" || value == "PGUP") return ImGuiKey_PageUp;
+    if (value == "PAGEDOWN" || value == "PGDN") return ImGuiKey_PageDown;
+    if (value == "LEFT") return ImGuiKey_LeftArrow;
+    if (value == "RIGHT") return ImGuiKey_RightArrow;
+    if (value == "UP") return ImGuiKey_UpArrow;
+    if (value == "DOWN") return ImGuiKey_DownArrow;
+    if (value == "COMMA") return ImGuiKey_Comma;
+    if (value == "PERIOD" || value == "DOT") return ImGuiKey_Period;
+    if (value == "SLASH") return ImGuiKey_Slash;
+    if (value == "BACKSLASH") return ImGuiKey_Backslash;
+    if (value == "APOSTROPHE" || value == "QUOTE") return ImGuiKey_Apostrophe;
+    if (value == "SEMICOLON") return ImGuiKey_Semicolon;
+    if (value == "MINUS") return ImGuiKey_Minus;
+    if (value == "EQUAL" || value == "PLUS") return ImGuiKey_Equal;
+    if (value == "LEFTBRACKET" || value == "LBRACKET") return ImGuiKey_LeftBracket;
+    if (value == "RIGHTBRACKET" || value == "RBRACKET") return ImGuiKey_RightBracket;
+    if (value == "GRAVE" || value == "BACKTICK" || value == "TILDE") return ImGuiKey_GraveAccent;
+
+    return std::nullopt;
+}
+
+static std::optional<ImGuiKeyChord> parse_key_chord(const char* keys) {
+    if (!keys || keys[0] == '\0') {
+        return std::nullopt;
+    }
+
+    std::string input(keys);
+    ImGuiKeyChord chord = 0;
+    std::optional<ImGuiKey> final_key;
+    size_t start = 0;
+
+    while (start <= input.size()) {
+        const size_t end = input.find('+', start);
+        const std::string token = trim_and_upper(input.substr(start, end == std::string::npos ? std::string::npos : end - start).c_str());
+        if (token.empty()) {
+            return std::nullopt;
+        }
+
+        if (token == "CTRL" || token == "CONTROL" || token == "CMD" || token == "COMMAND") {
+            chord |= ImGuiMod_Ctrl;
+        } else if (token == "SHIFT") {
+            chord |= ImGuiMod_Shift;
+        } else if (token == "ALT" || token == "OPTION") {
+            chord |= ImGuiMod_Alt;
+        } else if (token == "SUPER" || token == "META" || token == "WIN" || token == "WINDOWS") {
+            chord |= ImGuiMod_Super;
+        } else {
+            final_key = parse_named_key(token);
+            if (!final_key.has_value()) {
+                return std::nullopt;
+            }
+        }
+
+        if (end == std::string::npos) {
+            break;
+        }
+        start = end + 1;
+    }
+
+    if (!final_key.has_value()) {
+        return std::nullopt;
+    }
+
+    chord |= *final_key;
+    return chord;
+}
 
 void begin_window(const char* title, int flags, bool* p_open, const Style& style) {
     before_child();
@@ -164,6 +298,18 @@ void end_popup() {
 
 void open_popup(const char* id) {
     ImGui::OpenPopup(id);
+}
+
+bool begin_context_menu_item(const char* id) {
+    return ImGui::BeginPopupContextItem((id && id[0] != '\0') ? id : nullptr);
+}
+
+bool begin_context_menu_window(const char* id) {
+    return ImGui::BeginPopupContextWindow((id && id[0] != '\0') ? id : nullptr);
+}
+
+void end_context_menu() {
+    ImGui::EndPopup();
 }
 
 void begin_dockspace(const Style& style, bool has_menu_bar) {
@@ -482,10 +628,52 @@ void progress_bar(float fraction, const char* overlay, const Style& style) {
 }
 
 void tooltip(const char* text) {
-    // Don't call before_child() -- tooltip attaches to previous item
-    if (ImGui::IsItemHovered()) {
-        ImGui::SetTooltip("%s", text);
+    if (text && text[0] != '\0') {
+        ImGui::SetItemTooltip("%s", text);
     }
+}
+
+void request_keyboard_focus() {
+    ImGui::SetKeyboardFocusHere();
+}
+
+bool item_hovered() {
+    return ImGui::IsItemHovered();
+}
+
+bool item_active() {
+    return ImGui::IsItemActive();
+}
+
+bool item_focused() {
+    return ImGui::IsItemFocused();
+}
+
+bool item_clicked() {
+    return ImGui::IsItemClicked();
+}
+
+bool item_double_clicked() {
+    return ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left);
+}
+
+void item_scroll_to_here() {
+    ImGui::SetScrollHereY();
+}
+
+void item_cursor(const char* cursor) {
+    if (!ImGui::IsItemHovered()) {
+        return;
+    }
+    ImGui::SetMouseCursor(parse_mouse_cursor(cursor));
+}
+
+bool shortcut_pressed(const char* keys) {
+    const std::optional<ImGuiKeyChord> chord = parse_key_chord(keys);
+    if (!chord.has_value()) {
+        return false;
+    }
+    return ImGui::IsKeyChordPressed(*chord);
 }
 
 void bullet_text(const char* fmt, ...) {

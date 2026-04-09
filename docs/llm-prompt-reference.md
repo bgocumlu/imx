@@ -22,6 +22,8 @@ Utilities:
 `load_font_embedded(name, data, data_size, size, options?) -> ImFont*`
 `find_font(name) -> ImFont*`
 `set_default_font(name) -> bool`
+`clipboard_get() -> std::string`
+`clipboard_set(text) -> void`
 
 `FontOptions`: `pixel_snap_h`, `oversample_h`, `oversample_v`, `rasterizer_multiply`, `merge_mode`
 
@@ -49,6 +51,7 @@ MainMenuBar: children — full-screen application menu bar
 MenuBar: children — window-local menu bar
 Menu: label(string, required) | children — dropdown menu
 MenuItem: label(string, required) | onPress?(() => void) | shortcut?(string) — menu action
+Shortcut: keys(string, required) | onPress(() => void, required) — real keyboard chord handler (MenuItem.shortcut is display only)
 TabBar: style?(Style) | children — tab container
 TabItem: label(string, required) | children — single tab
 ```
@@ -122,11 +125,13 @@ SliderInt4: label(string, required) | value([number,number,number,number], requi
 ```
 
 Phase 14 width note: `TextInput`, `InputTextMultiline`, scalar inputs, vector inputs, sliders, drags, `Combo`, `ListBox`, `ColorEdit3`, and `ColorPicker3` also accept `width?(number)`.
+Phase 16 interaction note: interactive widgets also accept `tooltip?(string)`, `autoFocus?(boolean)`, `scrollToHere?(boolean)`, `cursor?("none"|"arrow"|"text"|"textInput"|"resizeAll"|"resizeNS"|"resizeEW"|"resizeNESW"|"resizeNWSE"|"hand"|"wait"|"progress"|"notAllowed")`, `onHover?(() => void)`, `onActive?(() => void)`, `onFocused?(() => void)`, `onClicked?(() => void)`, `onDoubleClicked?(() => void)`.
 
 ### Overlay
 ```
 Modal: title(string, required) | open?(boolean) | onClose?(() => void) | style?(Style) | children — blocking modal dialog
 Popup: id(string, required) | style?(Style) | children
+ContextMenu: id?(string) | target?("item"|"window") | children — right-click popup for previous item or current window
 Image: src(string, required) | embed?(boolean) | width?(number) | height?(number) — texture display (embed bakes into exe)
 ```
 
