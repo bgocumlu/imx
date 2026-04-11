@@ -4,7 +4,17 @@ import * as path from 'node:path';
 import { initProject, addToProject } from './init.js';
 import { compile } from './compile.js';
 import { startWatch } from './watch.js';
-import { promptProjectName, promptTemplateName } from './templates/index.js';
+import { promptProjectName, promptTemplateName, TEMPLATES } from './templates/index.js';
+
+// Handle `imxc templates` — list available templates
+if (process.argv[2] === 'templates') {
+    console.log('Available templates:\n');
+    TEMPLATES.forEach(t => {
+        console.log(`  ${t.name} — ${t.description}`);
+    });
+    console.log('\nUsage: imxc init <project-name> --template=<name>');
+    process.exit(0);
+}
 
 // Handle `imxc init [dir] [--template=<name>]` subcommand
 if (process.argv[2] === 'init') {
@@ -58,8 +68,9 @@ if (process.argv[2] === 'watch') {
     if (positionals.length === 0) {
         console.error('Usage: imxc <input.tsx ...> -o <output-dir>');
         console.error('       imxc init [project-dir] [--template=<name>]');
+        console.error('       imxc templates');
         console.error('       imxc add [project-dir]');
-        console.error('       imxc watch <dir> -o <output-dir>');
+        console.error('       imxc watch <dir> -o <output-dir> [--build <cmd>]');
         process.exit(1);
     }
 
