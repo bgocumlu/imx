@@ -3,6 +3,7 @@ import * as path from 'node:path';
 import { TEMPLATES, APP_TSX, buildImxDts, TSCONFIG } from './templates/index.js';
 import './templates/minimal.js';
 import './templates/async.js';
+import './templates/persistence.js';
 export function addToProject(projectDir) {
     const srcDir = path.join(projectDir, 'src');
     if (fs.existsSync(path.join(srcDir, 'App.tsx'))) {
