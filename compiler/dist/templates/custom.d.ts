@@ -2,7 +2,6 @@ export interface FeatureModule {
     name: string;
     description: string;
     requires?: string[];
-    exclusive?: boolean;
     includes: string[];
     appStateCppFields: string;
     appStateCppHeaders: string[];
