@@ -3,6 +3,55 @@
 IMX: write .tsx with JSX components and useState hooks. Compiles to native Dear ImGui C++ apps.
 Compile: `node compiler/dist/index.js App.tsx [Other.tsx ...] -o build/generated`
 
+## Known Compiler Limitations
+
+These patterns SHOULD work but don't yet due to compiler bugs. The compiler will be fixed — don't treat the workarounds as correct patterns. If you find a new case where correct-looking TSX produces invalid C++, it's a compiler bug. Report it.
+
+**1. Numeric text interpolation in child components**
+```tsx
+// BROKEN — generates .c_str() on int/float, won't compile
+<Text>Count: {props.data.count}</Text>
+
+// WORKAROUND — display numbers through widgets instead
+<DragInt label="Count" value={props.data.count} speed={0} />
+```
+Root components handle this correctly. Only child components with struct binding are affected.
+
+**2. Individual scalar props lose C++ type info**
+```tsx
+// BROKEN — all number props become int* regardless of actual C++ type
+<MyComponent speed={props.speed} count={props.count} />
+
+// WORKAROUND — use a named sub-struct type
+<MyComponent data={props.controls} />
+```
+
+**3. MultiSelect bound prop detection**
+```tsx
+// BROKEN — compiler doesn't detect data as needing pointer binding
+// because there's no value={} without onChange (directBind)
+<MultiSelect onSelectionChange={() => props.data.apply_selection(0)}>
+
+// WORKAROUND — add any directBind widget to force detection
+<DragInt label="Count" value={props.data.ms_selection_count} speed={0} />
+```
+
+**4. Left-click context menus on interactive items**
+```tsx
+// BROKEN — left-click is consumed by the button before context menu sees it
+<Button title="Click me" onPress={() => {}} />
+<ContextMenu mouseButton="left">...</ContextMenu>
+```
+Right-click context menus work correctly. Left-click is a renderer issue.
+
+**5. Non-root component imports**
+```tsx
+// BROKEN — Phase12.tsx importing Phase12Nested.tsx
+// Generated Phase12.gen.cpp won't include Phase12Nested.gen.h
+import { Phase12Nested } from './Phase12Nested';
+```
+Only the root component (App.tsx) can import child components. Child-to-child imports don't generate the required `#include`.
+
 ## Font Loading (C++)
 
 ```cpp
