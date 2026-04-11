@@ -332,15 +332,6 @@ if(IMX_BUILD_EXAMPLES)
         ${CMAKE_CURRENT_SOURCE_DIR}/examples/persistence/src
     )
 
-    # --- cpp-httplib (for networking example) ---
-    FetchContent_Declare(httplib
-        GIT_REPOSITORY https://github.com/yhirose/cpp-httplib.git
-        GIT_TAG v0.18.3
-        GIT_SHALLOW TRUE
-    )
-    set(HTTPLIB_COMPILE OFF CACHE BOOL "" FORCE)
-    FetchContent_MakeAvailable(httplib)
-
     # --- networking_app: HTTP client scaffolding ---
     imx_compile_tsx(NETWORKING_GENERATED
         SOURCES
@@ -353,7 +344,7 @@ if(IMX_BUILD_EXAMPLES)
         ${NETWORKING_GENERATED}
     )
     set_target_properties(networking_app PROPERTIES WIN32_EXECUTABLE $<CONFIG:Release>)
-    target_link_libraries(networking_app PRIVATE imx_renderer httplib::httplib)
+    target_link_libraries(networking_app PRIVATE imx_renderer)
     target_include_directories(networking_app PRIVATE
         ${CMAKE_BINARY_DIR}/generated_networking
         ${CMAKE_CURRENT_SOURCE_DIR}/examples/networking/src

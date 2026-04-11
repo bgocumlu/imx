@@ -1,6 +1,6 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import { registerTemplate, buildImxDts, TSCONFIG, GITIGNORE } from './index.js';
+import { registerTemplate, buildImxDts, TSCONFIG, GITIGNORE, cmakeTemplate } from './index.js';
 const APPSTATE_INTERFACE = `interface AppState {
     url: string;
     response: string;
@@ -48,7 +48,7 @@ const MAIN_CPP = `#include <imx/runtime.h>
 #include <GLFW/glfw3.h>
 
 #include <thread>
-#include <httplib.h>
+#include <imx/httplib.h>
 #include "async.h"
 #include "AppState.h"
 
@@ -205,59 +205,6 @@ const APP_TSX = `export default function App(props: AppState) {
   );
 }
 `;
-function cmakeWithHttplib(projectName) {
-    return `cmake_minimum_required(VERSION 3.25)
-project(${projectName} LANGUAGES CXX)
-
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
-include(FetchContent)
-set(FETCHCONTENT_QUIET OFF)
-
-FetchContent_Declare(
-    imx
-    GIT_REPOSITORY https://github.com/bgocumlu/imx.git
-    GIT_TAG main
-    GIT_SHALLOW TRUE
-    GIT_PROGRESS TRUE
-)
-
-FetchContent_Declare(
-    httplib
-    GIT_REPOSITORY https://github.com/yhirose/cpp-httplib.git
-    GIT_TAG v0.18.3
-    GIT_SHALLOW TRUE
-)
-set(HTTPLIB_COMPILE OFF CACHE BOOL "" FORCE)
-
-message(STATUS "Fetching IMX (includes ImGui + GLFW)...")
-FetchContent_MakeAvailable(imx httplib)
-
-include(ImxCompile)
-
-imx_compile_tsx(GENERATED
-    SOURCES src/App.tsx
-    OUTPUT_DIR \${CMAKE_BINARY_DIR}/generated
-)
-
-add_executable(${projectName}
-    src/main.cpp
-    \${GENERATED}
-)
-set_target_properties(${projectName} PROPERTIES WIN32_EXECUTABLE $<CONFIG:Release>)
-target_link_libraries(${projectName} PRIVATE imx::renderer httplib::httplib)
-target_include_directories(${projectName} PRIVATE \${CMAKE_BINARY_DIR}/generated \${CMAKE_CURRENT_SOURCE_DIR}/src)
-
-# Copy public/ assets to output directory
-add_custom_command(TARGET ${projectName} POST_BUILD
-    COMMAND \${CMAKE_COMMAND} -E copy_directory
-        \${CMAKE_CURRENT_SOURCE_DIR}/public
-        $<TARGET_FILE_DIR:${projectName}>
-    COMMENT "Copying public/ assets"
-)
-`;
-}
 function generate(projectDir, projectName) {
     const srcDir = path.join(projectDir, 'src');
     if (fs.existsSync(path.join(srcDir, 'App.tsx'))) {
@@ -274,7 +221,7 @@ function generate(projectDir, projectName) {
     fs.writeFileSync(path.join(srcDir, 'App.tsx'), APP_TSX);
     fs.writeFileSync(path.join(srcDir, 'imx.d.ts'), buildImxDts(APPSTATE_INTERFACE));
     fs.writeFileSync(path.join(projectDir, 'tsconfig.json'), TSCONFIG);
-    fs.writeFileSync(path.join(projectDir, 'CMakeLists.txt'), cmakeWithHttplib(projectName));
+    fs.writeFileSync(path.join(projectDir, 'CMakeLists.txt'), cmakeTemplate(projectName, 'https://github.com/bgocumlu/imx.git'));
     fs.writeFileSync(path.join(projectDir, '.gitignore'), GITIGNORE);
     console.log(`imxc: initialized project "${projectName}" with template "networking"`);
     console.log('');
