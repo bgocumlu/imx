@@ -22,7 +22,7 @@ bool load_json(const std::string& path, T& state) {
     if (!f) return false;
     nlohmann::json j = nlohmann::json::parse(f, nullptr, false);
     if (j.is_discarded()) return false;
-    state = j.get<T>();
+    nlohmann::from_json(j, state);
     return true;
 }
 
