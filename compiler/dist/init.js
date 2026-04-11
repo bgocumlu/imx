@@ -5,6 +5,7 @@ import './templates/minimal.js';
 import './templates/async.js';
 import './templates/persistence.js';
 import './templates/networking.js';
+import './templates/hotreload.js';
 export function addToProject(projectDir) {
     const srcDir = path.join(projectDir, 'src');
     if (fs.existsSync(path.join(srcDir, 'App.tsx'))) {
