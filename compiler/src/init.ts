@@ -4,6 +4,7 @@ import { TEMPLATES, APP_TSX, buildImxDts, TSCONFIG } from './templates/index.js'
 import './templates/minimal.js';
 import './templates/async.js';
 import './templates/persistence.js';
+import './templates/networking.js';
 
 export function addToProject(projectDir: string): void {
     const srcDir = path.join(projectDir, 'src');
