@@ -189,6 +189,7 @@ if(IMX_BUILD_EXAMPLES)
             examples/phases/src/Phase15.tsx
             examples/phases/src/Phase16.tsx
             examples/phases/src/Phase17.tsx
+            examples/phases/src/Phase18.tsx
         OUTPUT_DIR ${CMAKE_BINARY_DIR}/generated_phases
     )
 
