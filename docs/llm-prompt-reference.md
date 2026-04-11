@@ -616,13 +616,11 @@ Thread safety: developer's responsibility (same as raw ImGui).
 
 - **TextInput / InputTextMultiline**: supports struct binding via `value={props.name}` — buffer syncs to/from the struct field each frame.
 - **Custom component props**: bound props (used with `value={props.x}` without onChange) are automatically passed as `T*` pointers through custom components. Direct binding works at any nesting level.
-- **Sub-struct pattern (required for child components)**: pass a named sub-struct type, not individual scalar fields. Individual `number` props lose C++ type info (all become `int*`). Use a sub-struct: `<Phase11 data={props.phase11} />` with `props: { data: Phase11Data }`.
+- **Sub-struct binding**: pass named sub-struct types to child components. `<ControlsPanel data={props.controls} />` with `props: { data: ControlsData }`. The compiler generates `ControlsData* data` in the child's Props struct.
 - **Nested `.map()`**: auto-generated unique loop indices — same variable name in nested maps is safe.
 - **ColorEdit/ColorPicker**: works with struct binding via `std::vector<float>` fields (emits `.data()`).
 - **DragDrop payloads**: type matches the `onDrop` callback's parameter type annotation. Defaults to `float` if no target is found in the same component.
-- **Text interpolation in child components**: `<Text>{props.data.count}</Text>` where `count` is a number will fail (emits `.c_str()` on int/float). Display numbers through widgets (SliderFloat, DragInt, ProgressBar), not Text. Root components handle this correctly.
-- **MultiSelect in child components**: use `std::function<void(ImGuiMultiSelectIO*)>` in the sub-struct, not a member method. Member methods can't be passed as callback props. Wire the function in main.cpp.
-- **File naming**: TSX filename must match the exported function name. `Phase11.tsx` must export `Phase11`, not `Phase11Demo`. CMake uses the filename, compiler uses the function name.
+- **File naming**: TSX filename must match the exported function name. `Sidebar.tsx` exports `Sidebar`. CMake uses the filename, compiler uses the function name.
 - **Repeated labels in tables/loops**: wrap in `<ID scope={i}>` to give each item a unique ImGui ID.
 
 ### Sub-struct Binding Example

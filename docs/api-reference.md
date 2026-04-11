@@ -1910,6 +1910,7 @@ export function TransformSection(props: { value: TransformSettings }) {
 
 - The component function must be `export`ed (named export).
 - The root component (entry point) must use `export default`.
+- **File name must match function name** — `Sidebar.tsx` exports `Sidebar`, not `SidebarPanel`. CMake derives the output filename from the source filename, the compiler uses the function name. A mismatch causes build failures.
 - Props types can be: `string`, `number`, `boolean`, or `() => void` (callback).
 - Access props via `props.propName` (not destructuring).
 - All `.tsx` files that are imported must be passed to the compiler together.
