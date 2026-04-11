@@ -392,6 +392,10 @@ function generate(projectDir: string, projectName: string): void {
     console.log(`    cd ${projectName}`);
     console.log(`    cmake -B build`);
     console.log(`    cmake --build build`);
+    console.log('');
+    console.log('  Hot reload:');
+    console.log(`    ./build/Debug/${projectName}                    # run the host`);
+    console.log(`    npx imxc watch src -o build/generated --build "cmake --build build --target ${projectName}_ui"`);
 }
 
 registerTemplate({ name: 'hotreload', description: 'DLL hot reload for live UI iteration', generate });
