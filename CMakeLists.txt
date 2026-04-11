@@ -359,4 +359,41 @@ if(IMX_BUILD_EXAMPLES)
         ${CMAKE_CURRENT_SOURCE_DIR}/examples/networking/src
     )
 
+    # --- hotreload: DLL hot reload scaffolding ---
+    imx_compile_tsx(HOTRELOAD_GENERATED
+        SOURCES
+            examples/hotreload/src/App.tsx
+        OUTPUT_DIR ${CMAKE_BINARY_DIR}/generated_hotreload
+    )
+
+    # UI shared library (hot-reloadable)
+    add_library(hotreload_ui SHARED
+        examples/hotreload/src/ui_entry.cpp
+        ${HOTRELOAD_GENERATED}
+    )
+    target_link_libraries(hotreload_ui PRIVATE imx_renderer)
+    target_include_directories(hotreload_ui PRIVATE
+        ${CMAKE_BINARY_DIR}/generated_hotreload
+        ${CMAKE_CURRENT_SOURCE_DIR}/examples/hotreload/src
+    )
+
+    # Host executable (loads hotreload_ui dynamically)
+    add_executable(hotreload_host
+        examples/hotreload/src/main.cpp
+    )
+    set_target_properties(hotreload_host PROPERTIES WIN32_EXECUTABLE $<CONFIG:Release>)
+    target_link_libraries(hotreload_host PRIVATE imx_renderer ${CMAKE_DL_LIBS})
+    target_include_directories(hotreload_host PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/examples/hotreload/src
+    )
+
+    # Copy DLL next to host exe after build
+    add_custom_command(TARGET hotreload_ui POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:hotreload_ui> $<TARGET_FILE_DIR:hotreload_host>
+        COMMENT "Copying hotreload_ui DLL to host directory"
+    )
+
+    # Build host after UI so the DLL is ready
+    add_dependencies(hotreload_host hotreload_ui)
+
 endif()
