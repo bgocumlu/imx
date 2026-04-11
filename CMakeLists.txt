@@ -387,4 +387,22 @@ if(IMX_BUILD_EXAMPLES)
     # Build host after UI so the DLL is ready
     add_dependencies(hotreload_host imx_ui)
 
+    # --- filedialog_app: native file dialogs + drag & drop ---
+    imx_compile_tsx(FILEDIALOG_GENERATED
+        SOURCES
+            examples/filedialog/src/App.tsx
+        OUTPUT_DIR ${CMAKE_BINARY_DIR}/generated_filedialog
+    )
+
+    add_executable(filedialog_app
+        examples/filedialog/src/main.cpp
+        ${FILEDIALOG_GENERATED}
+    )
+    set_target_properties(filedialog_app PROPERTIES WIN32_EXECUTABLE $<CONFIG:Release>)
+    target_link_libraries(filedialog_app PRIVATE imx_renderer)
+    target_include_directories(filedialog_app PRIVATE
+        ${CMAKE_BINARY_DIR}/generated_filedialog
+        ${CMAKE_CURRENT_SOURCE_DIR}/examples/filedialog/src
+    )
+
 endif()
