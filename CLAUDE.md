@@ -70,12 +70,17 @@ Key principles:
 - `renderer/` — C++ renderer (ImGui host components, layout stack, style, texture loading)
 - `renderer/stb_image.h` — vendored image decoder (PNG + JPEG)
 - `renderer/texture.cpp` — Image component: file loading, embed loading, OpenGL texture cache
+- `include/imx/json.hpp` — vendored nlohmann/json v3.11.3 (persistence template)
+- `include/imx/httplib.h` — vendored cpp-httplib v0.18.3 (networking template)
+- `include/imx/pfd.h` — vendored portable-file-dialogs (filedialog template)
 - `compiler/src/` — TypeScript compiler (parser, validator, ir, lowering, emitter, compile, init)
-- `compiler/dist/` — compiled JS (committed to git so FetchContent works without npm)
+- `compiler/src/templates/` — template registry, feature modules, and per-template generators
+- `compiler/dist/` — compiled JS (committed to git so FetchContent works without npm install)
 - `cmake/ImxCompile.cmake` — CMake helper for compiling .tsx files
 - `examples/hello/` — minimal getting-started (~25 lines TSX, no struct binding). `src/App.tsx`, `src/main.cpp`
 - `examples/demo/` — component-organized demo (like imgui_demo). Single scrollable window with 14 TreeNode categories, each with CollapsingHeader sub-sections. `src/App.tsx` + 14 category .tsx files + `src/DemoState.h` + `src/main.cpp`
 - `examples/phases/` — phase showcase (Phase 11-18). Hub with buttons, each opens a phase demo window. `src/App.tsx` + `Phase11.tsx`..`Phase18.tsx` + `src/PhasesState.h` + `src/main.cpp`
+- `examples/async/`, `examples/persistence/`, `examples/networking/`, `examples/hotreload/`, `examples/filedialog/` — template examples (same code as `imxc init --template=<name>`)
 - `examples/dashboard/`, `examples/kanban/`, `examples/settings/`, `examples/todo/` — specialized examples
 - Example layout: `tsconfig.json` at example root, source in `src/`, assets in `public/`
 - `docs/` — spec, mvp, roadmap, api-reference, quick-start, llm-prompt-reference
@@ -113,7 +118,7 @@ The goal is a compiler where any valid-looking TSX produces valid C++. If a patt
 - Don't call `before_child()` in modal/popup begin functions — overlays don't participate in layout
 - Don't work around compiler bugs by modifying example code — fix the pipeline
 
-## Current status (Phases 1-19 complete)
+## Current status (Phases 1-20 complete)
 - Font embed from TSX: `<Font name="mono" src="file.ttf" size={15} embed>` — compiler generates .embed.h and `_imx_load_fonts()` in app_root.gen.cpp. C++ `load_font()` / `load_font_embedded()` API unchanged.
 - ~98 host components covering all ImGui widgets + input expansion
 - Text & Display Variants (Phase 18): `color`, `disabled`, `wrapped` props on `<Text>`, `<Bullet />` standalone, Selectable `spanAllColumns`/`allowDoubleClick`/`dontClosePopups` flags, ListBox manual mode (BeginListBox/EndListBox with children), horizontalScrollbar bug fix
@@ -139,9 +144,9 @@ The goal is a compiler where any valid-looking TSX produces valid C++. If a patt
 - Style overrides: StyleColor (20 color props), StyleVar (11 style vars)
 - Multi-component support with imports, props, callbacks
 - TypeScript type definitions for IDE support
-- CLI: `imxc init` (full scaffold + .gitignore), `imxc add` (existing project), `imxc watch` (file watcher)
+- CLI: `imxc init` (interactive feature selector + `--template` flag), `imxc add` (existing project), `imxc watch` (file watcher + `--build` for hot reload), `imxc templates` (list available templates)
 - API documentation + LLM prompt reference complete
-- Packaging: `imxc@0.5.5` on npm, FetchContent for C++ (compiler/dist/ committed)
+- Packaging: `imxc@0.5.5` on npm, FetchContent for C++ (compiler/dist/ committed, no npm install needed)
 - Release builds hide console on Windows (WIN32_EXECUTABLE), Debug shows it
 - Developer Experience (Phase 19): source-mapped errors (`#line` directives in `.gen.cpp` pointing back to `.tsx` source lines — MSVC errors show `App.tsx:42` instead of `App.gen.cpp:187`), compiler warnings for unknown components and missing `<ID scope>` in `.map()` loops, warning severity in diagnostics output
-- Next: Phase 20 (Project Templates)
+- Project Templates (Phase 20): 6 standalone templates (minimal, async, persistence, networking, hotreload, filedialog) + multi-template combining via `--template=async,persistence`. Interactive checkbox selector with arrow keys. Vendored single-header libraries (`imx/json.hpp`, `imx/httplib.h`, `imx/pfd.h`) — no external FetchContent needed. DLL hot reload with `imxc watch --build`. Examples in `examples/async/`, `persistence/`, `networking/`, `hotreload/`, `filedialog/`.

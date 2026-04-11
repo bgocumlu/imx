@@ -427,55 +427,53 @@ Exit criteria:
 - MSVC compile errors point to the correct `.tsx` source line
 - compiler catches common mistakes (missing props, unknown components) with clear `.tsx`-located messages
 
-## Phase 20: Project Templates
+## Phase 20: Project Templates (DONE)
 
 Goal:
 
 - provide well-designed starter templates via `imxc init` that scaffold common C++ backend patterns — IMX the library is unchanged, templates are just generated user code
 
-Note: templates are `.js` files in the `imxc` CLI package. They generate `main.cpp`, `AppState.h`, `CMakeLists.txt` with appropriate libraries. The TSX side is identical across all templates. None of this affects IMX as a library — it's purely scaffolding.
-
-Important: generated `CMakeLists.txt` should FetchContent from a git tag (e.g. `v0.6.0`), not `main`. Tag the repo before publishing templates so users pin to a stable release.
-
 Deliverables:
 
-- **Interactive template selector** — `imxc init my_app` shows a CLI menu to pick a template (or `imxc init my_app --template=networking` to skip menu)
-- **`minimal` template** — current default, bare ImGui app. Just IMX + GLFW + OpenGL. (~745 KB)
-- **`hotreload` template** — adds DLL hot reload scaffolding for debug builds. `main.cpp` includes a loader that `LoadLibrary`/`FreeLibrary` cycles the UI DLL on file change. CMakeLists builds UI as shared library in Debug, static in Release. State survives reloads because struct binding keeps `AppState` in the host exe. `imxc watch --hot` triggers recompile → DLL swap. Struct layout changes (`AppState.h`) require full restart (loader detects and warns). Release builds remain single-exe, no DLLs.
-- **`networking` template** — adds HTTP client scaffolding. WinHTTP on Windows, libcurl on Linux/macOS. `AppState` has example fetch callback, `main.cpp` shows async request pattern with `std::thread` + `request_frame()` on completion. CMakeLists adds the platform HTTP library.
-- **`persistence` template** — adds JSON save/load scaffolding. FetchContent for nlohmann/json (single-header). `AppState` has `save()` / `load()` methods, `main.cpp` loads state on startup and saves on exit. File path uses platform app data directory (`%APPDATA%`, `~/Library/Application Support`, `~/.config`).
-- **`async` template** — adds background task scaffolding. Simple thread pool in `async.h`, `main.cpp` shows dispatching work and updating `AppState` on completion with `request_frame()`. No external dependency (pure `std::thread` + `std::future`).
-- **`system` template** — adds OS integration scaffolding. Native file dialog (Win32 `IFileDialog` / GTK / Cocoa), system tray icon (Win32 `Shell_NotifyIcon` / NSStatusItem), native notifications, GLFW file drop callback wired to `AppState`. Platform-specific code behind `#ifdef _WIN32` / `__APPLE__` / `__linux__`.
-- **`full` template** — combines networking + persistence + async + system. Complete desktop app starter with all backend patterns wired together.
-- **`custom` template** — interactive picker: choose which backend features to include (checkboxes for networking, persistence, async, system). Generates a combined template with only selected features.
+- **Interactive feature selector** — `imxc init my_app` shows a checkbox selector (arrow keys + space to toggle, enter to confirm). Select nothing for minimal. `--template=<name>` or `--template=async,persistence` to skip menu. `imxc templates` lists available templates for LLM/script discovery.
+- **`minimal` template** — default when nothing is selected. Bare ImGui app with struct binding (GLFW + OpenGL). Counter + slider demo.
+- **`async` template** — background task scaffolding. `run_async<T>()` helper in `async.h` (pure `std::thread`, ~20 lines). `main.cpp` shows dispatching work and updating `AppState` on completion with `request_frame()`. Demo: fake 2-second fetch with loading state.
+- **`persistence` template** — JSON save/load scaffolding. `save_json()` / `load_json()` helpers in `persistence.h` using vendored `imx/json.hpp` (nlohmann/json v3.11.3). Saves next to the executable. Demo: editable fields with Save/Load buttons.
+- **`networking` template** — HTTP client scaffolding. Uses vendored `imx/httplib.h` (cpp-httplib v0.18.3). Background HTTP GET via `run_async` (depends on async). Demo: URL input + Fetch button, displays response. Plain HTTP; comment explains HTTPS with OpenSSL.
+- **`hotreload` template** — DLL/SO hot reload. Host exe loads `imx_ui.dll` dynamically, checks `last_write_time` each frame, reloads on change. Cross-platform (`LoadLibrary`/`dlopen` with `#ifdef`). `imxc watch --build` flag auto-rebuilds DLL after TSX recompile. State survives reloads (lives in host). Watch command shown in ImGui window with Copy button.
+- **`filedialog` template** — native file dialogs + GLFW drag & drop. Uses vendored `imx/pfd.h` (portable-file-dialogs). Open/Save dialog buttons + file drop callback. Fully cross-platform.
+- **Multi-template combining** — `--template=async,persistence,filedialog` merges multiple features into one project. Deduplicates fields, merges callbacks, generates one Window per feature. Networking auto-selects async. Interactive selector supports multi-select with space toggle.
 
-Each template includes:
+Each template has a matching `examples/<name>/` directory in the repo with identical code for local testing.
 
-- Commented `main.cpp` explaining the pattern
-- `AppState.h` with example fields and callbacks for the template's features
-- `CMakeLists.txt` with correct FetchContent / platform libraries
-- `App.tsx` demonstrating the template's features from the TSX side
-- A `README.md` explaining the architecture and how to extend it
+Vendored single-header libraries in `include/imx/`:
+- `imx/json.hpp` — nlohmann/json v3.11.3 (900KB, saves 180MB FetchContent)
+- `imx/httplib.h` — cpp-httplib v0.18.3 (340KB)
+- `imx/pfd.h` — portable-file-dialogs (60KB)
 
-Size impact on IMX: 0 KB — templates are JS in the CLI, not compiled into the library
+No template requires external FetchContent beyond IMX itself. No `npm install` needed — TypeScript moved to devDependencies, `compiler/dist/` runs with just `node`.
+
+Size impact on IMX library: 0 KB — templates are JS in the CLI, vendored headers are header-only
 
 Exit criteria:
 
-- `imxc init` offers template selection with clear descriptions
-- each template builds and runs out of the box on Windows, macOS, and Linux
-- a developer can go from `imxc init my_app --template=full` to a working desktop app with networking, persistence, and system integration in under 5 minutes
+- `imxc init` offers interactive feature selection with clear descriptions
+- each template builds and runs out of the box on Windows (tested), macOS, and Linux (cross-platform code)
+- `imxc init my_app --template=async,persistence` produces a working combined project
+- `imxc watch --build` enables hot reload workflow
 
 ## Future Candidates
 
 Implement only when justified by real need:
 
+- **Installer template** — generates project with platform packaging (Rust-based installer for MSI/DMG/AppImage)
 - **Plugin/extension API** — third-party component packages
 - **Cross-compilation** — build Windows/macOS/Linux from single machine
 
 ## Non-goals
 
 - **React lifecycle hooks (useEffect, useInit, etc.)** — ImGui is immediate mode; TSX is a pure UI layer. Initialization, cleanup, and side effects belong in C++ where the data lives.
-- **Platform/OS APIs (file dialogs, tray, notifications, networking, persistence)** — IMX is a frontend. The C++ backend handles platform integration. IMX wraps ImGui, not the OS.
+- **Native IR / interpreter** — contradicts "no runtime in shipped binary"
 - **Native IR / interpreter** — contradicts "no runtime in shipped binary"
 - **Tauri-like CLI wrapper** — IMX integrates via FetchContent, build stays CMake-native
 - **Embedded JS/Lua runtime** — defeats the purpose, adds 500 KB+ for no benefit
