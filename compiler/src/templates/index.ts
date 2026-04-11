@@ -469,56 +469,92 @@ export async function promptProjectName(): Promise<string> {
 }
 
 export async function promptTemplateName(): Promise<string> {
-    const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-    let answered = false;
-    rl.on('close', () => { if (!answered) process.exit(0); });
+    // Filter out minimal — it's the default when nothing is selected
+    const features = TEMPLATES.filter(t => t.name !== 'minimal');
+
     return new Promise((resolve) => {
-        console.log('Select a template:');
-        console.log('');
-        TEMPLATES.forEach((t, i) => {
-            console.log(`  ${i + 1}. ${t.name} — ${t.description}`);
-        });
-        console.log('');
-        rl.question('Template (number or name, comma-separated to combine): ', (answer) => {
-            answered = true;
-            rl.close();
-            const input = answer.trim();
+        const selected = new Set<number>();
+        let cursor = 0;
 
-            // Check for comma-separated
-            if (input.includes(',')) {
-                const parts = input.split(',').map(s => s.trim());
-                const resolved: string[] = [];
-                for (const part of parts) {
-                    const num = parseInt(part, 10);
-                    if (!isNaN(num) && num >= 1 && num <= TEMPLATES.length) {
-                        resolved.push(TEMPLATES[num - 1].name);
-                    } else {
-                        const found = TEMPLATES.find(t => t.name === part);
-                        if (found) {
-                            resolved.push(found.name);
-                        } else {
-                            console.error(`Error: unknown template "${part}".`);
-                            process.exit(1);
-                        }
-                    }
+        function render() {
+            // Move cursor up to redraw (except first render)
+            const lines = features.length + 3;
+            process.stdout.write(`\x1b[${lines}A\x1b[J`);
+            draw();
+        }
+
+        function draw() {
+            console.log('Select features (arrow keys, space to toggle, enter to confirm):');
+            console.log('');
+            features.forEach((t, i) => {
+                const check = selected.has(i) ? 'x' : ' ';
+                const arrow = i === cursor ? '>' : ' ';
+                console.log(`  ${arrow} [${check}] ${t.name} — ${t.description}`);
+            });
+            console.log('');
+        }
+
+        // Initial draw
+        draw();
+
+        // Raw mode for keypress handling
+        if (!process.stdin.isTTY) {
+            // Fallback for non-TTY (piped input) — use old text prompt
+            const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+            rl.question('Templates (comma-separated names): ', (answer) => {
+                rl.close();
+                resolve(answer.trim() || 'minimal');
+            });
+            return;
+        }
+
+        process.stdin.setRawMode(true);
+        process.stdin.resume();
+        process.stdin.setEncoding('utf8');
+
+        process.stdin.on('data', (key: string) => {
+            if (key === '\x03') {
+                // Ctrl+C
+                process.stdin.setRawMode(false);
+                console.log('');
+                process.exit(0);
+            }
+            if (key === '\r' || key === '\n') {
+                // Enter — confirm
+                process.stdin.setRawMode(false);
+                process.stdin.pause();
+                const names = features
+                    .filter((_, i) => selected.has(i))
+                    .map(t => t.name);
+                if (names.length === 0) {
+                    resolve('minimal');
+                } else if (names.length === 1) {
+                    resolve(names[0]);
+                } else {
+                    resolve(names.join(','));
                 }
-                resolve(resolved.join(','));
                 return;
             }
-
-            // Single value — existing logic
-            const byNumber = parseInt(input, 10);
-            if (!isNaN(byNumber) && byNumber >= 1 && byNumber <= TEMPLATES.length) {
-                resolve(TEMPLATES[byNumber - 1].name);
+            if (key === ' ') {
+                // Space — toggle
+                if (selected.has(cursor)) {
+                    selected.delete(cursor);
+                } else {
+                    selected.add(cursor);
+                }
+                render();
                 return;
             }
-            const byName = TEMPLATES.find(t => t.name === input);
-            if (byName) {
-                resolve(byName.name);
-                return;
+            // Arrow keys (escape sequences)
+            if (key === '\x1b[A' || key === 'k') {
+                // Up
+                cursor = (cursor - 1 + features.length) % features.length;
+                render();
+            } else if (key === '\x1b[B' || key === 'j') {
+                // Down
+                cursor = (cursor + 1) % features.length;
+                render();
             }
-            console.error(`Error: unknown template "${input}".`);
-            process.exit(1);
         });
     });
 }
