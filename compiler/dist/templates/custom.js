@@ -1,0 +1,674 @@
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+import { buildImxDts, TSCONFIG, GITIGNORE, cmakeTemplate } from './index.js';
+// ---------------------------------------------------------------------------
+// Shared helper content (async.h used by both async and networking)
+// ---------------------------------------------------------------------------
+const ASYNC_H = `#pragma once
+#include <thread>
+#include <functional>
+#include <imx/runtime.h>
+
+namespace imx {
+
+// Runs \`work\` on a background thread, then calls \`on_done\` with the result.
+// Calls request_frame() so the UI wakes up to display the result.
+// Replace with a thread pool if you need to limit concurrency.
+template<typename T>
+void run_async(Runtime& runtime, std::function<T()> work, std::function<void(T)> on_done) {
+    std::thread([&runtime, work = std::move(work), on_done = std::move(on_done)]() {
+        T result = work();
+        on_done(std::move(result));
+        runtime.request_frame();
+    }).detach();
+}
+
+} // namespace imx
+`;
+const PERSISTENCE_H = `#pragma once
+#include <fstream>
+#include <string>
+#include <nlohmann/json.hpp>
+
+namespace imx {
+
+// Save state as formatted JSON. Returns true on success.
+// Saves next to the executable by default — change path for platform app data dirs.
+template<typename T>
+bool save_json(const std::string& path, const T& state) {
+    std::ofstream f(path);
+    if (!f) return false;
+    f << nlohmann::json(state).dump(2);
+    return true;
+}
+
+// Load state from JSON file. Returns true on success, leaves state unchanged on failure.
+template<typename T>
+bool load_json(const std::string& path, T& state) {
+    std::ifstream f(path);
+    if (!f) return false;
+    nlohmann::json j = nlohmann::json::parse(f, nullptr, false);
+    if (j.is_discarded()) return false;
+    nlohmann::from_json(j, state);
+    return true;
+}
+
+} // namespace imx
+`;
+// ---------------------------------------------------------------------------
+// Feature definitions (prefixed names to avoid collisions when combined)
+// ---------------------------------------------------------------------------
+export const FEATURES = [
+    {
+        name: 'async',
+        description: 'Background tasks with std::thread',
+        includes: ['#include <thread>', '#include <chrono>'],
+        appStateCppHeaders: ['#include <string>'],
+        appStateCppFields: [
+            '    bool loading = false;',
+            '    std::string result = "";',
+            '    std::function<void()> onFetchAsync;',
+        ].join('\n'),
+        appStateTsFields: [
+            '    loading: boolean;',
+            '    result: string;',
+            '    onFetchAsync: () => void;',
+        ].join('\n'),
+        callbacks: `    app.state.onFetchAsync = [&]() {
+        app.state.loading = true;
+        app.state.result = "";
+        imx::run_async<std::string>(
+            app.runtime,
+            []() {
+                // Simulate work — replace with real computation
+                std::this_thread::sleep_for(std::chrono::seconds(2));
+                return std::string("Data loaded successfully!");
+            },
+            [&](std::string res) {
+                app.state.result = std::move(res);
+                app.state.loading = false;
+            }
+        );
+    };`,
+        tsxWindow: `      <Window title="Async Demo">
+        <Column gap={8}>
+          <Text>Background Task Example</Text>
+          <Separator />
+          <Button
+            title="Fetch Data"
+            onPress={props.onFetchAsync}
+            disabled={props.loading}
+          />
+          {props.loading && <Text color={[1, 0.8, 0, 1]}>Loading...</Text>}
+          {props.result !== "" && <Text color={[0, 1, 0, 1]}>Result: {props.result}</Text>}
+        </Column>
+      </Window>`,
+        extraFiles: { 'async.h': ASYNC_H },
+    },
+    {
+        name: 'persistence',
+        description: 'JSON save/load with nlohmann/json',
+        includes: [],
+        appStateCppHeaders: ['#include <string>', '#include <nlohmann/json.hpp>'],
+        appStateCppFields: [
+            '    std::string name = "World";',
+            '    float volume = 50.0F;',
+            '    bool darkMode = true;',
+            '    std::function<void()> onSaveState;',
+            '    std::function<void()> onLoadState;',
+        ].join('\n'),
+        appStateTsFields: [
+            '    name: string;',
+            '    volume: number;',
+            '    darkMode: boolean;',
+            '    onSaveState: () => void;',
+            '    onLoadState: () => void;',
+        ].join('\n'),
+        callbacks: `    app.state.onSaveState = [&]() {
+        imx::save_json("state.json", app.state);
+    };
+    app.state.onLoadState = [&]() {
+        imx::load_json("state.json", app.state);
+        app.runtime.request_frame();
+    };
+
+    // Auto-load saved state (silently fails if no file exists)
+    imx::load_json("state.json", app.state);`,
+        tsxWindow: `      <Window title="Persistence Demo">
+        <Column gap={8}>
+          <Text>JSON Save/Load Example</Text>
+          <Separator />
+          <TextInput label="Name" value={props.name} />
+          <SliderFloat label="Volume" value={props.volume} min={0} max={100} />
+          <Checkbox label="Dark Mode" value={props.darkMode} />
+          <Separator />
+          <Row gap={8}>
+            <Button title="Save" onPress={props.onSaveState} />
+            <Button title="Load" onPress={props.onLoadState} />
+          </Row>
+        </Column>
+      </Window>`,
+        extraFiles: { 'persistence.h': PERSISTENCE_H },
+        dataFields: ['name', 'volume', 'darkMode'],
+    },
+    {
+        name: 'networking',
+        description: 'HTTP client with cpp-httplib',
+        requires: ['async'],
+        includes: ['#include <thread>', '#include <imx/httplib.h>'],
+        appStateCppHeaders: ['#include <string>'],
+        appStateCppFields: [
+            '    std::string url = "http://jsonplaceholder.typicode.com/todos/1";',
+            '    std::string response = "";',
+            '    bool loading = false;',
+            '    std::function<void()> onFetchNet;',
+        ].join('\n'),
+        appStateTsFields: [
+            '    url: string;',
+            '    response: string;',
+            '    loading: boolean;',
+            '    onFetchNet: () => void;',
+        ].join('\n'),
+        callbacks: `    // Wire up the HTTP fetch callback
+    app.state.onFetchNet = [&]() {
+        app.state.loading = true;
+        app.state.response = "";
+        std::string url = app.state.url;
+        imx::run_async<std::string>(
+            app.runtime,
+            [url]() -> std::string {
+                // Parse http://host/path
+                auto scheme_end = url.find("://");
+                if (scheme_end == std::string::npos)
+                    return "Error: invalid URL (must start with http://)";
+                auto host_start = scheme_end + 3;
+                auto path_start = url.find('/', host_start);
+                std::string host = (path_start != std::string::npos)
+                    ? url.substr(0, path_start) : url;
+                std::string path = (path_start != std::string::npos)
+                    ? url.substr(path_start) : "/";
+
+                // For HTTPS: #define CPPHTTPLIB_OPENSSL_SUPPORT and link OpenSSL
+                httplib::Client cli(host);
+                cli.set_connection_timeout(5);
+                cli.set_read_timeout(5);
+                auto res = cli.Get(path);
+                if (res) return res->body;
+                return "Error: request failed";
+            },
+            [&](std::string body) {
+                app.state.response = std::move(body);
+                app.state.loading = false;
+            }
+        );
+    };`,
+        tsxWindow: `      <Window title="Networking Demo">
+        <Column gap={8}>
+          <Text>HTTP Client Example</Text>
+          <Separator />
+          <TextInput label="URL" value={props.url} />
+          <Button title="Fetch" onPress={props.onFetchNet} disabled={props.loading} />
+          {props.loading && <Text color={[1, 0.8, 0, 1]}>Loading...</Text>}
+          {props.response !== "" && <Text wrapped={true}>{props.response}</Text>}
+        </Column>
+      </Window>`,
+        extraFiles: { 'async.h': ASYNC_H },
+    },
+    {
+        name: 'filedialog',
+        description: 'Native file dialogs + drag & drop',
+        includes: ['#include <imx/pfd.h>'],
+        appStateCppHeaders: ['#include <string>'],
+        appStateCppFields: [
+            '    std::string filePath = "";',
+            '    std::string message = "";',
+            '    std::function<void()> onOpenDialog;',
+            '    std::function<void()> onSaveDialog;',
+        ].join('\n'),
+        appStateTsFields: [
+            '    filePath: string;',
+            '    message: string;',
+            '    onOpenDialog: () => void;',
+            '    onSaveDialog: () => void;',
+        ].join('\n'),
+        callbacks: `    app.state.onOpenDialog = [&]() {
+        auto result = pfd::open_file("Open File").result();
+        if (!result.empty()) {
+            app.state.filePath = result[0];
+            app.state.message = "Opened: " + result[0];
+            app.runtime.request_frame();
+        }
+    };
+
+    app.state.onSaveDialog = [&]() {
+        auto result = pfd::save_file("Save File").result();
+        if (!result.empty()) {
+            app.state.filePath = result;
+            app.state.message = "Save to: " + result;
+            app.runtime.request_frame();
+        }
+    };
+
+    // GLFW file drop callback
+    glfwSetDropCallback(window, [](GLFWwindow* w, int count, const char** paths) {
+        auto* a = static_cast<App*>(glfwGetWindowUserPointer(w));
+        if (a && count > 0) {
+            a->state.filePath = paths[0];
+            a->state.message = "Dropped: " + std::string(paths[0]);
+            a->runtime.request_frame();
+        }
+    });`,
+        tsxWindow: `      <Window title="File Dialog Demo">
+        <Column gap={8}>
+          <Text>Native File Dialogs + Drag & Drop</Text>
+          <Separator />
+          <Row gap={8}>
+            <Button title="Open File" onPress={props.onOpenDialog} />
+            <Button title="Save File" onPress={props.onSaveDialog} />
+          </Row>
+          <Text>Drag & drop a file onto this window</Text>
+          {props.message !== "" && <Text color={[0, 1, 0, 1]}>{props.message}</Text>}
+          {props.filePath !== "" && <Text>Path: {props.filePath}</Text>}
+        </Column>
+      </Window>`,
+        extraFiles: {},
+    },
+    {
+        name: 'hotreload',
+        description: 'DLL hot reload for live UI iteration',
+        exclusive: true,
+        includes: [],
+        appStateCppHeaders: [],
+        appStateCppFields: '',
+        appStateTsFields: '',
+        callbacks: '',
+        tsxWindow: '',
+        extraFiles: {},
+    },
+];
+// ---------------------------------------------------------------------------
+// CMake with nlohmann/json FetchContent
+// ---------------------------------------------------------------------------
+function cmakeWithJson(projectName) {
+    return `cmake_minimum_required(VERSION 3.25)
+project(${projectName} LANGUAGES CXX)
+
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+include(FetchContent)
+set(FETCHCONTENT_QUIET OFF)
+
+FetchContent_Declare(
+    imx
+    GIT_REPOSITORY https://github.com/bgocumlu/imx.git
+    GIT_TAG main
+    GIT_SHALLOW TRUE
+    GIT_PROGRESS TRUE
+)
+
+FetchContent_Declare(
+    json
+    GIT_REPOSITORY https://github.com/nlohmann/json.git
+    GIT_TAG v3.11.3
+    GIT_SHALLOW TRUE
+)
+set(JSON_BuildTests OFF CACHE BOOL "" FORCE)
+
+message(STATUS "Fetching IMX (includes ImGui + GLFW)...")
+FetchContent_MakeAvailable(imx json)
+
+include(ImxCompile)
+
+imx_compile_tsx(GENERATED
+    SOURCES src/App.tsx
+    OUTPUT_DIR \${CMAKE_BINARY_DIR}/generated
+)
+
+add_executable(${projectName}
+    src/main.cpp
+    \${GENERATED}
+)
+set_target_properties(${projectName} PROPERTIES WIN32_EXECUTABLE $<CONFIG:Release>)
+target_link_libraries(${projectName} PRIVATE imx::renderer nlohmann_json::nlohmann_json)
+target_include_directories(${projectName} PRIVATE \${CMAKE_BINARY_DIR}/generated \${CMAKE_CURRENT_SOURCE_DIR}/src)
+
+# Copy public/ assets to output directory
+add_custom_command(TARGET ${projectName} POST_BUILD
+    COMMAND \${CMAKE_COMMAND} -E copy_directory
+        \${CMAKE_CURRENT_SOURCE_DIR}/public
+        $<TARGET_FILE_DIR:${projectName}>
+    COMMENT "Copying public/ assets"
+)
+`;
+}
+// ---------------------------------------------------------------------------
+// Base main.cpp template with placeholders
+// ---------------------------------------------------------------------------
+function buildMainCpp(projectName, extraIncludes, callbacks, hasPersistence) {
+    const includeBlock = extraIncludes ? '\n' + extraIncludes : '';
+    const persistenceInclude = hasPersistence ? '\n#include "persistence.h"' : '';
+    return `#include <imx/runtime.h>
+#include <imx/renderer.h>
+
+#include <imgui.h>
+#include <imgui_impl_glfw.h>
+#include <imgui_impl_opengl3.h>
+#include <GLFW/glfw3.h>
+${includeBlock}${persistenceInclude}
+#include "AppState.h"
+
+struct App {
+    GLFWwindow*      window  = nullptr;
+    ImGuiIO*         io      = nullptr;
+    imx::Runtime runtime;
+    AppState state;
+};
+
+static void render_frame(App& app) {
+    glfwMakeContextCurrent(app.window);
+    if (glfwGetWindowAttrib(app.window, GLFW_ICONIFIED) != 0) return;
+
+    int fb_w = 0, fb_h = 0;
+    glfwGetFramebufferSize(app.window, &fb_w, &fb_h);
+    if (fb_w <= 0 || fb_h <= 0) return;
+
+    ImGui_ImplOpenGL3_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui::NewFrame();
+
+    imx::render_root(app.runtime, app.state);
+
+    ImGui::Render();
+    glViewport(0, 0, fb_w, fb_h);
+    glClearColor(0.12F, 0.12F, 0.15F, 1.0F);
+    glClear(GL_COLOR_BUFFER_BIT);
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+    if ((app.io->ConfigFlags & ImGuiConfigFlags_ViewportsEnable) != 0) {
+        ImGui::UpdatePlatformWindows();
+        ImGui::RenderPlatformWindowsDefault();
+    }
+
+    glfwMakeContextCurrent(app.window);
+    glfwSwapBuffers(app.window);
+}
+
+static void window_size_callback(GLFWwindow* window, int, int) {
+    auto* app = static_cast<App*>(glfwGetWindowUserPointer(window));
+    if (app) render_frame(*app);
+}
+
+int main() {
+    if (glfwInit() == 0) return 1;
+
+    const char* glsl_version = "#version 150";
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+#ifdef __APPLE__
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+#endif
+
+    GLFWwindow* window = glfwCreateWindow(800, 600, "${projectName}", nullptr, nullptr);
+    if (!window) { glfwTerminate(); return 1; }
+    glfwMakeContextCurrent(window);
+    glfwSwapInterval(1);
+
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO();
+    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+    io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+
+    ImGui::StyleColorsDark();
+    ImGuiStyle& style = ImGui::GetStyle();
+    if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
+        style.WindowRounding = 0.0F;
+        style.Colors[ImGuiCol_WindowBg].w = 1.0F;
+    }
+
+    ImGui_ImplGlfw_InitForOpenGL(window, true);
+    ImGui_ImplOpenGL3_Init(glsl_version);
+
+    App app;
+    app.window = window;
+    app.io = &io;
+    glfwSetWindowUserPointer(window, &app);
+    glfwSetWindowSizeCallback(window, window_size_callback);
+
+${callbacks}
+
+    while (glfwWindowShouldClose(window) == 0) {
+        if (app.runtime.needs_frame()) {
+            glfwPollEvents();
+        } else {
+            glfwWaitEventsTimeout(0.1);
+        }
+        render_frame(app);
+        app.runtime.frame_rendered(ImGui::IsAnyItemActive());
+    }
+
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
+    glfwDestroyWindow(window);
+    glfwTerminate();
+    return 0;
+}
+
+#ifdef _WIN32
+#include <windows.h>
+int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) { return main(); }
+#endif
+`;
+}
+// ---------------------------------------------------------------------------
+// AppState.h builder
+// ---------------------------------------------------------------------------
+function buildAppStateH(headers, fields, nlohmannMacroFields) {
+    const dedupedHeaders = [...new Set(['#include <functional>', ...headers])];
+    const headerBlock = dedupedHeaders.join('\n');
+    const macroLine = nlohmannMacroFields
+        ? `\n// Only serialize data fields — callbacks are not persisted\nNLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(AppState, ${nlohmannMacroFields.join(', ')})\n`
+        : '';
+    return `#pragma once
+${headerBlock}
+
+struct AppState {
+${fields}
+};
+${macroLine}`;
+}
+// ---------------------------------------------------------------------------
+// App.tsx builder
+// ---------------------------------------------------------------------------
+function buildAppTsx(windows) {
+    return `export default function App(props: AppState) {
+  return (
+    <DockSpace>
+${windows}
+    </DockSpace>
+  );
+}
+`;
+}
+// ---------------------------------------------------------------------------
+// Deduplicate C++ struct fields by field name
+// ---------------------------------------------------------------------------
+function deduplicateFields(fieldsBlock) {
+    const seen = new Set();
+    const result = [];
+    for (const line of fieldsBlock.split('\n')) {
+        const trimmed = line.trim();
+        if (trimmed === '')
+            continue;
+        // Extract field name: match "type name = ..." or "std::function<...> name;"
+        const match = trimmed.match(/(\w+)\s*[=;]/);
+        if (match) {
+            const fieldName = match[1];
+            if (seen.has(fieldName))
+                continue;
+            seen.add(fieldName);
+        }
+        result.push(line);
+    }
+    return result.join('\n');
+}
+// ---------------------------------------------------------------------------
+// Deduplicate TS interface fields by field name
+// ---------------------------------------------------------------------------
+function deduplicateTsFields(fieldsBlock) {
+    const seen = new Set();
+    const result = [];
+    for (const line of fieldsBlock.split('\n')) {
+        const trimmed = line.trim();
+        if (trimmed === '')
+            continue;
+        // Extract field name: "name: type;"
+        const match = trimmed.match(/^(\w+)\s*[?]?\s*:/);
+        if (match) {
+            const fieldName = match[1];
+            if (seen.has(fieldName))
+                continue;
+            seen.add(fieldName);
+        }
+        result.push(line);
+    }
+    return result.join('\n');
+}
+// ---------------------------------------------------------------------------
+// Main entry: generateCombined()
+// ---------------------------------------------------------------------------
+export function generateCombined(featureNames, projectDir, projectName) {
+    // 1. Resolve feature objects
+    const featureMap = new Map();
+    for (const f of FEATURES)
+        featureMap.set(f.name, f);
+    // Validate all names exist
+    for (const name of featureNames) {
+        if (!featureMap.has(name)) {
+            console.error(`Error: unknown feature "${name}". Available: ${FEATURES.map(f => f.name).join(', ')}`);
+            process.exit(1);
+        }
+    }
+    // 2. Check exclusive features
+    const selected = new Set(featureNames);
+    for (const name of selected) {
+        const feat = featureMap.get(name);
+        if (feat.exclusive && selected.size > 1) {
+            console.error(`Error: "${name}" cannot be combined with other features. Use it as a standalone template.`);
+            process.exit(1);
+        }
+    }
+    // 3. Resolve dependencies (auto-add required features)
+    let changed = true;
+    while (changed) {
+        changed = false;
+        for (const name of [...selected]) {
+            const feat = featureMap.get(name);
+            if (feat.requires) {
+                for (const dep of feat.requires) {
+                    if (!selected.has(dep)) {
+                        selected.add(dep);
+                        changed = true;
+                    }
+                }
+            }
+        }
+    }
+    // Deterministic order: follow FEATURES array order
+    const ordered = FEATURES.filter(f => selected.has(f.name));
+    // 4. Collect everything
+    const allIncludes = [];
+    const allCppFields = [];
+    const allCppHeaders = [];
+    const allTsFields = [];
+    const allCallbacks = [];
+    const allWindows = [];
+    const allExtraFiles = {};
+    let nlohmannFields = null;
+    for (const feat of ordered) {
+        for (const inc of feat.includes) {
+            if (!allIncludes.includes(inc))
+                allIncludes.push(inc);
+        }
+        if (feat.appStateCppFields)
+            allCppFields.push(feat.appStateCppFields);
+        for (const h of feat.appStateCppHeaders) {
+            if (!allCppHeaders.includes(h))
+                allCppHeaders.push(h);
+        }
+        if (feat.appStateTsFields)
+            allTsFields.push(feat.appStateTsFields);
+        if (feat.callbacks)
+            allCallbacks.push(feat.callbacks);
+        if (feat.tsxWindow)
+            allWindows.push(feat.tsxWindow);
+        Object.assign(allExtraFiles, feat.extraFiles);
+        if (feat.dataFields) {
+            nlohmannFields = nlohmannFields || [];
+            nlohmannFields.push(...feat.dataFields);
+        }
+    }
+    // Deduplicate struct fields (e.g. `loading` from both async and networking)
+    const mergedCppFields = deduplicateFields(allCppFields.join('\n'));
+    const mergedTsFields = deduplicateTsFields(allTsFields.join('\n'));
+    // 5. Check for existing files
+    const srcDir = path.join(projectDir, 'src');
+    if (fs.existsSync(path.join(srcDir, 'App.tsx'))) {
+        console.error(`Error: ${srcDir}/App.tsx already exists. Aborting.`);
+        process.exit(1);
+    }
+    fs.mkdirSync(srcDir, { recursive: true });
+    const publicDir = path.join(projectDir, 'public');
+    fs.mkdirSync(publicDir, { recursive: true });
+    // 6. Build files
+    const hasPersistence = selected.has('persistence');
+    const includeLines = allIncludes.length > 0 ? allIncludes.join('\n') : '';
+    // Add async.h include if async.h is in extra files
+    const hasAsyncH = 'async.h' in allExtraFiles;
+    const asyncInclude = hasAsyncH ? '#include "async.h"' : '';
+    const fullIncludes = [includeLines, asyncInclude].filter(Boolean).join('\n');
+    const mainCpp = buildMainCpp(projectName, fullIncludes, allCallbacks.join('\n\n'), hasPersistence);
+    const appStateH = buildAppStateH(allCppHeaders, mergedCppFields, nlohmannFields);
+    const appStateInterface = `interface AppState {\n${mergedTsFields}\n}`;
+    const appTsx = buildAppTsx(allWindows.join('\n'));
+    const imxDts = buildImxDts(appStateInterface);
+    const cmake = hasPersistence
+        ? cmakeWithJson(projectName)
+        : cmakeTemplate(projectName, 'https://github.com/bgocumlu/imx.git');
+    // 7. Write files
+    fs.writeFileSync(path.join(srcDir, 'main.cpp'), mainCpp);
+    fs.writeFileSync(path.join(srcDir, 'AppState.h'), appStateH);
+    fs.writeFileSync(path.join(srcDir, 'App.tsx'), appTsx);
+    fs.writeFileSync(path.join(srcDir, 'imx.d.ts'), imxDts);
+    fs.writeFileSync(path.join(projectDir, 'tsconfig.json'), TSCONFIG);
+    fs.writeFileSync(path.join(projectDir, 'CMakeLists.txt'), cmake);
+    fs.writeFileSync(path.join(projectDir, '.gitignore'), GITIGNORE);
+    const createdFiles = [
+        'src/main.cpp',
+        'src/AppState.h',
+        'src/App.tsx',
+        'src/imx.d.ts',
+    ];
+    for (const [filename, content] of Object.entries(allExtraFiles)) {
+        fs.writeFileSync(path.join(srcDir, filename), content);
+        createdFiles.push(`src/${filename}`);
+    }
+    createdFiles.push('tsconfig.json', 'CMakeLists.txt', '.gitignore', 'public/');
+    // 8. Print summary
+    const featureList = ordered.map(f => f.name).join(', ');
+    console.log(`imxc: initialized project "${projectName}" with features: ${featureList}`);
+    console.log('');
+    console.log('  Created:');
+    for (const file of createdFiles) {
+        const pad = file.length < 22 ? ' '.repeat(22 - file.length) : ' ';
+        console.log(`    ${file}${pad}`);
+    }
+    console.log('');
+    console.log('  Next steps:');
+    console.log(`    cd ${projectName}`);
+    console.log(`    cmake -B build`);
+    console.log(`    cmake --build build`);
+}
