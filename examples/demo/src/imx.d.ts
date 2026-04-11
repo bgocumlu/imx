@@ -1,6 +1,18 @@
 // imx.d.ts — Type definitions for IMX components
 
+interface DemoTableRow {
+  system: string;
+  priority: string;
+  notes: string;
+}
+
+interface DemoTableData {
+  rows: DemoTableRow[];
+  sort_rows: (col: number, dir: number) => void;
+}
+
 interface DemoState {
+  table: DemoTableData;
   ms_selected: boolean[];
   ms_selection_count: number;
   apply_selection: (io: any) => void;

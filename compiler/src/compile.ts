@@ -127,7 +127,7 @@ export function compile(files: string[], outputDir: string): CompileResult {
         const importInfos: ImportInfo[] = [];
         for (const [importedName] of comp.imports) {
             const importedComp = componentMap.get(importedName);
-            if (importedComp && importedComp.hasProps) {
+            if (importedComp) {
                 importInfos.push({
                     name: importedName,
                     headerFile: `${importedName}.gen.h`,
@@ -148,9 +148,10 @@ export function compile(files: string[], outputDir: string): CompileResult {
             generateEmbedHeaders(embedImages, sourceDir, outputDir);
         }
 
-        // Only generate a header for inline props (not for named interface types —
-        // those are declared in the user's main.cpp)
-        if (comp.hasProps && !comp.ir.namedPropsType) {
+        // Generate a header for non-root components (not for named interface types —
+        // those are declared in the user's main.cpp). Even propless components need
+        // a forward declaration so the root can call their render function.
+        if (!comp.ir.namedPropsType && (comp.hasProps || comp !== compiled[0])) {
             const headerOutput = emitComponentHeader(comp.ir, comp.sourceFile, comp.boundProps, sharedPropsType);
             const headerPath = path.join(outputDir, `${baseName}.gen.h`);
             fs.writeFileSync(headerPath, headerOutput);

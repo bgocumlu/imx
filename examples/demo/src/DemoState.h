@@ -1,8 +1,25 @@
 #pragma once
 #include <imgui.h>
 #include <imx/renderer.h>
+#include <string>
+#include <vector>
+#include <functional>
+#include <algorithm>
+
+struct DemoTableRow {
+    std::string system;
+    std::string priority;
+    std::string notes;
+};
+
+struct DemoTableData {
+    std::vector<DemoTableRow> rows;
+    std::function<void(int, int)> sort_rows;
+};
 
 struct DemoState {
+    // Sortable table (TablesDemo)
+    DemoTableData table;
     // MultiSelect demo state (AdvancedDemo)
     static constexpr int MS_COUNT = 6;
     bool ms_selected[MS_COUNT] = {};

@@ -180,20 +180,23 @@ export function emitComponentHeader(comp: IRComponent, sourceFile?: string, boun
     }
     lines.push('');
 
-    // Props struct
-    lines.push(`struct ${comp.name}Props {`);
-    for (const p of comp.params) {
-        if (boundProps && boundProps.has(p.name)) {
-            lines.push(`${INDENT}${cppPropType(p.type)}* ${p.name} = nullptr;`);
-        } else {
-            lines.push(`${INDENT}${cppPropType(p.type)} ${p.name};`);
+    if (comp.params.length > 0) {
+        // Props struct
+        lines.push(`struct ${comp.name}Props {`);
+        for (const p of comp.params) {
+            if (boundProps && boundProps.has(p.name)) {
+                lines.push(`${INDENT}${cppPropType(p.type)}* ${p.name} = nullptr;`);
+            } else {
+                lines.push(`${INDENT}${cppPropType(p.type)} ${p.name};`);
+            }
         }
+        lines.push('};');
+        lines.push('');
+        lines.push(`void ${comp.name}_render(imx::RenderContext& ctx, ${comp.name}Props& props);`);
+    } else {
+        // Propless component — just the function forward declaration
+        lines.push(`void ${comp.name}_render(imx::RenderContext& ctx);`);
     }
-    lines.push('};');
-    lines.push('');
-
-    // Function forward declaration
-    lines.push(`void ${comp.name}_render(imx::RenderContext& ctx, ${comp.name}Props& props);`);
     lines.push('');
 
     return lines.join('\n');

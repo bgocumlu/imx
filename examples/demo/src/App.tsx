@@ -14,72 +14,30 @@ import { ImagesDemo } from './ImagesDemo';
 import { AdvancedDemo } from './AdvancedDemo';
 
 export default function App(props: DemoState) {
-  const [showLayout, setShowLayout] = useState(false);
-  const [showText, setShowText] = useState(false);
-  const [showInputs, setShowInputs] = useState(false);
-  const [showSliders, setShowSliders] = useState(false);
-  const [showButtons, setShowButtons] = useState(false);
-  const [showColor, setShowColor] = useState(false);
-  const [showTables, setShowTables] = useState(false);
-  const [showTrees, setShowTrees] = useState(false);
-  const [showMenus, setShowMenus] = useState(false);
-  const [showDragDrop, setShowDragDrop] = useState(false);
-  const [showCanvas, setShowCanvas] = useState(false);
-  const [showTheming, setShowTheming] = useState(false);
-  const [showImages, setShowImages] = useState(false);
-  const [showAdvanced, setShowAdvanced] = useState(false);
-
   return (
-    <Font name="inter-ui" src="Inter-Regular.ttf" size={16}>
+    <Font name="inter-ui" src="Inter-Regular.ttf" size={16} embed>
     <DockSpace>
-      <DockLayout>
-        <DockSplit direction="horizontal" size={0.18}>
-          <DockPanel>
-            <Window title="IMX Demo" />
-          </DockPanel>
-          <DockPanel>
-            <Window title="Demo Content" />
-          </DockPanel>
-        </DockSplit>
-      </DockLayout>
       <Window title="IMX Demo">
         <Column gap={4}>
-          <Text>Component Demos</Text>
-          <Text disabled>Click to open a demo window.</Text>
+          <Text>IMX Component Reference</Text>
+          <Text disabled>All components in one scrollable window.</Text>
           <Separator />
-          <Button title="Layout" onPress={() => setShowLayout(!showLayout)} />
-          <Button title="Text" onPress={() => setShowText(!showText)} />
-          <Button title="Inputs" onPress={() => setShowInputs(!showInputs)} />
-          <Button title="Sliders & Drags" onPress={() => setShowSliders(!showSliders)} />
-          <Button title="Buttons" onPress={() => setShowButtons(!showButtons)} />
-          <Button title="Color" onPress={() => setShowColor(!showColor)} />
-          <Button title="Tables" onPress={() => setShowTables(!showTables)} />
-          <Button title="Trees" onPress={() => setShowTrees(!showTrees)} />
-          <Button title="Menus & Popups" onPress={() => setShowMenus(!showMenus)} />
-          <Button title="Drag & Drop" onPress={() => setShowDragDrop(!showDragDrop)} />
-          <Button title="Canvas" onPress={() => setShowCanvas(!showCanvas)} />
-          <Button title="Theming" onPress={() => setShowTheming(!showTheming)} />
-          <Button title="Images" onPress={() => setShowImages(!showImages)} />
-          <Button title="Advanced" onPress={() => setShowAdvanced(!showAdvanced)} />
+          <LayoutDemo />
+          <TextDemo />
+          <InputsDemo />
+          <SlidersDemo />
+          <ButtonsDemo />
+          <ColorDemo />
+          <TablesDemo data={props.table} />
+          <TreesDemo />
+          <MenusDemo />
+          <DragDropDemo />
+          <CanvasDemo />
+          <ThemingDemo />
+          <ImagesDemo />
+          <AdvancedDemo />
         </Column>
       </Window>
-      <Window title="Demo Content">
-        <Text disabled>Select a demo from the left panel.</Text>
-      </Window>
-      {showLayout && <LayoutDemo onClose={() => setShowLayout(false)} />}
-      {showText && <TextDemo onClose={() => setShowText(false)} />}
-      {showInputs && <InputsDemo onClose={() => setShowInputs(false)} />}
-      {showSliders && <SlidersDemo onClose={() => setShowSliders(false)} />}
-      {showButtons && <ButtonsDemo onClose={() => setShowButtons(false)} />}
-      {showColor && <ColorDemo onClose={() => setShowColor(false)} />}
-      {showTables && <TablesDemo onClose={() => setShowTables(false)} />}
-      {showTrees && <TreesDemo onClose={() => setShowTrees(false)} />}
-      {showMenus && <MenusDemo onClose={() => setShowMenus(false)} />}
-      {showDragDrop && <DragDropDemo onClose={() => setShowDragDrop(false)} />}
-      {showCanvas && <CanvasDemo onClose={() => setShowCanvas(false)} />}
-      {showTheming && <ThemingDemo onClose={() => setShowTheming(false)} />}
-      {showImages && <ImagesDemo onClose={() => setShowImages(false)} />}
-      {showAdvanced && <AdvancedDemo onClose={() => setShowAdvanced(false)} />}
     </DockSpace>
     </Font>
   );

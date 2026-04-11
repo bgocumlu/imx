@@ -95,6 +95,27 @@ int main() {
     App app;
     app.window = window;
     app.io = &io;
+
+    // Initialize sortable table data
+    {
+        auto& t = app.state.table;
+        DemoTableRow r1; r1.system = "Core";    r1.priority = "High";   r1.notes = "Always running";
+        DemoTableRow r2; r2.system = "Network"; r2.priority = "Medium"; r2.notes = "On demand";
+        DemoTableRow r3; r3.system = "Logger";  r3.priority = "Low";    r3.notes = "Background only";
+        t.rows.push_back(r1);
+        t.rows.push_back(r2);
+        t.rows.push_back(r3);
+
+        t.sort_rows = [&app](int col, int dir) {
+            auto& rows = app.state.table.rows;
+            bool asc = (dir == 1);
+            std::sort(rows.begin(), rows.end(), [col, asc](const DemoTableRow& a, const DemoTableRow& b) {
+                if (col == 0) return asc ? a.system < b.system : a.system > b.system;
+                if (col == 1) return asc ? a.priority < b.priority : a.priority > b.priority;
+                return asc ? a.notes < b.notes : a.notes > b.notes;
+            });
+        };
+    }
     glfwSetWindowUserPointer(window, &app);
     glfwSetWindowSizeCallback(window, window_size_callback);
 
