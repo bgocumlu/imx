@@ -287,4 +287,22 @@ if(IMX_BUILD_EXAMPLES)
         ${CMAKE_CURRENT_SOURCE_DIR}/examples/dashboard/src
     )
 
+    # --- async_app: background task scaffolding ---
+    imx_compile_tsx(ASYNC_GENERATED
+        SOURCES
+            examples/async/src/App.tsx
+        OUTPUT_DIR ${CMAKE_BINARY_DIR}/generated_async
+    )
+
+    add_executable(async_app
+        examples/async/src/main.cpp
+        ${ASYNC_GENERATED}
+    )
+    set_target_properties(async_app PROPERTIES WIN32_EXECUTABLE $<CONFIG:Release>)
+    target_link_libraries(async_app PRIVATE imx_renderer)
+    target_include_directories(async_app PRIVATE
+        ${CMAKE_BINARY_DIR}/generated_async
+        ${CMAKE_CURRENT_SOURCE_DIR}/examples/async/src
+    )
+
 endif()
