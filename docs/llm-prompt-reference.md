@@ -616,7 +616,77 @@ Thread safety: developer's responsibility (same as raw ImGui).
 
 - **TextInput / InputTextMultiline**: supports struct binding via `value={props.name}` — buffer syncs to/from the struct field each frame.
 - **Custom component props**: bound props (used with `value={props.x}` without onChange) are automatically passed as `T*` pointers through custom components. Direct binding works at any nesting level.
-- **Sub-struct binding**: nested struct references also flow through child components. Patterns like `<SettingsPanel value={props.settings} />` and then `value={props.value.speed}` inside the child now emit valid pointer-based binding code.
+- **Sub-struct pattern (required for child components)**: pass a named sub-struct type, not individual scalar fields. Individual `number` props lose C++ type info (all become `int*`). Use a sub-struct: `<Phase11 data={props.phase11} />` with `props: { data: Phase11Data }`.
 - **Nested `.map()`**: auto-generated unique loop indices — same variable name in nested maps is safe.
 - **ColorEdit/ColorPicker**: works with struct binding via `std::vector<float>` fields (emits `.data()`).
 - **DragDrop payloads**: type matches the `onDrop` callback's parameter type annotation. Defaults to `float` if no target is found in the same component.
+- **Text interpolation in child components**: `<Text>{props.data.count}</Text>` where `count` is a number will fail (emits `.c_str()` on int/float). Display numbers through widgets (SliderFloat, DragInt, ProgressBar), not Text. Root components handle this correctly.
+- **MultiSelect in child components**: use `std::function<void(ImGuiMultiSelectIO*)>` in the sub-struct, not a member method. Member methods can't be passed as callback props. Wire the function in main.cpp.
+- **File naming**: TSX filename must match the exported function name. `Phase11.tsx` must export `Phase11`, not `Phase11Demo`. CMake uses the filename, compiler uses the function name.
+- **Repeated labels in tables/loops**: wrap in `<ID scope={i}>` to give each item a unique ImGui ID.
+
+### Sub-struct Binding Example
+
+```cpp
+// AppState.h
+struct ControlsData {
+    float speed = 5.0f;
+    int count = 3;
+    std::vector<Item> items;
+    std::function<void()> reset;
+};
+
+struct AppState {
+    ControlsData controls;
+};
+```
+
+```tsx
+// ControlsPanel.tsx — child component receives sub-struct
+export function ControlsPanel(props: { onClose: () => void; data: ControlsData }) {
+  return (
+    <Window title="Controls" open={true} onClose={props.onClose}>
+      <SliderFloat label="Speed" value={props.data.speed} min={0} max={100} />
+      <DragInt label="Count" value={props.data.count} speed={1} />
+      <Button title="Reset" onPress={props.data.reset} />
+      {props.data.items.map((item, i) => (
+        <ID scope={i}>
+          <Text>{item.name}</Text>
+        </ID>
+      ))}
+    </Window>
+  );
+}
+```
+
+```tsx
+// App.tsx — root passes sub-struct
+import { ControlsPanel } from './ControlsPanel';
+
+export default function App(props: AppState) {
+  const [showControls, setShowControls] = useState(false);
+  return (
+    <DockSpace>
+      <Window title="Main">
+        <Button title="Controls" onPress={() => setShowControls(true)} />
+      </Window>
+      {showControls && <ControlsPanel
+        onClose={() => setShowControls(false)}
+        data={props.controls}
+      />}
+    </DockSpace>
+  );
+}
+```
+
+### Modal with Escape Key
+
+Modal does not close on Escape by default (ImGui design). Add a Shortcut inside the modal:
+
+```tsx
+<Modal title="Confirm" open={showModal} onClose={() => setShowModal(false)}>
+  <Shortcut keys="Escape" onPress={() => setShowModal(false)} />
+  <Text>Are you sure?</Text>
+  <Button title="Close" onPress={() => setShowModal(false)} />
+</Modal>
+```

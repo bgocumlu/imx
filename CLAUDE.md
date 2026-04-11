@@ -58,6 +58,17 @@ Key principles:
 - DragDrop type matching is per-component — if source and target are in different .tsx files, payload defaults to `float`
 - MultiSelect `onSelectionChange` uses `() => props.fn(0)` pattern — emitter extracts the function call and replaces `0` with `ms_io_end` pointer. Called on both BeginMultiSelect and EndMultiSelect results. Requires struct binding (not useState).
 - Manual Combo mode is detected statically in lowering.ts — children present → begin_combo/end_combo IR, items prop → existing combo IR
+- File name must match exported function name — CMake derives output from filename (`Phase11.tsx` → `Phase11.gen.cpp`), compiler uses function name. Mismatch causes "file not found" build errors
+- Non-root components cannot import other non-root components — generated `.gen.cpp` won't include the child's `.gen.h`. Only the root component's imports generate `#include` directives
+- `useState` variable names must not collide with generated C++ locals — e.g., `val` conflicts with slider/checkbox temp vars (use descriptive names like `widthDemo`, `treeOpen`)
+- Child component numeric text interpolation emits `.c_str()` on all types — `<Text>{props.data.count}</Text>` fails for `int`/`float` fields. Root components correctly use `%g` format. Workaround: display numbers through widgets (SliderFloat, DragInt) not Text interpolation. Fix pending in emitter
+- `allowDoubleClick` on Selectable fires `onSelect` on BOTH single and double clicks — use `onDoubleClicked` callback for double-click-only behavior
+- Modal does not close on Escape key (ImGui design) — add `<Shortcut keys="Escape" onPress={() => setShow(false)} />` inside Modal if Escape-to-close is desired
+- MenuBar must be a direct child of Window — cannot be used inside CollapsingHeader, TreeNode, or child components
+- Propless child components need `props: {}` in TSX — compiler requires it to generate `.gen.h` header for the parent to include
+- Sub-struct pattern required for passing struct binding to child components — individual scalar props lose C++ type info (all become `int*`). Use a named sub-struct type (e.g., `Phase11Data`) and pass as `data={props.phase11}`
+- MultiSelect in child components: `apply_selection` must be `std::function<void(ImGuiMultiSelectIO*)>` (not a member method) — member methods can't be passed as callback props. Wire the std::function in main.cpp
+- Table with repeated button labels: wrap each in `<ID scope={i}>` to avoid ImGui ID conflicts
 
 ## File structure
 - `include/imx/` — public C++ headers (runtime.h, renderer.h)
@@ -69,8 +80,8 @@ Key principles:
 - `compiler/dist/` — compiled JS (committed to git so FetchContent works without npm)
 - `cmake/ImxCompile.cmake` — CMake helper for compiling .tsx files
 - `examples/hello/` — minimal getting-started (~25 lines TSX, no struct binding). `src/App.tsx`, `src/main.cpp`
-- `examples/demo/` — component-organized demo (like imgui_demo). Hub with 14 category buttons, each opens a demo window. `src/App.tsx` + 14 category .tsx files + `src/DemoState.h` + `src/main.cpp`
-- `examples/phases/` — phase showcase hub. Buttons for Phase 11-18. Content files added incrementally. `src/App.tsx` + `src/PhasesState.h` + `src/main.cpp`
+- `examples/demo/` — component-organized demo (like imgui_demo). Single scrollable window with 14 TreeNode categories, each with CollapsingHeader sub-sections. `src/App.tsx` + 14 category .tsx files + `src/DemoState.h` + `src/main.cpp`
+- `examples/phases/` — phase showcase (Phase 11-18). Hub with buttons, each opens a phase demo window. `src/App.tsx` + `Phase11.tsx`..`Phase18.tsx` + `src/PhasesState.h` + `src/main.cpp`
 - `examples/dashboard/`, `examples/kanban/`, `examples/settings/`, `examples/todo/` — specialized examples
 - Example layout: `tsconfig.json` at example root, source in `src/`, assets in `public/`
 - `docs/` — spec, mvp, roadmap, api-reference, quick-start, llm-prompt-reference
