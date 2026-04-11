@@ -452,9 +452,11 @@ add_custom_command(TARGET ${projectName} POST_BUILD
 
 export async function promptProjectName(): Promise<string> {
     const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-    rl.on('close', () => { process.exit(0); });
+    let answered = false;
+    rl.on('close', () => { if (!answered) process.exit(0); });
     return new Promise((resolve) => {
         rl.question('Project name: ', (answer) => {
+            answered = true;
             rl.close();
             const name = answer.trim();
             if (!name) {
@@ -468,7 +470,8 @@ export async function promptProjectName(): Promise<string> {
 
 export async function promptTemplateName(): Promise<string> {
     const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-    rl.on('close', () => { process.exit(0); });
+    let answered = false;
+    rl.on('close', () => { if (!answered) process.exit(0); });
     return new Promise((resolve) => {
         console.log('Select a template:');
         console.log('');
@@ -477,6 +480,7 @@ export async function promptTemplateName(): Promise<string> {
         });
         console.log('');
         rl.question('Template (number or name, comma-separated to combine): ', (answer) => {
+            answered = true;
             rl.close();
             const input = answer.trim();
 
