@@ -82,7 +82,7 @@ Key principles:
 - `docs/superpowers/` — design specs and implementation plans for each phase
 
 ## Compiler-first philosophy
-The goal is a compiler where any valid-looking TSX produces valid C++. If a pattern looks correct but generates broken code, **the compiler is wrong, not the pattern**. Don't teach workarounds — add the broken pattern to `docs/compiler-bugs.md` and fix the compiler. No workarounds in docs, no "avoid this pattern" — just fix it.
+The goal is a compiler where any valid-looking TSX produces valid C++. If a pattern looks correct but generates broken code, **the compiler is wrong, not the pattern**. Don't teach workarounds — add the broken pattern to `docs/compiler-bugs.md` and fix the compiler. No workarounds in docs, no "avoid this pattern" — just fix it. All previously known compiler bugs (numeric interpolation in child components, scalar prop type loss, MultiSelect bound detection, left-click context menus, non-root imports) have been fixed.
 
 ## Do's and Don'ts
 

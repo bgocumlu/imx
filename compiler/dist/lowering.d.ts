@@ -7,6 +7,7 @@ interface LoweringContext {
     setterMap: Map<string, string>;
     propsParam: string | null;
     propsFieldTypes: Map<string, string | 'callback'>;
+    externalInterfaces?: Map<string, Map<string, string | 'callback'>>;
     bufferIndex: number;
     mapCounter: number;
     sourceFile: ts.SourceFile;

@@ -1,52 +1,20 @@
 # Compiler Bugs
 
-Patterns that should work but produce invalid C++. Fix the compiler, don't work around them.
+No known compiler bugs. All patterns below have been fixed and should generate valid C++.
 
-## 1. Numeric text interpolation in child components
+## Fixed (kept for reference)
 
-```tsx
-<Text>Count: {props.data.count}</Text>
-```
-Generates `(*props.data).count.c_str()` — calls `.c_str()` on int/float. Root components correctly use `%g` format. Child component emitter path is wrong.
+### 1. Numeric text interpolation in child components (fixed)
+`<Text>Count: {props.data.count}</Text>` in child components now correctly uses `%g` format with `(double)` cast for numeric types, matching root component behavior. `inferExprType` resolves nested struct field types through external interfaces.
 
-## 2. Individual scalar props lose C++ type info
+### 2. Individual scalar props preserve C++ type info (fixed)
+`<MyComponent speed={props.speed} />` where `speed` is `float` in C++ now correctly generates `float* speed` in the child's Props struct. The compiler resolves actual C++ types from the parent's external interface definition.
 
-```tsx
-<MyComponent speed={props.speed} />
-```
-`speed` is `float` in C++ but generates `int* speed` in child Props struct. Compiler sees TypeScript `number` and defaults to `int` instead of resolving the actual type from the parent struct.
+### 3. MultiSelect bound prop detection (fixed)
+`detectBoundProps` now scans all expression strings (callbacks, conditions, selections) for `props.X.Y` / `props.X[N]` patterns, not just `directBind` widgets. MultiSelect with struct binding generates correct pointer types.
 
-## 3. MultiSelect bound prop detection without directBind
+### 4. Left-click context menus on interactive items (fixed)
+`<Button /><ContextMenu mouseButton="left">` now works. The renderer manually detects left-click via `IsItemHovered` + `IsMouseReleased` and calls `OpenPopup` before `BeginPopupContextItem`, bypassing the click consumption issue with interactive items.
 
-```tsx
-<MultiSelect onSelectionChange={() => props.data.apply_selection(0)}>
-  <Selectable selected={props.data.ms_selected[0]} selectionIndex={0} />
-</MultiSelect>
-```
-`data` generates as value copy instead of pointer. `detectBoundProps` only checks directBind widgets (SliderFloat without onChange). Should detect struct field access in callbacks and expressions too.
-
-## 4. Left-click context menus on interactive items
-
-```tsx
-<Button title="Click me" onPress={() => {}} />
-<ContextMenu mouseButton="left">
-  <MenuItem label="Action" onPress={() => {}} />
-</ContextMenu>
-```
-Left-click never opens the menu. Right-click context menus work. Renderer passes correct flag (`0` = left) but interactive items consume the click first.
-
-## 5. Non-root component imports
-
-```tsx
-// Phase12.tsx imports Phase12Nested.tsx
-import { Phase12Nested } from './Phase12Nested';
-```
-Generated `Phase12.gen.cpp` doesn't include `Phase12Nested.gen.h`. Import `#include` generation only runs for the root component.
-
-## 6. useState variable name collisions
-
-```tsx
-const [val, setVal] = useState(50.0);
-<SliderFloat label="X" value={val} onChange={setVal} min={0} max={100} />
-```
-Compiler generates `float val = val.get()` — local shadows the state variable. Compiler should namespace generated locals to avoid collisions.
+### 5. Non-root component imports (fixed)
+Components with inline props that import other components now correctly include `#include` directives for imported component headers. Previously only the named-interface and no-props code paths included imports.

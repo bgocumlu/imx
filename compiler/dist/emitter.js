@@ -132,7 +132,7 @@ function emitDockSetupFunction(layout, compName, lines) {
  * Emit a .gen.h header for a component that has props.
  * Contains the props struct and function forward declaration.
  */
-export function emitComponentHeader(comp, sourceFile, boundProps, sharedPropsType) {
+export function emitComponentHeader(comp, sourceFile, boundProps, sharedPropsType, resolvedBoundTypes) {
     const lines = [];
     if (sourceFile) {
         lines.push(`// Generated from ${sourceFile} by imxc`);
@@ -151,7 +151,9 @@ export function emitComponentHeader(comp, sourceFile, boundProps, sharedPropsTyp
         lines.push(`struct ${comp.name}Props {`);
         for (const p of comp.params) {
             if (boundProps && boundProps.has(p.name)) {
-                lines.push(`${INDENT}${cppPropType(p.type)}* ${p.name} = nullptr;`);
+                // Use resolved C++ type from parent interface if available (e.g. float instead of int)
+                const actualType = resolvedBoundTypes?.get(p.name) ?? cppPropType(p.type);
+                lines.push(`${INDENT}${actualType}* ${p.name} = nullptr;`);
             }
             else {
                 lines.push(`${INDENT}${cppPropType(p.type)} ${p.name};`);
@@ -221,6 +223,12 @@ export function emitComponent(comp, imports, sourceFile, boundProps, boundPropsM
             lines.push(`#include "${comp.name}.gen.h"`);
             if (hasColorType) {
                 lines.push('#include <array>');
+            }
+            // Include imported component headers
+            if (imports && imports.length > 0) {
+                for (const imp of imports) {
+                    lines.push(`#include "${imp.headerFile}"`);
+                }
             }
             // Embed image includes
             const embedKeysProps = collectEmbedKeys(comp.body);

@@ -64,6 +64,7 @@ export function lowerComponent(parsed, validation, externalInterfaces) {
         setterMap,
         propsParam,
         propsFieldTypes,
+        externalInterfaces,
         bufferIndex: 0,
         mapCounter: 0,
         sourceFile: parsed.sourceFile,
@@ -1222,6 +1223,24 @@ function inferExprType(expr, ctx) {
                     return ft;
                 }
                 return 'string';
+            }
+        }
+        // Nested access: props.data.field — resolve through external interfaces
+        if (ctx.propsParam && ctx.externalInterfaces && ts.isPropertyAccessExpression(expr.expression)) {
+            const mid = expr.expression;
+            if (ts.isIdentifier(mid.expression) && mid.expression.text === ctx.propsParam) {
+                const midType = ctx.propsFieldTypes.get(mid.name.text);
+                if (midType && midType !== 'callback') {
+                    const iface = ctx.externalInterfaces.get(midType);
+                    if (iface) {
+                        const fieldType = iface.get(prop);
+                        if (fieldType && fieldType !== 'callback') {
+                            if (fieldType === 'int' || fieldType === 'float' || fieldType === 'bool' || fieldType === 'string' || fieldType === 'color' || fieldType === 'int_array') {
+                                return fieldType;
+                            }
+                        }
+                    }
+                }
             }
         }
         return 'string';

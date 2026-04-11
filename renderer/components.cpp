@@ -1,4 +1,5 @@
 #include <imx/renderer.h>
+#include <imgui_internal.h>
 #include <algorithm>
 #include <cctype>
 #include <cstdarg>
@@ -334,7 +335,17 @@ void open_popup(const char* id) {
 }
 
 bool begin_context_menu_item(const char* id, int mouse_button) {
-    return ImGui::BeginPopupContextItem((id && id[0] != '\0') ? id : nullptr, mouse_button);
+    const char* popup_id = (id && id[0] != '\0') ? id : nullptr;
+    if (mouse_button == 0) {
+        // Left-click: interactive items (Button, Selectable) consume the click
+        // before BeginPopupContextItem can detect it. Handle manually.
+        ImGuiID pid = popup_id ? ImGui::GetCurrentWindow()->GetID(popup_id) : ImGui::GetItemID();
+        if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup) && ImGui::IsMouseReleased(0)) {
+            ImGui::OpenPopup(pid);
+        }
+        return ImGui::BeginPopupEx(pid, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoSavedSettings);
+    }
+    return ImGui::BeginPopupContextItem(popup_id, mouse_button);
 }
 
 bool begin_context_menu_window(const char* id, int mouse_button) {

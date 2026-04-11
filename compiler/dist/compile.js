@@ -15,6 +15,7 @@ export function compile(files, outputDir) {
     let hasErrors = false;
     const errorMessages = [];
     const compiled = [];
+    const allExternalInterfaces = new Map();
     // Phase 1: Parse, validate, and lower all components
     for (const file of files) {
         if (!fs.existsSync(file)) {
@@ -38,6 +39,8 @@ export function compile(files, outputDir) {
         }
         // Load external interface definitions from imx.d.ts in the same directory
         const externalInterfaces = loadExternalInterfaces(path.dirname(path.resolve(file)));
+        for (const [k, v] of externalInterfaces)
+            allExternalInterfaces.set(k, v);
         const ir = lowerComponent(parsed, validation, externalInterfaces);
         const imports = extractImports(parsed.sourceFile);
         compiled.push({
@@ -91,6 +94,25 @@ export function compile(files, outputDir) {
         boundPropsMap.set(comp.name, comp.boundProps);
     }
     const sharedPropsType = compiled.find(c => c.ir.namedPropsType)?.ir.namedPropsType;
+    // Resolve actual C++ types for bound props by tracing through parent interfaces.
+    // When a child declares `speed: number` (→ 'int'), but the parent struct has `float speed`,
+    // the bound prop pointer must use the parent's actual type.
+    const resolvedBoundPropTypes = new Map();
+    for (const comp of compiled) {
+        // Build field types for this component (either from external interface or inline params)
+        let fieldTypes;
+        if (comp.ir.namedPropsType) {
+            fieldTypes = allExternalInterfaces.get(comp.ir.namedPropsType);
+        }
+        else if (comp.ir.params.length > 0) {
+            fieldTypes = new Map();
+            for (const p of comp.ir.params)
+                fieldTypes.set(p.name, p.type);
+        }
+        if (fieldTypes) {
+            resolveChildBoundTypes(comp.ir.body, fieldTypes, componentMap, allExternalInterfaces, resolvedBoundPropTypes);
+        }
+    }
     for (const comp of compiled) {
         const importInfos = [];
         for (const [importedName] of comp.imports) {
@@ -117,7 +139,8 @@ export function compile(files, outputDir) {
         // those are declared in the user's main.cpp). Even propless components need
         // a forward declaration so the root can call their render function.
         if (!comp.ir.namedPropsType && (comp.hasProps || comp !== compiled[0])) {
-            const headerOutput = emitComponentHeader(comp.ir, comp.sourceFile, comp.boundProps, sharedPropsType);
+            const resolved = resolvedBoundPropTypes.get(comp.name);
+            const headerOutput = emitComponentHeader(comp.ir, comp.sourceFile, comp.boundProps, sharedPropsType, resolved);
             const headerPath = path.join(outputDir, `${baseName}.gen.h`);
             fs.writeFileSync(headerPath, headerOutput);
             console.log(`  ${baseName} -> ${headerPath} (header)`);
@@ -390,6 +413,10 @@ function walkNodesForBinding(nodes, bound) {
                 bound.add(propName);
             }
         }
+        // Scan all expressions for nested struct field access (props.X.Y or props.X[N]).
+        // This catches struct binding in callbacks, conditions, selections, text args, etc.
+        // — not just directBind widgets.
+        scanNodeExprsForBinding(node, bound);
         if (node.kind === 'conditional') {
             walkNodesForBinding(node.body, bound);
             if (node.elseBody)
@@ -397,6 +424,101 @@ function walkNodesForBinding(nodes, bound) {
         }
         else if (node.kind === 'list_map') {
             walkNodesForBinding(node.body, bound);
+        }
+    }
+}
+/** Scan all string-valued properties of an IR node for props.X.Y / props.X[N] patterns. */
+function scanNodeExprsForBinding(node, bound) {
+    const obj = node;
+    for (const key of Object.keys(obj)) {
+        // Skip structural/recursive fields — they're handled by walkNodes recursion
+        if (key === 'kind' || key === 'body' || key === 'elseBody' || key === 'loc')
+            continue;
+        const val = obj[key];
+        if (typeof val === 'string') {
+            extractNestedPropAccess(val, bound);
+        }
+        else if (Array.isArray(val)) {
+            for (const item of val) {
+                if (typeof item === 'string')
+                    extractNestedPropAccess(item, bound);
+            }
+        }
+        else if (typeof val === 'object' && val !== null) {
+            // Handles Record<string, string> (container props, custom component props)
+            // and IRItemInteraction objects
+            for (const v of Object.values(val)) {
+                if (typeof v === 'string')
+                    extractNestedPropAccess(v, bound);
+            }
+        }
+    }
+}
+/** If expr contains props.X.Y or props.X[N], mark X as needing pointer binding.
+ *  Skips .c_str() and .size() — these are method calls on scalar types, not struct access. */
+function extractNestedPropAccess(expr, bound) {
+    // Match props.X. (dot access)
+    const dotRegex = /props\.(\w+)\./g;
+    let match;
+    while ((match = dotRegex.exec(expr)) !== null) {
+        const afterDot = expr.slice(match.index + match[0].length);
+        if (afterDot.startsWith('c_str()') || afterDot.startsWith('size()'))
+            continue;
+        bound.add(match[1]);
+    }
+    // Match props.X[ (bracket access)
+    const bracketRegex = /props\.(\w+)\[/g;
+    while ((match = bracketRegex.exec(expr)) !== null) {
+        bound.add(match[1]);
+    }
+}
+/**
+ * Walk IR nodes in a parent component, resolving actual C++ types for child bound props.
+ * When a child has `speed: number` (→ 'int') but the parent passes props.speed from a struct
+ * where speed is float, the resolved type overrides the child's inferred type.
+ */
+function resolveChildBoundTypes(nodes, parentFieldTypes, componentMap, extIfaces, result) {
+    for (const node of nodes) {
+        if (node.kind === 'custom_component') {
+            const child = componentMap.get(node.name);
+            if (child) {
+                for (const [propName, valueExpr] of Object.entries(node.props)) {
+                    if (!child.boundProps.has(propName) || !valueExpr.startsWith('props.'))
+                        continue;
+                    const parts = valueExpr.slice(6).split('.');
+                    const topField = parts[0].split('[')[0];
+                    const topType = parentFieldTypes.get(topField);
+                    if (!topType || topType === 'callback')
+                        continue;
+                    let resolvedType;
+                    if (parts.length === 1) {
+                        // Direct scalar: props.speed → parent's type for speed
+                        resolvedType = topType;
+                    }
+                    else if (parts.length === 2) {
+                        // Nested: props.data.speed → look up speed in data's interface
+                        const iface = extIfaces.get(topType);
+                        if (iface) {
+                            const ft = iface.get(parts[1].split('[')[0]);
+                            if (ft && ft !== 'callback')
+                                resolvedType = ft;
+                        }
+                    }
+                    if (resolvedType) {
+                        if (!result.has(node.name))
+                            result.set(node.name, new Map());
+                        result.get(node.name).set(propName, resolvedType);
+                    }
+                }
+            }
+        }
+        else if (node.kind === 'conditional') {
+            resolveChildBoundTypes(node.body, parentFieldTypes, componentMap, extIfaces, result);
+            if (node.elseBody)
+                resolveChildBoundTypes(node.elseBody, parentFieldTypes, componentMap, extIfaces, result);
+        }
+        else if (node.kind === 'list_map') {
+            resolveChildBoundTypes(node.body, parentFieldTypes, componentMap, extIfaces, result);
         }
     }
 }

@@ -41,6 +41,14 @@ export function MenusDemo(props: {}) {
           </ContextMenu>
 
           <Spacing />
+          <Text>Left-click the button below for a left-click context menu.</Text>
+          <Button title="Left-click me (left ctx)" onPress={() => {}} />
+          <ContextMenu id="ctx-left" mouseButton="left">
+            <MenuItem label="Option A" onPress={() => setCtxStatus("Option A")} />
+            <MenuItem label="Option B" onPress={() => setCtxStatus("Option B")} />
+          </ContextMenu>
+
+          <Spacing />
           <Text>Context menu action: {ctxStatus}</Text>
         </Column>
       </CollapsingHeader>
