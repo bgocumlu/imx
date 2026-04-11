@@ -93,15 +93,15 @@ int main() {
     glfwSetWindowSizeCallback(window, window_size_callback);
 
     app.state.onIncrement = [&]() { app.state.count++; };
-    app.state.watchCmd = "npx imxc watch src -o build/generated --build \"cmake --build build --target hotreload_ui\"";
+    app.state.watchCmd = "npx imxc watch src -o build/generated --build \"cmake --build build --target imx_ui\"";
     app.state.onCopyCmd = [&]() { imx::clipboard_set(app.state.watchCmd.c_str()); };
 
 #ifdef _WIN32
-    app.module.load("hotreload_ui.dll");
+    app.module.load("imx_ui.dll");
 #elif defined(__APPLE__)
-    app.module.load("libhotreload_ui.dylib");
+    app.module.load("libimx_ui.dylib");
 #else
-    app.module.load("libhotreload_ui.so");
+    app.module.load("libimx_ui.so");
 #endif
 
     while (glfwWindowShouldClose(window) == 0) {

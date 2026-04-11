@@ -367,17 +367,17 @@ if(IMX_BUILD_EXAMPLES)
     )
 
     # UI shared library (hot-reloadable)
-    add_library(hotreload_ui SHARED
+    add_library(imx_ui SHARED
         examples/hotreload/src/ui_entry.cpp
         ${HOTRELOAD_GENERATED}
     )
-    target_link_libraries(hotreload_ui PRIVATE imx_renderer)
-    target_include_directories(hotreload_ui PRIVATE
+    target_link_libraries(imx_ui PRIVATE imx_renderer)
+    target_include_directories(imx_ui PRIVATE
         ${CMAKE_BINARY_DIR}/generated_hotreload
         ${CMAKE_CURRENT_SOURCE_DIR}/examples/hotreload/src
     )
 
-    # Host executable (loads hotreload_ui dynamically)
+    # Host executable (loads imx_ui dynamically)
     add_executable(hotreload_host
         examples/hotreload/src/main.cpp
     )
@@ -388,12 +388,12 @@ if(IMX_BUILD_EXAMPLES)
     )
 
     # Copy DLL next to host exe after build
-    add_custom_command(TARGET hotreload_ui POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:hotreload_ui> $<TARGET_FILE_DIR:hotreload_host>
-        COMMENT "Copying hotreload_ui DLL to host directory"
+    add_custom_command(TARGET imx_ui POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:imx_ui> $<TARGET_FILE_DIR:hotreload_host>
+        COMMENT "Copying imx_ui DLL to host directory"
     )
 
     # Build host after UI so the DLL is ready
-    add_dependencies(hotreload_host hotreload_ui)
+    add_dependencies(hotreload_host imx_ui)
 
 endif()

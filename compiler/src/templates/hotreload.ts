@@ -238,15 +238,15 @@ int main() {
     glfwSetWindowSizeCallback(window, window_size_callback);
 
     app.state.onIncrement = [&]() { app.state.count++; };
-    app.state.watchCmd = "npx imxc watch src -o build/generated --build \\"cmake --build build --target APP_NAME_ui\\"";
+    app.state.watchCmd = "npx imxc watch src -o build/generated --build \\"cmake --build build --target imx_ui\\"";
     app.state.onCopyCmd = [&]() { imx::clipboard_set(app.state.watchCmd.c_str()); };
 
 #ifdef _WIN32
-    app.module.load("APP_NAME_ui.dll");
+    app.module.load("imx_ui.dll");
 #elif defined(__APPLE__)
-    app.module.load("libAPP_NAME_ui.dylib");
+    app.module.load("libimx_ui.dylib");
 #else
-    app.module.load("libAPP_NAME_ui.so");
+    app.module.load("libimx_ui.so");
 #endif
 
     while (glfwWindowShouldClose(window) == 0) {
@@ -333,12 +333,12 @@ imx_compile_tsx(GENERATED
 )
 
 # UI shared library (hot-reloadable)
-add_library(${projectName}_ui SHARED
+add_library(imx_ui SHARED
     src/ui_entry.cpp
     \${GENERATED}
 )
-target_link_libraries(${projectName}_ui PRIVATE imx::renderer)
-target_include_directories(${projectName}_ui PRIVATE \${CMAKE_BINARY_DIR}/generated \${CMAKE_CURRENT_SOURCE_DIR}/src)
+target_link_libraries(imx_ui PRIVATE imx::renderer)
+target_include_directories(imx_ui PRIVATE \${CMAKE_BINARY_DIR}/generated \${CMAKE_CURRENT_SOURCE_DIR}/src)
 
 # Host executable (loads UI module dynamically)
 add_executable(${projectName}
@@ -349,11 +349,11 @@ target_link_libraries(${projectName} PRIVATE imx::renderer \${CMAKE_DL_LIBS})
 target_include_directories(${projectName} PRIVATE \${CMAKE_CURRENT_SOURCE_DIR}/src)
 
 # Copy DLL/SO next to host exe after build
-add_custom_command(TARGET ${projectName}_ui POST_BUILD
-    COMMAND \${CMAKE_COMMAND} -E copy $<TARGET_FILE:${projectName}_ui> $<TARGET_FILE_DIR:${projectName}>
+add_custom_command(TARGET imx_ui POST_BUILD
+    COMMAND \${CMAKE_COMMAND} -E copy $<TARGET_FILE:imx_ui> $<TARGET_FILE_DIR:${projectName}>
     COMMENT "Copying UI module to host directory"
 )
-add_dependencies(${projectName} ${projectName}_ui)
+add_dependencies(${projectName} imx_ui)
 
 # Copy public/ assets to output directory
 add_custom_command(TARGET ${projectName} POST_BUILD
