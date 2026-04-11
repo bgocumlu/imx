@@ -82,7 +82,7 @@ Key principles:
 - `docs/superpowers/` — design specs and implementation plans for each phase
 
 ## Compiler-first philosophy
-The goal is a compiler where any valid-looking TSX produces valid C++. If a pattern looks correct but generates broken code, **the compiler is wrong, not the pattern**. Don't teach workarounds as correct usage — document the limitation, then fix the compiler. Known limitations are listed in `docs/llm-prompt-reference.md` under "Known Compiler Limitations". When you find a new one: add it there with the broken pattern, the workaround, and why the compiler should handle it. Then fix the compiler when possible.
+The goal is a compiler where any valid-looking TSX produces valid C++. If a pattern looks correct but generates broken code, **the compiler is wrong, not the pattern**. Don't teach workarounds — add the broken pattern to `docs/compiler-bugs.md` and fix the compiler. No workarounds in docs, no "avoid this pattern" — just fix it.
 
 ## Do's and Don'ts
 
