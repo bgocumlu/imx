@@ -13,6 +13,7 @@ if (process.argv[2] === 'templates') {
         console.log(`  ${t.name} — ${t.description}`);
     });
     console.log('\nUsage: imxc init <project-name> --template=<name>');
+    console.log('Combine: imxc init <project-name> --template=async,persistence');
     process.exit(0);
 }
 
@@ -67,7 +68,7 @@ if (process.argv[2] === 'watch') {
 
     if (positionals.length === 0) {
         console.error('Usage: imxc <input.tsx ...> -o <output-dir>');
-        console.error('       imxc init [project-dir] [--template=<name>]');
+        console.error('       imxc init [project-dir] [--template=<name[,name,...]>]');
         console.error('       imxc templates');
         console.error('       imxc add [project-dir]');
         console.error('       imxc watch <dir> -o <output-dir> [--build <cmd>]');
