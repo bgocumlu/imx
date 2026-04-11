@@ -7,4 +7,5 @@ struct AppState {
     float speed = 5.0F;
     std::string watchCmd;
     std::function<void()> onIncrement;
+    std::function<void()> onCopyCmd;
 };

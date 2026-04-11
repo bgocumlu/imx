@@ -5,6 +5,7 @@ interface AppState {
   speed: number;
   watchCmd: string;
   onIncrement: () => void;
+  onCopyCmd: () => void;
 }
 
 interface Style {

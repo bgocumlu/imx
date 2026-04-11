@@ -94,6 +94,7 @@ int main() {
 
     app.state.onIncrement = [&]() { app.state.count++; };
     app.state.watchCmd = "npx imxc watch src -o build/generated --build \"cmake --build build --target hotreload_ui\"";
+    app.state.onCopyCmd = [&]() { imx::clipboard_set(app.state.watchCmd.c_str()); };
 
 #ifdef _WIN32
     app.module.load("hotreload_ui.dll");

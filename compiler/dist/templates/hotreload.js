@@ -6,6 +6,7 @@ const APPSTATE_INTERFACE = `interface AppState {
     speed: number;
     watchCmd: string;
     onIncrement: () => void;
+    onCopyCmd: () => void;
 }`;
 const APPSTATE_H = `#pragma once
 #include <string>
@@ -16,6 +17,7 @@ struct AppState {
     float speed = 5.0F;
     std::string watchCmd;
     std::function<void()> onIncrement;
+    std::function<void()> onCopyCmd;
 };
 `;
 const HOTRELOAD_H = `#pragma once
@@ -232,6 +234,7 @@ int main() {
 
     app.state.onIncrement = [&]() { app.state.count++; };
     app.state.watchCmd = "npx imxc watch src -o build/generated --build \\"cmake --build build --target APP_NAME_ui\\"";
+    app.state.onCopyCmd = [&]() { imx::clipboard_set(app.state.watchCmd.c_str()); };
 
 #ifdef _WIN32
     app.module.load("APP_NAME_ui.dll");
@@ -283,7 +286,8 @@ const APP_TSX = `export default function App(props: AppState) {
       <Window title="Hot Reload">
         <Column gap={8}>
           <Text>Run this in a second terminal to enable live reload:</Text>
-          <TextInput label="Watch command" value={props.watchCmd} />
+          <Text wrapped={true}>{props.watchCmd}</Text>
+          <Button title="Copy" onPress={props.onCopyCmd} />
         </Column>
       </Window>
       {showAbout && <Window title="About">

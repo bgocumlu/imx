@@ -15,7 +15,8 @@ export default function App(props: AppState) {
       <Window title="Hot Reload">
         <Column gap={8}>
           <Text>Run this in a second terminal to enable live reload:</Text>
-          <TextInput label="Watch command" value={props.watchCmd} />
+          <Text wrapped={true}>{props.watchCmd}</Text>
+          <Button title="Copy" onPress={props.onCopyCmd} />
         </Column>
       </Window>
       {showAbout && <Window title="About">
