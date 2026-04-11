@@ -121,6 +121,42 @@ int main() {
         };
     }
 
+    // Phase 12: initialize struct binding fixes demo data
+    {
+        auto& p = app.state.phase12;
+        p.username = "user123";
+        p.notes = "Edit this text.\nMulti-line struct binding.";
+        p.inner.brightness = 0.5f;
+        p.inner.priority = 1;
+
+        Phase12DragItem a1; a1.label = "Apple";  a1.id = 1;
+        Phase12DragItem a2; a2.label = "Banana"; a2.id = 2;
+        Phase12DragItem a3; a3.label = "Cherry"; a3.id = 3;
+        p.pool_a.push_back(a1);
+        p.pool_a.push_back(a2);
+        p.pool_a.push_back(a3);
+
+        Phase12DragItem b1; b1.label = "Date";       b1.id = 4;
+        Phase12DragItem b2; b2.label = "Elderberry"; b2.id = 5;
+        p.pool_b.push_back(b1);
+        p.pool_b.push_back(b2);
+
+        p.move_to_b = [&app](int id) {
+            auto& a = app.state.phase12.pool_a;
+            auto& b = app.state.phase12.pool_b;
+            for (auto it = a.begin(); it != a.end(); ++it) {
+                if (it->id == id) { b.push_back(*it); a.erase(it); return; }
+            }
+        };
+        p.move_to_a = [&app](int id) {
+            auto& a = app.state.phase12.pool_a;
+            auto& b = app.state.phase12.pool_b;
+            for (auto it = b.begin(); it != b.end(); ++it) {
+                if (it->id == id) { a.push_back(*it); b.erase(it); return; }
+            }
+        };
+    }
+
     // Load TSX-declared fonts before first frame
     extern void _imx_load_fonts();
     _imx_load_fonts();

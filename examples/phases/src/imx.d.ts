@@ -15,8 +15,29 @@ interface Phase11Data {
   total_tasks: number;
 }
 
+interface Phase12Inner {
+  brightness: number;
+  priority: number;
+}
+
+interface Phase12DragItem {
+  label: string;
+  id: number;
+}
+
+interface Phase12Data {
+  username: string;
+  notes: string;
+  inner: Phase12Inner;
+  pool_a: Phase12DragItem[];
+  pool_b: Phase12DragItem[];
+  move_to_b: (id: number) => void;
+  move_to_a: (id: number) => void;
+}
+
 interface PhasesState {
   phase11: Phase11Data;
+  phase12: Phase12Data;
   ms_selected: boolean[];
   ms_selection_count: number;
   apply_selection: (io: any) => void;
