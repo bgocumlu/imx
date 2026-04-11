@@ -456,9 +456,33 @@ export async function promptTemplateName() {
             console.log(`  ${i + 1}. ${t.name} — ${t.description}`);
         });
         console.log('');
-        rl.question('Template (number or name): ', (answer) => {
+        rl.question('Template (number or name, comma-separated to combine): ', (answer) => {
             rl.close();
             const input = answer.trim();
+            // Check for comma-separated
+            if (input.includes(',')) {
+                const parts = input.split(',').map(s => s.trim());
+                const resolved = [];
+                for (const part of parts) {
+                    const num = parseInt(part, 10);
+                    if (!isNaN(num) && num >= 1 && num <= TEMPLATES.length) {
+                        resolved.push(TEMPLATES[num - 1].name);
+                    }
+                    else {
+                        const found = TEMPLATES.find(t => t.name === part);
+                        if (found) {
+                            resolved.push(found.name);
+                        }
+                        else {
+                            console.error(`Error: unknown template "${part}".`);
+                            process.exit(1);
+                        }
+                    }
+                }
+                resolve(resolved.join(','));
+                return;
+            }
+            // Single value — existing logic
             const byNumber = parseInt(input, 10);
             if (!isNaN(byNumber) && byNumber >= 1 && byNumber <= TEMPLATES.length) {
                 resolve(TEMPLATES[byNumber - 1].name);

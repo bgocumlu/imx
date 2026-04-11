@@ -1,6 +1,7 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { TEMPLATES, APP_TSX, buildImxDts, TSCONFIG } from './templates/index.js';
+import { generateCombined, FEATURES } from './templates/custom.js';
 import './templates/minimal.js';
 import './templates/async.js';
 import './templates/persistence.js';
@@ -69,6 +70,21 @@ export function addToProject(projectDir) {
 export function initProject(projectDir, projectName, templateName) {
     const name = projectName ?? path.basename(projectDir);
     const tpl = templateName ?? 'minimal';
+    // Check for comma-separated (combined template)
+    const parts = tpl.split(',').map(s => s.trim());
+    if (parts.length > 1) {
+        // Validate all parts are known features
+        const featureNames = FEATURES.map(f => f.name);
+        for (const p of parts) {
+            if (!featureNames.includes(p)) {
+                console.error(`Error: unknown feature "${p}". Combinable features: ${featureNames.join(', ')}`);
+                process.exit(1);
+            }
+        }
+        generateCombined(parts, projectDir, name);
+        return;
+    }
+    // Single template — use existing generator
     const entry = TEMPLATES.find(t => t.name === tpl);
     if (!entry) {
         console.error(`Error: unknown template "${tpl}". Available: ${TEMPLATES.map(t => t.name).join(', ')}`);
