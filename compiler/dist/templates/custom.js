@@ -28,7 +28,7 @@ void run_async(Runtime& runtime, std::function<T()> work, std::function<void(T)>
 const PERSISTENCE_H = `#pragma once
 #include <fstream>
 #include <string>
-#include <nlohmann/json.hpp>
+#include <imx/json.hpp>
 
 namespace imx {
 
@@ -227,7 +227,7 @@ export const FEATURES = [
         name: 'persistence',
         description: 'JSON save/load with nlohmann/json',
         includes: [],
-        appStateCppHeaders: ['#include <string>', '#include <nlohmann/json.hpp>'],
+        appStateCppHeaders: ['#include <string>', '#include <imx/json.hpp>'],
         appStateCppFields: [
             '    std::string name = "World";',
             '    float volume = 50.0F;',
@@ -411,9 +411,9 @@ export const FEATURES = [
     },
 ];
 // ---------------------------------------------------------------------------
-// CMake with nlohmann/json FetchContent
+// CMake for hot reload (host exe + UI shared lib)
 // ---------------------------------------------------------------------------
-function cmakeWithJson(projectName) {
+function cmakeHotreloadCombined(projectName) {
     return `cmake_minimum_required(VERSION 3.25)
 project(${projectName} LANGUAGES CXX)
 
@@ -430,78 +430,8 @@ FetchContent_Declare(
     GIT_SHALLOW TRUE
     GIT_PROGRESS TRUE
 )
-
-FetchContent_Declare(
-    json
-    GIT_REPOSITORY https://github.com/nlohmann/json.git
-    GIT_TAG v3.11.3
-    GIT_SHALLOW TRUE
-)
-set(JSON_BuildTests OFF CACHE BOOL "" FORCE)
-
 message(STATUS "Fetching IMX (includes ImGui + GLFW)...")
-FetchContent_MakeAvailable(imx json)
-
-include(ImxCompile)
-
-imx_compile_tsx(GENERATED
-    SOURCES src/App.tsx
-    OUTPUT_DIR \${CMAKE_BINARY_DIR}/generated
-)
-
-add_executable(${projectName}
-    src/main.cpp
-    \${GENERATED}
-)
-set_target_properties(${projectName} PROPERTIES WIN32_EXECUTABLE $<CONFIG:Release>)
-target_link_libraries(${projectName} PRIVATE imx::renderer nlohmann_json::nlohmann_json)
-target_include_directories(${projectName} PRIVATE \${CMAKE_BINARY_DIR}/generated \${CMAKE_CURRENT_SOURCE_DIR}/src)
-
-# Copy public/ assets to output directory
-add_custom_command(TARGET ${projectName} POST_BUILD
-    COMMAND \${CMAKE_COMMAND} -E copy_directory
-        \${CMAKE_CURRENT_SOURCE_DIR}/public
-        $<TARGET_FILE_DIR:${projectName}>
-    COMMENT "Copying public/ assets"
-)
-`;
-}
-// ---------------------------------------------------------------------------
-// CMake for hot reload (host exe + UI shared lib), optionally with persistence
-// ---------------------------------------------------------------------------
-function cmakeHotreloadCombined(projectName, hasPersistence) {
-    const jsonFetch = hasPersistence ? `
-FetchContent_Declare(
-    json
-    GIT_REPOSITORY https://github.com/nlohmann/json.git
-    GIT_TAG v3.11.3
-    GIT_SHALLOW TRUE
-)
-set(JSON_BuildTests OFF CACHE BOOL "" FORCE)
-` : '';
-    const fetchMakeAvailable = hasPersistence
-        ? 'FetchContent_MakeAvailable(imx json)'
-        : 'FetchContent_MakeAvailable(imx)';
-    const jsonLinkHost = hasPersistence ? ' nlohmann_json::nlohmann_json' : '';
-    const jsonLinkUi = hasPersistence ? ' nlohmann_json::nlohmann_json' : '';
-    return `cmake_minimum_required(VERSION 3.25)
-project(${projectName} LANGUAGES CXX)
-
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
-include(FetchContent)
-set(FETCHCONTENT_QUIET OFF)
-
-FetchContent_Declare(
-    imx
-    GIT_REPOSITORY https://github.com/bgocumlu/imx.git
-    GIT_TAG main
-    GIT_SHALLOW TRUE
-    GIT_PROGRESS TRUE
-)
-${jsonFetch}message(STATUS "Fetching IMX (includes ImGui + GLFW)...")
-${fetchMakeAvailable}
+FetchContent_MakeAvailable(imx)
 
 include(ImxCompile)
 
@@ -515,7 +445,7 @@ add_library(imx_ui SHARED
     src/ui_entry.cpp
     \${GENERATED}
 )
-target_link_libraries(imx_ui PRIVATE imx::renderer${jsonLinkUi})
+target_link_libraries(imx_ui PRIVATE imx::renderer)
 target_include_directories(imx_ui PRIVATE \${CMAKE_BINARY_DIR}/generated \${CMAKE_CURRENT_SOURCE_DIR}/src)
 
 # Host executable (loads UI module dynamically)
@@ -523,7 +453,7 @@ add_executable(${projectName}
     src/main.cpp
 )
 set_target_properties(${projectName} PROPERTIES WIN32_EXECUTABLE $<CONFIG:Release>)
-target_link_libraries(${projectName} PRIVATE imx::renderer \${CMAKE_DL_LIBS}${jsonLinkHost})
+target_link_libraries(${projectName} PRIVATE imx::renderer \${CMAKE_DL_LIBS})
 target_include_directories(${projectName} PRIVATE \${CMAKE_CURRENT_SOURCE_DIR}/src)
 
 # Copy DLL/SO next to host exe after build
@@ -968,19 +898,9 @@ export function generateCombined(featureNames, projectDir, projectName) {
     const appTsx = buildAppTsx(allWindows.join('\n'));
     const imxDts = buildImxDts(appStateInterface);
     // Build CMakeLists
-    let cmake;
-    if (hasHotreload && hasPersistence) {
-        cmake = cmakeHotreloadCombined(projectName, true);
-    }
-    else if (hasHotreload) {
-        cmake = cmakeHotreloadCombined(projectName, false);
-    }
-    else if (hasPersistence) {
-        cmake = cmakeWithJson(projectName);
-    }
-    else {
-        cmake = cmakeTemplate(projectName, 'https://github.com/bgocumlu/imx.git');
-    }
+    const cmake = hasHotreload
+        ? cmakeHotreloadCombined(projectName)
+        : cmakeTemplate(projectName, 'https://github.com/bgocumlu/imx.git');
     // 7. Write files
     fs.writeFileSync(path.join(srcDir, 'main.cpp'), mainCpp);
     fs.writeFileSync(path.join(srcDir, 'AppState.h'), appStateH);

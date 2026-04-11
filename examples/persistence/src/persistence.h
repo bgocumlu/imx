@@ -1,7 +1,7 @@
 #pragma once
 #include <fstream>
 #include <string>
-#include <nlohmann/json.hpp>
+#include <imx/json.hpp>
 
 namespace imx {
 

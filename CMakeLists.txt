@@ -305,15 +305,6 @@ if(IMX_BUILD_EXAMPLES)
         ${CMAKE_CURRENT_SOURCE_DIR}/examples/async/src
     )
 
-    # --- nlohmann/json (for persistence example) ---
-    FetchContent_Declare(json
-        GIT_REPOSITORY https://github.com/nlohmann/json.git
-        GIT_TAG v3.11.3
-        GIT_SHALLOW TRUE
-    )
-    set(JSON_BuildTests OFF CACHE BOOL "" FORCE)
-    FetchContent_MakeAvailable(json)
-
     # --- persistence_app: JSON save/load scaffolding ---
     imx_compile_tsx(PERSISTENCE_GENERATED
         SOURCES
@@ -326,7 +317,7 @@ if(IMX_BUILD_EXAMPLES)
         ${PERSISTENCE_GENERATED}
     )
     set_target_properties(persistence_app PROPERTIES WIN32_EXECUTABLE $<CONFIG:Release>)
-    target_link_libraries(persistence_app PRIVATE imx_renderer nlohmann_json::nlohmann_json)
+    target_link_libraries(persistence_app PRIVATE imx_renderer)
     target_include_directories(persistence_app PRIVATE
         ${CMAKE_BINARY_DIR}/generated_persistence
         ${CMAKE_CURRENT_SOURCE_DIR}/examples/persistence/src

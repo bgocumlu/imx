@@ -1,7 +1,7 @@
 #pragma once
 #include <string>
 #include <functional>
-#include <nlohmann/json.hpp>
+#include <imx/json.hpp>
 
 struct AppState {
     std::string name = "World";
