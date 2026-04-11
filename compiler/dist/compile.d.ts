@@ -3,6 +3,7 @@ export interface CompileResult {
     success: boolean;
     componentCount: number;
     errors: string[];
+    warnings: string[];
 }
 /**
  * Compile a list of .tsx files and write generated C++ to outputDir.

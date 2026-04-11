@@ -9,5 +9,7 @@ export interface ImportInfo {
     name: string;
     headerFile: string;
 }
-export declare function emitComponent(comp: IRComponent, imports?: ImportInfo[], sourceFile?: string, boundProps?: Set<string>, boundPropsMap?: Map<string, Set<string>>): string;
+export declare function emitComponent(comp: IRComponent, imports?: ImportInfo[], sourceFile?: string, boundProps?: Set<string>, boundPropsMap?: Map<string, Set<string>>, options?: {
+    sourceMap?: boolean;
+}): string;
 export declare function emitRoot(rootName: string, stateCount: number, bufferCount: number, sourceFile?: string, propsType?: string, namedPropsType?: boolean, fontDeclarations?: FontDeclaration[]): string;

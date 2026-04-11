@@ -25,11 +25,15 @@ const INDENT = '    ';
 let currentCompName = '';
 let currentBoundProps: Set<string> = new Set();
 let allBoundProps: Map<string, Set<string>> = new Map();
+let sourceMapEnabled = true;
 
 function emitLocComment(loc: SourceLoc | undefined, tag: string, lines: string[], indent: string): void {
-    if (loc) {
-        lines.push(`${indent}// ${loc.file}:${loc.line} <${tag}>`);
+    if (!loc) return;
+    if (sourceMapEnabled) {
+        const filename = loc.file.replace(/\\/g, '/');
+        lines.push(`#line ${loc.line} "${filename}"`);
     }
+    lines.push(`${indent}// ${loc.file}:${loc.line} <${tag}>`);
 }
 
 function cppType(t: IRType): string {
@@ -209,8 +213,9 @@ export interface ImportInfo {
     headerFile: string;   // e.g. "TodoItem.gen.h"
 }
 
-export function emitComponent(comp: IRComponent, imports?: ImportInfo[], sourceFile?: string, boundProps?: Set<string>, boundPropsMap?: Map<string, Set<string>>): string {
+export function emitComponent(comp: IRComponent, imports?: ImportInfo[], sourceFile?: string, boundProps?: Set<string>, boundPropsMap?: Map<string, Set<string>>, options?: { sourceMap?: boolean }): string {
     const lines: string[] = [];
+    sourceMapEnabled = options?.sourceMap ?? true;
 
     // Reset counters for each component
     styleCounter = 0;
@@ -344,6 +349,7 @@ export function emitComponent(comp: IRComponent, imports?: ImportInfo[], sourceF
     if (currentBoundProps.size > 0) {
         for (let i = 0; i < lines.length; i++) {
             if (lines[i].trimStart().startsWith('//')) continue;
+            if (lines[i].trimStart().startsWith('#line')) continue;
             for (const prop of currentBoundProps) {
                 // Replace props.X reads with (*props.X) — but not &props.X or *props.X (already handled)
                 const pattern = new RegExp(`(?<![&*])\\bprops\\.${prop}\\b`, 'g');

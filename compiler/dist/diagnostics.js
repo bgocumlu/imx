@@ -4,8 +4,9 @@
 export function formatDiagnostic(error, source) {
     const lines = source.split('\n');
     const lineIdx = error.line - 1;
-    // Header: file:line:col - error: message
-    const header = `${error.file}:${error.line}:${error.col} - error: ${error.message}`;
+    // Header: file:line:col - error/warning: message
+    const level = error.severity ?? 'error';
+    const header = `${error.file}:${error.line}:${error.col} - ${level}: ${error.message}`;
     if (lineIdx < 0 || lineIdx >= lines.length) {
         return header;
     }

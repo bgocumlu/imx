@@ -8,14 +8,14 @@ import { lowerComponent } from '../src/lowering.js';
 import { emitComponent, emitComponentHeader, emitRoot } from '../src/emitter.js';
 import { compile as compileFiles, resolveDragDropTypes } from '../src/compile.js';
 
-function compile(source: string, sourceFile?: string): string {
+function compile(source: string, sourceFile?: string, options?: { sourceMap?: boolean }): string {
     const parsed = parseFile('Test.tsx', source);
     expect(parsed.errors).toHaveLength(0);
     const validation = validate(parsed);
     expect(validation.errors).toHaveLength(0);
     const ir = lowerComponent(parsed, validation);
     resolveDragDropTypes(ir.body);
-    return emitComponent(ir, undefined, sourceFile);
+    return emitComponent(ir, undefined, sourceFile, undefined, undefined, options);
 }
 
 function compileHeader(source: string): string {
@@ -1414,5 +1414,73 @@ function App() {
         expect(output).toContain('if (imx::renderer::begin_context_menu_window("actions", 1)) {');
         expect(output).toContain('imx::renderer::end_context_menu();');
         expect(output).toContain('if (imx::renderer::shortcut_pressed("Ctrl+S")) {');
+    });
+});
+
+describe('#line directives', () => {
+    it('emits #line directives when sourceMap is enabled', () => {
+        const output = compile(`
+function App() {
+  return (
+    <Window title="Hello">
+      <Button title="Click" onPress={() => {}} />
+    </Window>
+  );
+}
+        `, 'App.tsx', { sourceMap: true });
+
+        // loc.file comes from parseFile('Test.tsx', ...) — the parser filename
+        expect(output).toMatch(/^#line \d+ "Test\.tsx"$/m);
+    });
+
+    it('does not emit #line directives when sourceMap is disabled', () => {
+        const output = compile(`
+function App() {
+  return (
+    <Window title="Hello">
+      <Button title="Click" onPress={() => {}} />
+    </Window>
+  );
+}
+        `, 'App.tsx', { sourceMap: false });
+
+        expect(output).not.toContain('#line');
+    });
+
+    it('#line directives have no indent', () => {
+        const output = compile(`
+function App() {
+  return (
+    <Window title="Hello">
+      <Button title="Click" onPress={() => {}} />
+    </Window>
+  );
+}
+        `, 'App.tsx', { sourceMap: true });
+
+        const lineDirectives = output.split('\n').filter(l => l.includes('#line'));
+        for (const line of lineDirectives) {
+            expect(line).toMatch(/^#line /);
+        }
+    });
+
+    it('#line directives contain correct line numbers', () => {
+        // Line 3 = Window, Line 4 = Button (1-based, accounting for leading newline)
+        const output = compile(`
+function App() {
+  return (
+    <Window title="Hello">
+      <Button title="Click" onPress={() => {}} />
+    </Window>
+  );
+}
+        `, 'App.tsx', { sourceMap: true });
+
+        const lineDirectives = output.split('\n').filter(l => l.startsWith('#line'));
+        expect(lineDirectives.length).toBeGreaterThanOrEqual(2);
+        // Each #line should have a valid number and quoted filename
+        for (const line of lineDirectives) {
+            expect(line).toMatch(/^#line \d+ ".+"$/);
+        }
     });
 });

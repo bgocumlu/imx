@@ -14,6 +14,7 @@ export function compile(files, outputDir) {
     fs.mkdirSync(outputDir, { recursive: true });
     let hasErrors = false;
     const errorMessages = [];
+    const warningMessages = [];
     const compiled = [];
     const allExternalInterfaces = new Map();
     // Phase 1: Parse, validate, and lower all components
@@ -32,6 +33,9 @@ export function compile(files, outputDir) {
             continue;
         }
         const validation = validate(parsed);
+        if (validation.warnings.length > 0) {
+            validation.warnings.forEach(w => warningMessages.push(formatDiagnostic(w, source)));
+        }
         if (validation.errors.length > 0) {
             validation.errors.forEach(e => errorMessages.push(formatDiagnostic(e, source)));
             hasErrors = true;
@@ -56,7 +60,7 @@ export function compile(files, outputDir) {
         });
     }
     if (hasErrors) {
-        return { success: false, componentCount: 0, errors: errorMessages };
+        return { success: false, componentCount: 0, errors: errorMessages, warnings: warningMessages };
     }
     // Phase 2: Build lookup of compiled components for cross-file resolution
     const componentMap = new Map();
@@ -124,7 +128,7 @@ export function compile(files, outputDir) {
                 });
             }
         }
-        const cppOutput = emitComponent(comp.ir, importInfos, comp.sourceFile, comp.boundProps, boundPropsMap);
+        const cppOutput = emitComponent(comp.ir, importInfos, comp.sourceFile, comp.boundProps, boundPropsMap, { sourceMap: true });
         const baseName = comp.name;
         const outPath = path.join(outputDir, `${baseName}.gen.cpp`);
         fs.writeFileSync(outPath, cppOutput);
@@ -170,7 +174,7 @@ export function compile(files, outputDir) {
         fs.writeFileSync(rootPath, rootOutput);
         console.log(`  -> ${rootPath} (root entry point)`);
     }
-    return { success: true, componentCount: compiled.length, errors: [] };
+    return { success: true, componentCount: compiled.length, errors: [], warnings: warningMessages };
 }
 function resolveCustomComponents(nodes, map) {
     for (const node of nodes) {

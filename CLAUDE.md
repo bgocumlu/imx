@@ -113,7 +113,7 @@ The goal is a compiler where any valid-looking TSX produces valid C++. If a patt
 - Don't call `before_child()` in modal/popup begin functions — overlays don't participate in layout
 - Don't work around compiler bugs by modifying example code — fix the pipeline
 
-## Current status (Phases 1-18 complete)
+## Current status (Phases 1-19 complete)
 - Font embed from TSX: `<Font name="mono" src="file.ttf" size={15} embed>` — compiler generates .embed.h and `_imx_load_fonts()` in app_root.gen.cpp. C++ `load_font()` / `load_font_embedded()` API unchanged.
 - ~98 host components covering all ImGui widgets + input expansion
 - Text & Display Variants (Phase 18): `color`, `disabled`, `wrapped` props on `<Text>`, `<Bullet />` standalone, Selectable `spanAllColumns`/`allowDoubleClick`/`dontClosePopups` flags, ListBox manual mode (BeginListBox/EndListBox with children), horizontalScrollbar bug fix
@@ -143,4 +143,5 @@ The goal is a compiler where any valid-looking TSX produces valid C++. If a patt
 - API documentation + LLM prompt reference complete
 - Packaging: `imxc@0.5.5` on npm, FetchContent for C++ (compiler/dist/ committed)
 - Release builds hide console on Windows (WIN32_EXECUTABLE), Debug shows it
-- Next: Phase 19 candidates
+- Developer Experience (Phase 19): source-mapped errors (`#line` directives in `.gen.cpp` pointing back to `.tsx` source lines — MSVC errors show `App.tsx:42` instead of `App.gen.cpp:187`), compiler warnings for unknown components and missing `<ID scope>` in `.map()` loops, warning severity in diagnostics output
+- Next: Phase 20 (Project Templates)

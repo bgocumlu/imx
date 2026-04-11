@@ -48,6 +48,9 @@ else {
     }
     const outputDir = values.output ?? '.';
     const result = compile(positionals, outputDir);
+    if (result.warnings.length > 0) {
+        result.warnings.forEach(w => console.warn(w));
+    }
     if (!result.success) {
         result.errors.forEach(e => console.error(e));
         process.exit(1);

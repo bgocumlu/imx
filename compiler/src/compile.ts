@@ -25,6 +25,7 @@ export interface CompileResult {
     success: boolean;
     componentCount: number;
     errors: string[];
+    warnings: string[];
 }
 
 /**
@@ -36,6 +37,7 @@ export function compile(files: string[], outputDir: string): CompileResult {
 
     let hasErrors = false;
     const errorMessages: string[] = [];
+    const warningMessages: string[] = [];
     const compiled: CompiledComponent[] = [];
     const allExternalInterfaces = new Map<string, Map<string, string | 'callback'>>();
 
@@ -57,6 +59,9 @@ export function compile(files: string[], outputDir: string): CompileResult {
         }
 
         const validation = validate(parsed);
+        if (validation.warnings.length > 0) {
+            validation.warnings.forEach(w => warningMessages.push(formatDiagnostic(w, source)));
+        }
         if (validation.errors.length > 0) {
             validation.errors.forEach(e => errorMessages.push(formatDiagnostic(e, source)));
             hasErrors = true;
@@ -84,7 +89,7 @@ export function compile(files: string[], outputDir: string): CompileResult {
     }
 
     if (hasErrors) {
-        return { success: false, componentCount: 0, errors: errorMessages };
+        return { success: false, componentCount: 0, errors: errorMessages, warnings: warningMessages };
     }
 
     // Phase 2: Build lookup of compiled components for cross-file resolution
@@ -155,7 +160,7 @@ export function compile(files: string[], outputDir: string): CompileResult {
             }
         }
 
-        const cppOutput = emitComponent(comp.ir, importInfos, comp.sourceFile, comp.boundProps, boundPropsMap);
+        const cppOutput = emitComponent(comp.ir, importInfos, comp.sourceFile, comp.boundProps, boundPropsMap, { sourceMap: true });
         const baseName = comp.name;
         const outPath = path.join(outputDir, `${baseName}.gen.cpp`);
         fs.writeFileSync(outPath, cppOutput);
@@ -207,7 +212,7 @@ export function compile(files: string[], outputDir: string): CompileResult {
         console.log(`  -> ${rootPath} (root entry point)`);
     }
 
-    return { success: true, componentCount: compiled.length, errors: [] };
+    return { success: true, componentCount: compiled.length, errors: [], warnings: warningMessages };
 }
 
 function resolveCustomComponents(nodes: IRNode[], map: Map<string, CompiledComponent>): void {

@@ -41,4 +41,46 @@ describe('validate', () => {
         const result = validate(parsed);
         expect(result.errors).toHaveLength(0);
     });
+
+    it('warns on unknown component (not error)', () => {
+        const source = `function App() { return <Knob value={0} />; }`;
+        const parsed = parseFile('App.tsx', source);
+        const result = validate(parsed);
+        expect(result.errors).toHaveLength(0);
+        expect(result.warnings.length).toBeGreaterThan(0);
+        expect(result.warnings[0].message).toContain("Unknown component '<Knob>' --");
+        expect(result.warnings[0].severity).toBe('warning');
+    });
+
+    it('no warning for imported custom component', () => {
+        const source = `import { Sidebar } from './Sidebar';\nfunction App() { return <Sidebar />; }`;
+        const parsed = parseFile('App.tsx', source);
+        const result = validate(parsed);
+        expect(result.errors).toHaveLength(0);
+        expect(result.warnings).toHaveLength(0);
+    });
+
+    it('warns on .map() without ID wrapper', () => {
+        const source = `function App() { const items = [1,2]; return <Window title="T">{items.map((item) => <Text>hi</Text>)}</Window>; }`;
+        const parsed = parseFile('App.tsx', source);
+        const result = validate(parsed);
+        expect(result.errors).toHaveLength(0);
+        expect(result.warnings.some(w => w.message.includes('<ID scope'))).toBe(true);
+    });
+
+    it('no warning on .map() with ID wrapper', () => {
+        const source = `function App() { const items = [1,2]; return <Window title="T">{items.map((item, i) => <ID scope={i}><Text>hi</Text></ID>)}</Window>; }`;
+        const parsed = parseFile('App.tsx', source);
+        const result = validate(parsed);
+        expect(result.errors).toHaveLength(0);
+        expect(result.warnings.filter(w => w.message.includes('<ID scope'))).toHaveLength(0);
+    });
+
+    it('no warning on .map() with TableRow (self-scoping)', () => {
+        const source = `function App() { const rows = [1,2]; return <Table columns={["A"]}>{rows.map((r, i) => <TableRow><Text>hi</Text></TableRow>)}</Table>; }`;
+        const parsed = parseFile('App.tsx', source);
+        const result = validate(parsed);
+        expect(result.errors).toHaveLength(0);
+        expect(result.warnings.filter(w => w.message.includes('<ID scope'))).toHaveLength(0);
+    });
 });

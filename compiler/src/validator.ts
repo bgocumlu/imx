@@ -5,6 +5,7 @@ import { extractImports } from './parser.js';
 
 export interface ValidationResult {
     errors: ParseError[];
+    warnings: ParseError[];
     customComponents: Map<string, string>;
     useStateCalls: UseStateInfo[];
 }
@@ -21,14 +22,20 @@ function err(sf: ts.SourceFile, node: ts.Node, msg: string): ParseError {
     return { file: sf.fileName, line: line + 1, col: character + 1, message: msg };
 }
 
+function warn(sf: ts.SourceFile, node: ts.Node, msg: string): ParseError {
+    const { line, character } = sf.getLineAndCharacterOfPosition(node.getStart());
+    return { file: sf.fileName, line: line + 1, col: character + 1, message: msg, severity: 'warning' };
+}
+
 export function validate(parsed: ParsedFile): ValidationResult {
     const errors: ParseError[] = [];
+    const warnings: ParseError[] = [];
     const sf = parsed.sourceFile;
     const func = parsed.component;
     const customComponents = extractImports(sf);
     const useStateCalls: UseStateInfo[] = [];
 
-    if (!func || !func.body) return { errors, customComponents, useStateCalls };
+    if (!func || !func.body) return { errors, warnings, customComponents, useStateCalls };
 
     let slotIndex = 0;
     for (const stmt of func.body.statements) {
@@ -44,10 +51,10 @@ export function validate(parsed: ParsedFile): ValidationResult {
 
     const returnStmt = func.body.statements.find(ts.isReturnStatement);
     if (returnStmt && returnStmt.expression) {
-        validateExpression(returnStmt.expression, sf, customComponents, errors);
+        validateExpression(returnStmt.expression, sf, customComponents, errors, warnings);
     }
 
-    return { errors, customComponents, useStateCalls };
+    return { errors, warnings, customComponents, useStateCalls };
 }
 
 function isUseStateCall(decl: ts.VariableDeclaration): boolean {
@@ -83,46 +90,68 @@ function extractUseState(decl: ts.VariableDeclaration, index: number, sf: ts.Sou
     return { name: nameEl.name.text, setter: setterEl.name.text, initializer: call.arguments[0], index };
 }
 
-function validateExpression(node: ts.Node, sf: ts.SourceFile, customComponents: Map<string, string>, errors: ParseError[]): void {
+function validateExpression(node: ts.Node, sf: ts.SourceFile, customComponents: Map<string, string>, errors: ParseError[], warnings: ParseError[]): void {
     if (ts.isJsxElement(node)) {
-        validateJsxElement(node, sf, customComponents, errors);
+        validateJsxElement(node, sf, customComponents, errors, warnings);
     } else if (ts.isJsxSelfClosingElement(node)) {
-        validateJsxTag(node.tagName, node, sf, customComponents, errors);
+        validateJsxTag(node.tagName, node, sf, customComponents, warnings);
         validateJsxAttributes(node.attributes, node.tagName, sf, errors);
     } else if (ts.isJsxFragment(node)) {
-        for (const child of node.children) validateExpression(child, sf, customComponents, errors);
+        for (const child of node.children) validateExpression(child, sf, customComponents, errors, warnings);
     } else if (ts.isParenthesizedExpression(node)) {
-        validateExpression(node.expression, sf, customComponents, errors);
+        validateExpression(node.expression, sf, customComponents, errors, warnings);
     } else if (ts.isConditionalExpression(node)) {
-        validateExpression(node.whenTrue, sf, customComponents, errors);
-        validateExpression(node.whenFalse, sf, customComponents, errors);
+        validateExpression(node.whenTrue, sf, customComponents, errors, warnings);
+        validateExpression(node.whenFalse, sf, customComponents, errors, warnings);
     } else if (ts.isBinaryExpression(node) && node.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandToken) {
-        validateExpression(node.right, sf, customComponents, errors);
+        validateExpression(node.right, sf, customComponents, errors, warnings);
     } else if (ts.isJsxExpression(node) && node.expression) {
-        validateExpression(node.expression, sf, customComponents, errors);
+        validateExpression(node.expression, sf, customComponents, errors, warnings);
     } else if (ts.isCallExpression(node) && ts.isPropertyAccessExpression(node.expression) && node.expression.name.text === 'map') {
         const callback = node.arguments[0];
         if (callback && (ts.isArrowFunction(callback) || ts.isFunctionExpression(callback))) {
+            let mapBody: ts.Expression | undefined;
             if (ts.isBlock(callback.body)) {
                 const ret = callback.body.statements.find(ts.isReturnStatement);
-                if (ret?.expression) validateExpression(ret.expression, sf, customComponents, errors);
+                mapBody = ret?.expression;
             } else if (callback.body) {
-                validateExpression(callback.body as ts.Expression, sf, customComponents, errors);
+                mapBody = callback.body as ts.Expression;
+            }
+            if (mapBody) {
+                validateExpression(mapBody, sf, customComponents, errors, warnings);
+                if (!hasIDWrapper(mapBody)) {
+                    warnings.push(warn(sf, node, 'Items in .map() should be wrapped in <ID scope={i}> to avoid ImGui ID conflicts'));
+                }
             }
         }
     }
 }
 
-function validateJsxElement(node: ts.JsxElement, sf: ts.SourceFile, customComponents: Map<string, string>, errors: ParseError[]): void {
-    validateJsxTag(node.openingElement.tagName, node, sf, customComponents, errors);
-    validateJsxAttributes(node.openingElement.attributes, node.openingElement.tagName, sf, errors);
-    for (const child of node.children) validateExpression(child, sf, customComponents, errors);
+// Components that handle their own ID scoping (no <ID> wrapper needed in .map())
+const SELF_SCOPED_COMPONENTS = new Set(['ID', 'TableRow', 'TabItem']);
+
+function hasIDWrapper(expr: ts.Expression): boolean {
+    if (ts.isParenthesizedExpression(expr)) return hasIDWrapper(expr.expression);
+    if (ts.isJsxElement(expr) && ts.isIdentifier(expr.openingElement.tagName) && SELF_SCOPED_COMPONENTS.has(expr.openingElement.tagName.text)) return true;
+    if (ts.isJsxSelfClosingElement(expr) && ts.isIdentifier(expr.tagName) && SELF_SCOPED_COMPONENTS.has(expr.tagName.text)) return true;
+    return false;
 }
 
-function validateJsxTag(tagName: ts.JsxTagNameExpression, node: ts.Node, sf: ts.SourceFile, customComponents: Map<string, string>, errors: ParseError[]): void {
+function validateJsxElement(node: ts.JsxElement, sf: ts.SourceFile, customComponents: Map<string, string>, errors: ParseError[], warnings: ParseError[]): void {
+    validateJsxTag(node.openingElement.tagName, node, sf, customComponents, warnings);
+    validateJsxAttributes(node.openingElement.attributes, node.openingElement.tagName, sf, errors);
+    for (const child of node.children) validateExpression(child, sf, customComponents, errors, warnings);
+}
+
+function validateJsxTag(tagName: ts.JsxTagNameExpression, node: ts.Node, sf: ts.SourceFile, customComponents: Map<string, string>, warnings: ParseError[]): void {
     if (!ts.isIdentifier(tagName)) return;
-    // Host components and imported custom components are validated.
-    // Unknown elements are treated as native widgets (validated by TypeScript + C++ linker).
+    const name = tagName.text;
+    // Skip lowercase tags (intrinsic HTML-like elements)
+    if (name[0] === name[0].toLowerCase()) return;
+    // Known host component or imported custom component — fine
+    if (isHostComponent(name) || customComponents.has(name)) return;
+    // Unknown uppercase component — warn (may be a native C++ widget)
+    warnings.push(warn(sf, node, `Unknown component '<${name}>' -- will be treated as a native C++ widget. If this is intentional, you can ignore this warning.`));
 }
 
 function validateJsxAttributes(attrs: ts.JsxAttributes, tagName: ts.JsxTagNameExpression, sf: ts.SourceFile, errors: ParseError[]): void {

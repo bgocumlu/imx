@@ -2,10 +2,15 @@ const INDENT = '    ';
 let currentCompName = '';
 let currentBoundProps = new Set();
 let allBoundProps = new Map();
+let sourceMapEnabled = true;
 function emitLocComment(loc, tag, lines, indent) {
-    if (loc) {
-        lines.push(`${indent}// ${loc.file}:${loc.line} <${tag}>`);
+    if (!loc)
+        return;
+    if (sourceMapEnabled) {
+        const filename = loc.file.replace(/\\/g, '/');
+        lines.push(`#line ${loc.line} "${filename}"`);
     }
+    lines.push(`${indent}// ${loc.file}:${loc.line} <${tag}>`);
 }
 function cppType(t) {
     switch (t) {
@@ -170,8 +175,9 @@ export function emitComponentHeader(comp, sourceFile, boundProps, sharedPropsTyp
     lines.push('');
     return lines.join('\n');
 }
-export function emitComponent(comp, imports, sourceFile, boundProps, boundPropsMap) {
+export function emitComponent(comp, imports, sourceFile, boundProps, boundPropsMap, options) {
     const lines = [];
+    sourceMapEnabled = options?.sourceMap ?? true;
     // Reset counters for each component
     styleCounter = 0;
     customComponentCounter = 0;
@@ -294,6 +300,8 @@ export function emitComponent(comp, imports, sourceFile, boundProps, boundPropsM
     if (currentBoundProps.size > 0) {
         for (let i = 0; i < lines.length; i++) {
             if (lines[i].trimStart().startsWith('//'))
+                continue;
+            if (lines[i].trimStart().startsWith('#line'))
                 continue;
             for (const prop of currentBoundProps) {
                 // Replace props.X reads with (*props.X) — but not &props.X or *props.X (already handled)

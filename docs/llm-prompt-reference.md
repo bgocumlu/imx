@@ -3,6 +3,8 @@
 IMX: write .tsx with JSX components and useState hooks. Compiles to native Dear ImGui C++ apps.
 Compile: `node compiler/dist/index.js App.tsx [Other.tsx ...] -o build/generated`
 
+Source mapping: generated `.gen.cpp` files include `#line` directives pointing back to `.tsx` source. MSVC errors show the original TSX filename and line number.
+
 ## Font Loading (C++)
 
 ```cpp

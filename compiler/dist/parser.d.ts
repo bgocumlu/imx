@@ -10,6 +10,7 @@ export interface ParseError {
     line: number;
     col: number;
     message: string;
+    severity?: 'error' | 'warning';
 }
 export declare function parseFile(filePath: string, source: string): ParsedFile;
 export declare function extractImports(sourceFile: ts.SourceFile): Map<string, string>;

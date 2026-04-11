@@ -2,6 +2,7 @@ import ts from 'typescript';
 import type { ParsedFile, ParseError } from './parser.js';
 export interface ValidationResult {
     errors: ParseError[];
+    warnings: ParseError[];
     customComponents: Map<string, string>;
     useStateCalls: UseStateInfo[];
 }

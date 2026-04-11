@@ -29,4 +29,21 @@ describe('formatDiagnostic', () => {
         // Just the header, no source context
         expect(output).toBe('Test.tsx:99:1 - error: gone');
     });
+
+    it('displays warning severity correctly', () => {
+        const source = `function App() {\n  return <Knob />;\n}`;
+        const warning = { file: 'App.tsx', line: 2, col: 10, message: "Unknown component '<Knob>'", severity: 'warning' as const };
+        const output = formatDiagnostic(warning, source);
+
+        expect(output).toContain('App.tsx:2:10 - warning:');
+        expect(output).not.toContain('- error:');
+    });
+
+    it('defaults to error when severity is omitted', () => {
+        const source = `x`;
+        const error = { file: 'Test.tsx', line: 1, col: 1, message: 'bad' };
+        const output = formatDiagnostic(error, source);
+
+        expect(output).toContain('- error: bad');
+    });
 });

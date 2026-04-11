@@ -30,6 +30,10 @@ function runCompile(watchDir: string, outputDir: string): void {
     const result = compile(files, outputDir);
     const elapsed = Math.round(performance.now() - start);
 
+    if (result.warnings.length > 0) {
+        result.warnings.forEach(w => console.warn(w));
+    }
+
     if (result.success) {
         console.log(`[watch] ${result.componentCount} component(s) compiled in ${elapsed}ms`);
     } else {

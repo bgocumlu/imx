@@ -408,27 +408,24 @@ Exit criteria:
 
 - every ImGui text and display variant has a TSX equivalent
 
-## Phase 19: Developer Experience
+## Phase 19: Developer Experience (DONE)
 
 Goal:
 
-- improve iteration speed and error quality for developers and LLMs writing IMX code
+- improve iteration speed and error quality for developers and LLMs writing IMX code — all changes are in the compiler, nothing added to the shipped binary
 
 Deliverables:
 
-- **DLL hot reload (debug only)** — components compile to a shared library, app reloads on change without restart. State survives because struct binding keeps state in the host exe (not the DLL). Works with both `imxc init` and `imxc add` (existing C++ projects). `imxc watch --hot` triggers recompile → DLL swap. **Release builds remain static-linked** — one exe, no DLLs, same ~745 KB as today. Debug builds add ~3-5 KB for the DLL loader. This is a CMake config switch, not a code change.
-- **Better error messages** — source-mapped errors pointing to `.tsx` line numbers instead of generated C++ lines.
-- **Component inspector** — debug overlay showing component tree, state values, instance IDs (debug builds only, stripped in release).
-- **Real-world example apps** — non-trivial apps demonstrating C++ backend + IMX frontend pattern (GPA calculator, settings panel, log viewer).
-- **LLM prompt reference updates** — keep `llm-prompt-reference.md` covering all new components so LLMs generate correct code.
+- **Source-mapped errors** — compiler emits `#line` directives in generated `.gen.cpp` pointing back to `.tsx` source lines. MSVC errors show `App.tsx:42` instead of `App.gen.cpp:187`. On by default. `emitLocComment()` emits `#line N "file.tsx"` at column 0 before every widget, keeping the existing `// file:line <Tag>` comment for readability.
+- **Compiler diagnostics** — warnings (not errors) for common mistakes: unknown component name (will be treated as native C++ widget), missing `<ID scope>` in `.map()` loops (suppressed for self-scoping components like `TableRow`, `TabItem`). Warnings include `.tsx` filename, line number, column, and source caret underline. `ParseError` gains `severity` field, `ValidationResult` and `CompileResult` gain `warnings` arrays.
+- **LLM prompt reference updates** — `llm-prompt-reference.md` updated with source mapping note.
 
-Size impact: 0 KB on Release builds (all dev features are debug-only or compile-time)
+Size impact: 0 KB (all changes are compile-time, nothing added to shipped binary)
 
 Exit criteria:
 
-- changing a TSX file and seeing the result takes under 2 seconds with state preserved
-- error messages point to the correct TSX source line
-- at least one real-world example app beyond demos
+- MSVC compile errors point to the correct `.tsx` source line
+- compiler catches common mistakes (missing props, unknown components) with clear `.tsx`-located messages
 
 ## Phase 20: Project Templates
 
@@ -442,6 +439,7 @@ Deliverables:
 
 - **Interactive template selector** — `imxc init my_app` shows a CLI menu to pick a template (or `imxc init my_app --template=networking` to skip menu)
 - **`minimal` template** — current default, bare ImGui app. Just IMX + GLFW + OpenGL. (~745 KB)
+- **`hotreload` template** — adds DLL hot reload scaffolding for debug builds. `main.cpp` includes a loader that `LoadLibrary`/`FreeLibrary` cycles the UI DLL on file change. CMakeLists builds UI as shared library in Debug, static in Release. State survives reloads because struct binding keeps `AppState` in the host exe. `imxc watch --hot` triggers recompile → DLL swap. Struct layout changes (`AppState.h`) require full restart (loader detects and warns). Release builds remain single-exe, no DLLs.
 - **`networking` template** — adds HTTP client scaffolding. WinHTTP on Windows, libcurl on Linux/macOS. `AppState` has example fetch callback, `main.cpp` shows async request pattern with `std::thread` + `request_frame()` on completion. CMakeLists adds the platform HTTP library.
 - **`persistence` template** — adds JSON save/load scaffolding. FetchContent for nlohmann/json (single-header). `AppState` has `save()` / `load()` methods, `main.cpp` loads state on startup and saves on exit. File path uses platform app data directory (`%APPDATA%`, `~/Library/Application Support`, `~/.config`).
 - **`async` template** — adds background task scaffolding. Simple thread pool in `async.h`, `main.cpp` shows dispatching work and updating `AppState` on completion with `request_frame()`. No external dependency (pure `std::thread` + `std::future`).

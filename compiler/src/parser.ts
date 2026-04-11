@@ -13,6 +13,7 @@ export interface ParseError {
     line: number;
     col: number;
     message: string;
+    severity?: 'error' | 'warning';
 }
 
 function formatError(sourceFile: ts.SourceFile, node: ts.Node, message: string): ParseError {
