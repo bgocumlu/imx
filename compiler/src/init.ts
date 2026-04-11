@@ -6,6 +6,7 @@ import './templates/async.js';
 import './templates/persistence.js';
 import './templates/networking.js';
 import './templates/hotreload.js';
+import './templates/filedialog.js';
 
 export function addToProject(projectDir: string): void {
     const srcDir = path.join(projectDir, 'src');
