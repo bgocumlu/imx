@@ -522,6 +522,18 @@ export async function promptTemplateName() {
                 else {
                     selected.add(cursor);
                 }
+                // Auto-select dependencies (networking requires async)
+                const deps = { networking: ['async'] };
+                for (const [feat, reqs] of Object.entries(deps)) {
+                    const featIdx = features.findIndex(f => f.name === feat);
+                    if (selected.has(featIdx)) {
+                        for (const req of reqs) {
+                            const reqIdx = features.findIndex(f => f.name === req);
+                            if (reqIdx >= 0)
+                                selected.add(reqIdx);
+                        }
+                    }
+                }
                 render();
                 return;
             }
