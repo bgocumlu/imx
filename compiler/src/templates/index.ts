@@ -43,7 +43,7 @@ export const APP_TSX = `export default function App(props: AppState) {
 }
 `;
 
-export const IMX_DTS = `// imx.d.ts — Type definitions for IMX components
+export const IMX_DTS_PREFIX = `// imx.d.ts — Type definitions for IMX components
 
 interface Style {
   padding?: number;
@@ -91,12 +91,9 @@ interface ItemInteractionProps {
   cursor?: MouseCursor;
 }
 
-interface AppState {
-    count: number;
-    speed: number;
-    onIncrement: () => void;
-}
+`;
 
+export const IMX_DTS_SUFFIX = `
 interface WindowProps { title: string; open?: boolean; onClose?: () => void; noTitleBar?: boolean; noResize?: boolean; noMove?: boolean; noCollapse?: boolean; noDocking?: boolean; noScrollbar?: boolean; noBackground?: boolean; alwaysAutoResize?: boolean; noNavFocus?: boolean; noNav?: boolean; noDecoration?: boolean; noInputs?: boolean; noScrollWithMouse?: boolean; horizontalScrollbar?: boolean; alwaysVerticalScrollbar?: boolean; alwaysHorizontalScrollbar?: boolean; x?: number; y?: number; width?: number; height?: number; forcePosition?: boolean; forceSize?: boolean; minWidth?: number; minHeight?: number; maxWidth?: number; maxHeight?: number; bgAlpha?: number; noViewport?: boolean; viewportAlwaysOnTop?: boolean; style?: Style; children?: any; }
 interface ViewProps { style?: Style; children?: any; }
 interface IndentProps { width?: number; children?: any; }
@@ -387,6 +384,10 @@ declare module "imx/jsx-runtime" {
   export function Fragment(props: any): any;
 }
 `;
+
+export function buildImxDts(appStateInterface: string): string {
+    return IMX_DTS_PREFIX + appStateInterface + '\n' + IMX_DTS_SUFFIX;
+}
 
 export const TSCONFIG = `{
   "compilerOptions": {

@@ -435,6 +435,8 @@ Goal:
 
 Note: templates are `.js` files in the `imxc` CLI package. They generate `main.cpp`, `AppState.h`, `CMakeLists.txt` with appropriate libraries. The TSX side is identical across all templates. None of this affects IMX as a library — it's purely scaffolding.
 
+Important: generated `CMakeLists.txt` should FetchContent from a git tag (e.g. `v0.6.0`), not `main`. Tag the repo before publishing templates so users pin to a stable release.
+
 Deliverables:
 
 - **Interactive template selector** — `imxc init my_app` shows a CLI menu to pick a template (or `imxc init my_app --template=networking` to skip menu)

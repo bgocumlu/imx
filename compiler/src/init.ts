@@ -1,6 +1,6 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import { TEMPLATES, APP_TSX, IMX_DTS, TSCONFIG } from './templates/index.js';
+import { TEMPLATES, APP_TSX, buildImxDts, TSCONFIG } from './templates/index.js';
 import './templates/minimal.js';
 
 export function addToProject(projectDir: string): void {
@@ -17,7 +17,11 @@ export function addToProject(projectDir: string): void {
 
     // Write TSX source files only — no CMakeLists.txt or main.cpp
     fs.writeFileSync(path.join(srcDir, 'App.tsx'), APP_TSX);
-    fs.writeFileSync(path.join(srcDir, 'imx.d.ts'), IMX_DTS);
+    fs.writeFileSync(path.join(srcDir, 'imx.d.ts'), buildImxDts(`interface AppState {
+    count: number;
+    speed: number;
+    onIncrement: () => void;
+}`));
     fs.writeFileSync(path.join(projectDir, 'tsconfig.json'), TSCONFIG);
 
     console.log(`imxc: added IMX sources to project`);

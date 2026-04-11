@@ -1,6 +1,11 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import { registerTemplate, APP_TSX, IMX_DTS, TSCONFIG, GITIGNORE, cmakeTemplate } from './index.js';
+import { registerTemplate, APP_TSX, buildImxDts, TSCONFIG, GITIGNORE, cmakeTemplate } from './index.js';
+const APPSTATE_INTERFACE = `interface AppState {
+    count: number;
+    speed: number;
+    onIncrement: () => void;
+}`;
 const APPSTATE_H = `#pragma once
 #include <functional>
 
@@ -136,7 +141,7 @@ function generate(projectDir, projectName) {
     fs.writeFileSync(path.join(srcDir, 'main.cpp'), MAIN_CPP.replace('APP_NAME', projectName));
     fs.writeFileSync(path.join(srcDir, 'AppState.h'), APPSTATE_H);
     fs.writeFileSync(path.join(srcDir, 'App.tsx'), APP_TSX);
-    fs.writeFileSync(path.join(srcDir, 'imx.d.ts'), IMX_DTS);
+    fs.writeFileSync(path.join(srcDir, 'imx.d.ts'), buildImxDts(APPSTATE_INTERFACE));
     fs.writeFileSync(path.join(projectDir, 'tsconfig.json'), TSCONFIG);
     fs.writeFileSync(path.join(projectDir, 'CMakeLists.txt'), cmakeTemplate(projectName, 'https://github.com/bgocumlu/imx.git'));
     fs.writeFileSync(path.join(projectDir, '.gitignore'), GITIGNORE);
@@ -153,6 +158,7 @@ function generate(projectDir, projectName) {
     console.log(`    public/               — static assets (copied to exe directory)`);
     console.log('');
     console.log('  Next steps:');
+    console.log(`    cd ${projectName}`);
     console.log(`    cmake -B build`);
     console.log(`    cmake --build build`);
 }
