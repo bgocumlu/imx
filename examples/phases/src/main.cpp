@@ -7,6 +7,7 @@
 #include <GLFW/glfw3.h>
 
 #include "PhasesState.h"
+#include <algorithm>
 
 struct App {
     GLFWwindow*      window  = nullptr;
@@ -154,6 +155,34 @@ int main() {
             for (auto it = b.begin(); it != b.end(); ++it) {
                 if (it->id == id) { a.push_back(*it); b.erase(it); return; }
             }
+        };
+    }
+
+    // Phase 15: initialize sortable table data
+    {
+        auto& p = app.state.phase15;
+        Phase15Row r1; r1.name = "Alice"; r1.score = "95"; r1.status = "Pass";
+        Phase15Row r2; r2.name = "Bob";   r2.score = "72"; r2.status = "Warn";
+        Phase15Row r3; r3.name = "Carol"; r3.score = "88"; r3.status = "Pass";
+        Phase15Row r4; r4.name = "Dave";  r4.score = "61"; r4.status = "Fail";
+        Phase15Row r5; r5.name = "Eve";   r5.score = "97"; r5.status = "Pass";
+        p.rows.push_back(r1);
+        p.rows.push_back(r2);
+        p.rows.push_back(r3);
+        p.rows.push_back(r4);
+        p.rows.push_back(r5);
+
+        p.sort_rows = [&app](int col, int dir) {
+            auto& rows = app.state.phase15.rows;
+            bool asc = (dir == 1);
+            std::sort(rows.begin(), rows.end(), [col, asc](const Phase15Row& a, const Phase15Row& b) {
+                if (col == 0) return asc ? a.name < b.name : a.name > b.name;
+                if (col == 1) {
+                    int sa = std::stoi(a.score), sb = std::stoi(b.score);
+                    return asc ? sa < sb : sa > sb;
+                }
+                return asc ? a.status < b.status : a.status > b.status;
+            });
         };
     }
 

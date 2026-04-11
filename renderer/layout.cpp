@@ -33,7 +33,7 @@ void before_child() {
             float default_spacing = ImGui::GetStyle().ItemSpacing.y;
             float extra = ls.gap - default_spacing;
             if (extra > 0.0f) {
-                ImGui::Dummy(ImVec2(0.0f, extra));
+                ImGui::SetCursorPosY(ImGui::GetCursorPosY() + extra);
             }
         }
     }

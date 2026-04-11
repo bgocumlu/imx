@@ -35,9 +35,21 @@ interface Phase12Data {
   move_to_a: (id: number) => void;
 }
 
+interface Phase15Row {
+  name: string;
+  score: string;
+  status: string;
+}
+
+interface Phase15Data {
+  rows: Phase15Row[];
+  sort_rows: (col: number, dir: number) => void;
+}
+
 interface PhasesState {
   phase11: Phase11Data;
   phase12: Phase12Data;
+  phase15: Phase15Data;
   ms_selected: boolean[];
   ms_selection_count: number;
   apply_selection: (io: any) => void;

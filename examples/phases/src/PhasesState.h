@@ -34,6 +34,19 @@ struct Phase12Data {
     std::function<void(int)> move_to_a;
 };
 
+// Phase 15: sortable table row
+struct Phase15Row {
+    std::string name;
+    std::string score;
+    std::string status;
+};
+
+// Phase 15: sub-struct for sortable table demo
+struct Phase15Data {
+    std::vector<Phase15Row> rows;
+    std::function<void(int, int)> sort_rows;  // (columnIndex, sortDirection)
+};
+
 // Phase 11: sub-struct for struct binding demo
 struct Phase11Data {
     float speed = 5.0f;
@@ -51,6 +64,9 @@ struct PhasesState {
 
     // Phase 12: Struct Binding Fixes demo
     Phase12Data phase12;
+
+    // Phase 15: Table & Tree demo
+    Phase15Data phase15;
 
     // Phase 17: MultiSelect demo
     static constexpr int MS_COUNT = 6;
