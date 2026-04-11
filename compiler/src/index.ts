@@ -4,12 +4,22 @@ import * as path from 'node:path';
 import { initProject, addToProject } from './init.js';
 import { compile } from './compile.js';
 import { startWatch } from './watch.js';
+import { promptProjectName, promptTemplateName } from './templates/index.js';
 
-// Handle `imxc init [dir]` subcommand
+// Handle `imxc init [dir] [--template=<name>]` subcommand
 if (process.argv[2] === 'init') {
-    const dir = process.argv[3] ?? '.';
+    const { values, positionals } = parseArgs({
+        args: process.argv.slice(3),
+        allowPositionals: true,
+        options: { template: { type: 'string', short: 't' } },
+    });
+    let dir = positionals[0];
+    if (!dir) {
+        dir = await promptProjectName();
+    }
     const absDir = path.resolve(dir);
-    initProject(absDir, path.basename(absDir));
+    const templateName = values.template ?? await promptTemplateName();
+    initProject(absDir, path.basename(absDir), templateName);
     process.exit(0);
 }
 
@@ -44,7 +54,7 @@ if (process.argv[2] === 'watch') {
 
     if (positionals.length === 0) {
         console.error('Usage: imxc <input.tsx ...> -o <output-dir>');
-        console.error('       imxc init [project-dir]');
+        console.error('       imxc init [project-dir] [--template=<name>]');
         console.error('       imxc add [project-dir]');
         console.error('       imxc watch <dir> -o <output-dir>');
         process.exit(1);
