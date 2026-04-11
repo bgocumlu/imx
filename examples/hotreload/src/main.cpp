@@ -31,7 +31,7 @@ static void render_frame(App& app) {
 
     app.module.check_reload();
     if (app.module.render) {
-        app.module.render(app.runtime, app.state);
+        app.module.render(app.runtime, app.state, ImGui::GetCurrentContext());
     }
 
     ImGui::Render();

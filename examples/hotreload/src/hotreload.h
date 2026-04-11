@@ -3,6 +3,7 @@
 #include <filesystem>
 #include <iostream>
 #include <imx/runtime.h>
+#include <imgui.h>
 #include "AppState.h"
 
 #ifdef _WIN32
@@ -14,7 +15,7 @@
 #endif
 
 struct HotModule {
-    using RenderFn = void(*)(imx::Runtime&, AppState&);
+    using RenderFn = void(*)(imx::Runtime&, AppState&, ImGuiContext*);
 
 #ifdef _WIN32
     HMODULE handle = nullptr;
