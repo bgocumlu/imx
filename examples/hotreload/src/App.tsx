@@ -12,6 +12,12 @@ export default function App(props: AppState) {
           <Button title="About" onPress={() => setShowAbout(!showAbout)} />
         </Column>
       </Window>
+      <Window title="Hot Reload">
+        <Column gap={8}>
+          <Text>Run this in a second terminal to enable live reload:</Text>
+          <TextInput label="Watch command" value={props.watchCmd} />
+        </Column>
+      </Window>
       {showAbout && <Window title="About">
         <Text>Built with IMX (hot-reloadable!)</Text>
         <Button title="Close" onPress={() => setShowAbout(false)} />

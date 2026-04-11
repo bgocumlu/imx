@@ -3,6 +3,7 @@
 interface AppState {
   count: number;
   speed: number;
+  watchCmd: string;
   onIncrement: () => void;
 }
 

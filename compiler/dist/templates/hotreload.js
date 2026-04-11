@@ -4,14 +4,17 @@ import { registerTemplate, buildImxDts, TSCONFIG, GITIGNORE } from './index.js';
 const APPSTATE_INTERFACE = `interface AppState {
     count: number;
     speed: number;
+    watchCmd: string;
     onIncrement: () => void;
 }`;
 const APPSTATE_H = `#pragma once
+#include <string>
 #include <functional>
 
 struct AppState {
     int count = 0;
     float speed = 5.0F;
+    std::string watchCmd;
     std::function<void()> onIncrement;
 };
 `;
@@ -228,6 +231,7 @@ int main() {
     glfwSetWindowSizeCallback(window, window_size_callback);
 
     app.state.onIncrement = [&]() { app.state.count++; };
+    app.state.watchCmd = "npx imxc watch src -o build/generated --build \\"cmake --build build --target APP_NAME_ui\\"";
 
 #ifdef _WIN32
     app.module.load("APP_NAME_ui.dll");
@@ -274,6 +278,12 @@ const APP_TSX = `export default function App(props: AppState) {
           <SliderFloat label="Speed" value={props.speed} min={0} max={100} />
           <Separator />
           <Button title="About" onPress={() => setShowAbout(!showAbout)} />
+        </Column>
+      </Window>
+      <Window title="Hot Reload">
+        <Column gap={8}>
+          <Text>Run this in a second terminal to enable live reload:</Text>
+          <TextInput label="Watch command" value={props.watchCmd} />
         </Column>
       </Window>
       {showAbout && <Window title="About">
@@ -380,9 +390,5 @@ function generate(projectDir, projectName) {
     console.log(`    cd ${projectName}`);
     console.log(`    cmake -B build`);
     console.log(`    cmake --build build`);
-    console.log('');
-    console.log('  Hot reload:');
-    console.log(`    ./build/Debug/${projectName}                    # run the host`);
-    console.log(`    npx imxc watch src -o build/generated --build "cmake --build build --target ${projectName}_ui"`);
 }
 registerTemplate({ name: 'hotreload', description: 'DLL hot reload for live UI iteration', generate });

@@ -93,6 +93,7 @@ int main() {
     glfwSetWindowSizeCallback(window, window_size_callback);
 
     app.state.onIncrement = [&]() { app.state.count++; };
+    app.state.watchCmd = "npx imxc watch src -o build/generated --build \"cmake --build build --target hotreload_ui\"";
 
 #ifdef _WIN32
     app.module.load("hotreload_ui.dll");
