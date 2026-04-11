@@ -77,11 +77,13 @@ export function initProject(projectDir: string, projectName?: string, templateNa
     const name = projectName ?? path.basename(projectDir);
     const tpl = templateName ?? 'minimal';
 
-    // Check if project already exists
-    const srcDir = path.join(projectDir, 'src');
-    if (fs.existsSync(path.join(srcDir, 'App.tsx'))) {
-        console.error(`Error: ${srcDir}/App.tsx already exists. Aborting.`);
-        process.exit(1);
+    // Check if directory already has content
+    if (fs.existsSync(projectDir)) {
+        const entries = fs.readdirSync(projectDir).filter(e => e !== '.git');
+        if (entries.length > 0) {
+            console.error('Error: directory is not empty.');
+            process.exit(1);
+        }
     }
 
     // Check for comma-separated (combined template)
