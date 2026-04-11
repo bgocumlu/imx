@@ -829,7 +829,19 @@ bool begin_modal(const char* title, bool open, bool* user_closed, int flags, con
     // No before_child() — modals are overlays, not part of parent layout
     if (user_closed) *user_closed = false;
 
+    // Track whether we previously opened this modal using ImGui state storage.
+    // This lets us distinguish "first open" from "was open, user closed via Escape".
+    ImGuiID id = ImGui::GetID(title);
+    ImGuiStorage* storage = ImGui::GetStateStorage();
+    bool was_open = storage->GetBool(id, false);
+
     if (open && !ImGui::IsPopupOpen(title)) {
+        if (was_open) {
+            // Popup was open but ImGui closed it (Escape key) — fire onClose
+            if (user_closed) *user_closed = true;
+            storage->SetBool(id, false);
+            return false;
+        }
         ImGui::OpenPopup(title);
     }
     // If state says closed but popup is still open (e.g., button set state to false
@@ -839,17 +851,25 @@ bool begin_modal(const char* title, bool open, bool* user_closed, int flags, con
             ImGui::CloseCurrentPopup();
             ImGui::EndPopup();
         }
+        storage->SetBool(id, false);
         return false;
     }
-    if (!open) return false;
+    if (!open) {
+        storage->SetBool(id, false);
+        return false;
+    }
 
     // Pass p_open to get X button. If X is clicked, BeginPopupModal calls
     // EndPopup internally and returns false. We detect this via p_open.
     bool p_open = true;
     bool visible = ImGui::BeginPopupModal(title, &p_open, flags);
+    if (visible) {
+        storage->SetBool(id, true);
+    }
     if (!visible && !p_open) {
         // X was clicked — BeginPopupModal already called EndPopup
         if (user_closed) *user_closed = true;
+        storage->SetBool(id, false);
     }
     return visible;
 }

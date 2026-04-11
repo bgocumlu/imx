@@ -186,6 +186,18 @@ int main() {
         };
     }
 
+    // Phase 17: wire MultiSelect callback
+    {
+        auto& p = app.state.phase17;
+        p.apply_selection = [&app](ImGuiMultiSelectIO* io) {
+            auto& p = app.state.phase17;
+            imx::renderer::apply_multi_select_requests(io, p.ms_selected, p.MS_COUNT);
+            p.ms_selection_count = 0;
+            for (int i = 0; i < p.MS_COUNT; i++)
+                if (p.ms_selected[i]) p.ms_selection_count++;
+        };
+    }
+
     // Load TSX-declared fonts before first frame
     extern void _imx_load_fonts();
     _imx_load_fonts();

@@ -46,13 +46,17 @@ interface Phase15Data {
   sort_rows: (col: number, dir: number) => void;
 }
 
+interface Phase17Data {
+  ms_selected: boolean[];
+  ms_selection_count: number;
+  apply_selection: (io: any) => void;
+}
+
 interface PhasesState {
   phase11: Phase11Data;
   phase12: Phase12Data;
   phase15: Phase15Data;
-  ms_selected: boolean[];
-  ms_selection_count: number;
-  apply_selection: (io: any) => void;
+  phase17: Phase17Data;
 }
 
 interface Style {

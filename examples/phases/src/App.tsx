@@ -4,6 +4,7 @@ import { Phase13 } from './Phase13';
 import { Phase14 } from './Phase14';
 import { Phase15 } from './Phase15';
 import { Phase16 } from './Phase16';
+import { Phase17 } from './Phase17';
 
 export default function App(props: PhasesState) {
   const [showPhase11, setShowPhase11] = useState(false);
@@ -62,6 +63,10 @@ export default function App(props: PhasesState) {
         data={props.phase15}
       />}
       {showPhase16 && <Phase16 onClose={() => setShowPhase16(false)} />}
+      {showPhase17 && <Phase17
+        onClose={() => setShowPhase17(false)}
+        data={props.phase17}
+      />}
     </DockSpace>
     </Font>
   );

@@ -1,6 +1,7 @@
 export function Phase16(props: { onClose: () => void }) {
   const [status, setStatus] = useState("Idle");
   const [shortcutCount, setShortcutCount] = useState(0);
+  const [selItem, setSelItem] = useState(false);
 
   return (
     <Window title="Phase 16: Interaction & State Queries" open={true} onClose={props.onClose}>
@@ -18,9 +19,11 @@ export function Phase16(props: { onClose: () => void }) {
             onClicked={() => setStatus("Button clicked")}
             onDoubleClicked={() => setStatus("Double-clicked!")}
           />
+          <Text disabled>Selectable is a clickable list item — click to toggle highlight.</Text>
           <Selectable
-            label="Selectable with hover"
-            onSelect={() => setStatus("Selectable clicked")}
+            label="Selectable (click to toggle)"
+            selected={selItem}
+            onSelect={() => { setSelItem(!selItem); setStatus("Selectable toggled"); }}
             onHover={() => setStatus("Hovering selectable")}
             tooltip="Selectable tooltip"
           />
