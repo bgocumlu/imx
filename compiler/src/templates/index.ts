@@ -452,6 +452,7 @@ add_custom_command(TARGET ${projectName} POST_BUILD
 
 export async function promptProjectName(): Promise<string> {
     const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+    rl.on('close', () => { process.exit(0); });
     return new Promise((resolve) => {
         rl.question('Project name: ', (answer) => {
             rl.close();
@@ -467,6 +468,7 @@ export async function promptProjectName(): Promise<string> {
 
 export async function promptTemplateName(): Promise<string> {
     const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+    rl.on('close', () => { process.exit(0); });
     return new Promise((resolve) => {
         console.log('Select a template:');
         console.log('');
