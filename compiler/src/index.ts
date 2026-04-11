@@ -41,10 +41,13 @@ if (process.argv[2] === 'watch') {
     const { values } = parseArgs({
         args: process.argv.slice(4),
         allowPositionals: false,
-        options: { output: { type: 'string', short: 'o' } },
+        options: {
+            output: { type: 'string', short: 'o' },
+            build: { type: 'string', short: 'b' },
+        },
     });
     const outputDir = values.output ?? '.';
-    startWatch(path.resolve(watchDir), path.resolve(outputDir));
+    startWatch(path.resolve(watchDir), path.resolve(outputDir), values.build);
 } else {
     // Default: build command
     const { values, positionals } = parseArgs({

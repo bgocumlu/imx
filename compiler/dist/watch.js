@@ -1,5 +1,6 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
+import { execSync } from 'node:child_process';
 import { compile } from './compile.js';
 /**
  * Discover all .tsx files in a directory (recursive).
@@ -18,7 +19,7 @@ function discoverTsxFiles(dir) {
     }
     return results;
 }
-function runCompile(watchDir, outputDir) {
+function runCompile(watchDir, outputDir, buildCmd) {
     const files = discoverTsxFiles(watchDir);
     if (files.length === 0) {
         console.log('[watch] No .tsx files found in ' + watchDir);
@@ -32,6 +33,16 @@ function runCompile(watchDir, outputDir) {
     }
     if (result.success) {
         console.log(`[watch] ${result.componentCount} component(s) compiled in ${elapsed}ms`);
+        if (buildCmd) {
+            console.log(`[watch] running: ${buildCmd}`);
+            try {
+                execSync(buildCmd, { stdio: 'inherit' });
+                console.log('[watch] build succeeded');
+            }
+            catch {
+                console.error('[watch] build failed');
+            }
+        }
     }
     else {
         result.errors.forEach(e => console.error(e));
@@ -40,13 +51,16 @@ function runCompile(watchDir, outputDir) {
 }
 /**
  * Start watching a directory for .tsx changes and recompile on change.
+ * If buildCmd is provided, runs it after each successful compile (for hot reload).
  */
-export function startWatch(watchDir, outputDir) {
+export function startWatch(watchDir, outputDir, buildCmd) {
     console.log(`[watch] watching ${watchDir} for .tsx changes...`);
     console.log(`[watch] output: ${outputDir}`);
+    if (buildCmd)
+        console.log(`[watch] build: ${buildCmd}`);
     console.log('[watch] press Ctrl+C to stop\n');
     // Initial compile
-    runCompile(watchDir, outputDir);
+    runCompile(watchDir, outputDir, buildCmd);
     // Debounce timer
     let debounceTimer = null;
     const watcher = fs.watch(watchDir, { recursive: true }, (_event, filename) => {
@@ -57,7 +71,7 @@ export function startWatch(watchDir, outputDir) {
             clearTimeout(debounceTimer);
         debounceTimer = setTimeout(() => {
             console.log(`\n[watch] change detected: ${filename}`);
-            runCompile(watchDir, outputDir);
+            runCompile(watchDir, outputDir, buildCmd);
         }, 100);
     });
     // Clean shutdown on Ctrl+C

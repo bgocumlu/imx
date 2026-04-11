@@ -1,5 +1,6 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
+import { execSync } from 'node:child_process';
 import { compile } from './compile.js';
 
 /**
@@ -19,7 +20,7 @@ function discoverTsxFiles(dir: string): string[] {
     return results;
 }
 
-function runCompile(watchDir: string, outputDir: string): void {
+function runCompile(watchDir: string, outputDir: string, buildCmd?: string): void {
     const files = discoverTsxFiles(watchDir);
     if (files.length === 0) {
         console.log('[watch] No .tsx files found in ' + watchDir);
@@ -36,6 +37,15 @@ function runCompile(watchDir: string, outputDir: string): void {
 
     if (result.success) {
         console.log(`[watch] ${result.componentCount} component(s) compiled in ${elapsed}ms`);
+        if (buildCmd) {
+            console.log(`[watch] running: ${buildCmd}`);
+            try {
+                execSync(buildCmd, { stdio: 'inherit' });
+                console.log('[watch] build succeeded');
+            } catch {
+                console.error('[watch] build failed');
+            }
+        }
     } else {
         result.errors.forEach(e => console.error(e));
         console.log(`[watch] compilation failed (${elapsed}ms)`);
@@ -44,14 +54,16 @@ function runCompile(watchDir: string, outputDir: string): void {
 
 /**
  * Start watching a directory for .tsx changes and recompile on change.
+ * If buildCmd is provided, runs it after each successful compile (for hot reload).
  */
-export function startWatch(watchDir: string, outputDir: string): void {
+export function startWatch(watchDir: string, outputDir: string, buildCmd?: string): void {
     console.log(`[watch] watching ${watchDir} for .tsx changes...`);
     console.log(`[watch] output: ${outputDir}`);
+    if (buildCmd) console.log(`[watch] build: ${buildCmd}`);
     console.log('[watch] press Ctrl+C to stop\n');
 
     // Initial compile
-    runCompile(watchDir, outputDir);
+    runCompile(watchDir, outputDir, buildCmd);
 
     // Debounce timer
     let debounceTimer: ReturnType<typeof setTimeout> | null = null;
@@ -63,7 +75,7 @@ export function startWatch(watchDir: string, outputDir: string): void {
         if (debounceTimer) clearTimeout(debounceTimer);
         debounceTimer = setTimeout(() => {
             console.log(`\n[watch] change detected: ${filename}`);
-            runCompile(watchDir, outputDir);
+            runCompile(watchDir, outputDir, buildCmd);
         }, 100);
     });
 
