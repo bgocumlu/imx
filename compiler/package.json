@@ -1,6 +1,6 @@
 {
   "name": "imxc",
-  "version": "0.6.1",
+  "version": "0.6.2",
   "description": "Compiler for IMX — compiles React-like .tsx to native Dear ImGui C++",
   "type": "module",
   "bin": {
@@ -17,8 +17,10 @@
   },
   "keywords": ["imgui", "react", "tsx", "native", "gui", "compiler", "codegen"],
   "license": "MIT",
+  "dependencies": {
+    "typescript": "^5.8.0"
+  },
   "devDependencies": {
-    "typescript": "^5.8.0",
     "vitest": "^3.1.0",
     "@types/node": "^22.0.0"
   }
