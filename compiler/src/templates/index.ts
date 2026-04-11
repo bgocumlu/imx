@@ -478,13 +478,14 @@ export async function promptTemplateName(): Promise<string> {
 
         function render() {
             // Move cursor up to redraw (except first render)
-            const lines = features.length + 3;
+            const lines = features.length + 4;
             process.stdout.write(`\x1b[${lines}A\x1b[J`);
             draw();
         }
 
         function draw() {
             console.log('Select features (arrow keys, space to toggle, enter to confirm):');
+            console.log('Select nothing for minimal template.');
             console.log('');
             features.forEach((t, i) => {
                 const check = selected.has(i) ? 'x' : ' ';
