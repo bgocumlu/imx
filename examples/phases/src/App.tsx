@@ -1,3 +1,5 @@
+import { Phase11 } from './Phase11';
+
 export default function App(props: PhasesState) {
   const [showPhase11, setShowPhase11] = useState(false);
   const [showPhase12, setShowPhase12] = useState(false);
@@ -40,6 +42,10 @@ export default function App(props: PhasesState) {
       <Window title="Phase Content">
         <Text disabled>Select a phase from the left panel.</Text>
       </Window>
+      {showPhase11 && <Phase11
+        onClose={() => setShowPhase11(false)}
+        data={props.phase11}
+      />}
     </DockSpace>
     </Font>
   );

@@ -87,6 +87,40 @@ int main() {
     glfwSetWindowUserPointer(window, &app);
     glfwSetWindowSizeCallback(window, window_size_callback);
 
+    // Phase 11: initialize struct binding demo data
+    {
+        auto& p = app.state.phase11;
+        Phase11Task t1; t1.name = "Alpha";  t1.progress = 0.3f;
+        Phase11Task t2; t2.name = "Beta";   t2.progress = 0.7f;
+        Phase11Task t3; t3.name = "Gamma";  t3.progress = 0.5f;
+        p.tasks.push_back(t1);
+        p.tasks.push_back(t2);
+        p.tasks.push_back(t3);
+        p.total_tasks = static_cast<int>(p.tasks.size());
+
+        p.add_task = [&app]() {
+            auto& p = app.state.phase11;
+            Phase11Task t;
+            t.name = "Task " + std::to_string(p.tasks.size() + 1);
+            p.tasks.push_back(t);
+            p.total_tasks = static_cast<int>(p.tasks.size());
+        };
+        p.reset = [&app]() {
+            auto& p = app.state.phase11;
+            p.speed = 5.0f;
+            p.count = 3;
+            p.volume = 50.0f;
+            p.tasks.clear();
+            Phase11Task r1; r1.name = "Alpha";  r1.progress = 0.3f;
+            Phase11Task r2; r2.name = "Beta";   r2.progress = 0.7f;
+            Phase11Task r3; r3.name = "Gamma";  r3.progress = 0.5f;
+            p.tasks.push_back(r1);
+            p.tasks.push_back(r2);
+            p.tasks.push_back(r3);
+            p.total_tasks = 3;
+        };
+    }
+
     // Load TSX-declared fonts before first frame
     extern void _imx_load_fonts();
     _imx_load_fonts();

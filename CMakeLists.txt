@@ -182,6 +182,7 @@ if(IMX_BUILD_EXAMPLES)
     imx_compile_tsx(PHASES_GENERATED
         SOURCES
             examples/phases/src/App.tsx
+            examples/phases/src/Phase11.tsx
         OUTPUT_DIR ${CMAKE_BINARY_DIR}/generated_phases
     )
 

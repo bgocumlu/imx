@@ -1,6 +1,22 @@
 // imx.d.ts — Type definitions for IMX components
 
+interface Phase11Task {
+  name: string;
+  progress: number;
+}
+
+interface Phase11Data {
+  speed: number;
+  count: number;
+  volume: number;
+  tasks: Phase11Task[];
+  add_task: () => void;
+  reset: () => void;
+  total_tasks: number;
+}
+
 interface PhasesState {
+  phase11: Phase11Data;
   ms_selected: boolean[];
   ms_selection_count: number;
   apply_selection: (io: any) => void;
