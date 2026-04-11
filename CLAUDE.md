@@ -59,15 +59,9 @@ Key principles:
 - MultiSelect `onSelectionChange` uses `() => props.fn(0)` pattern — emitter extracts the function call and replaces `0` with `ms_io_end` pointer. Called on both BeginMultiSelect and EndMultiSelect results. Requires struct binding (not useState).
 - Manual Combo mode is detected statically in lowering.ts — children present → begin_combo/end_combo IR, items prop → existing combo IR
 - File name must match exported function name — CMake derives output from filename (`Phase11.tsx` → `Phase11.gen.cpp`), compiler uses function name. Mismatch causes "file not found" build errors
-- Non-root components cannot import other non-root components — generated `.gen.cpp` won't include the child's `.gen.h`. Only the root component's imports generate `#include` directives
-- `useState` variable names must not collide with generated C++ locals — e.g., `val` conflicts with slider/checkbox temp vars (use descriptive names like `widthDemo`, `treeOpen`)
-- Child component numeric text interpolation emits `.c_str()` on all types — `<Text>{props.data.count}</Text>` fails for `int`/`float` fields. Root components correctly use `%g` format. Workaround: display numbers through widgets (SliderFloat, DragInt) not Text interpolation. Fix pending in emitter
 - `allowDoubleClick` on Selectable fires `onSelect` on BOTH single and double clicks — use `onDoubleClicked` callback for double-click-only behavior
-- Modal does not close on Escape key (ImGui design) — add `<Shortcut keys="Escape" onPress={() => setShow(false)} />` inside Modal if Escape-to-close is desired
-- MenuBar must be a direct child of Window — cannot be used inside CollapsingHeader, TreeNode, or child components
-- Propless child components need `props: {}` in TSX — compiler requires it to generate `.gen.h` header for the parent to include
-- Sub-struct pattern required for passing struct binding to child components — individual scalar props lose C++ type info (all become `int*`). Use a named sub-struct type (e.g., `Phase11Data`) and pass as `data={props.phase11}`
-- MultiSelect in child components: `apply_selection` must be `std::function<void(ImGuiMultiSelectIO*)>` (not a member method) — member methods can't be passed as callback props. Wire the std::function in main.cpp
+- Modal does not close on Escape key (ImGui design — modals are intentionally blocking)
+- MenuBar must be a direct child of Window (ImGui design — `BeginMenuBar` only works inside `Begin`/`End`)
 - Table with repeated button labels: wrap each in `<ID scope={i}>` to avoid ImGui ID conflicts
 
 ## File structure
