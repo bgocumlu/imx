@@ -310,6 +310,7 @@ export interface IRCombo {
     onChangeExpr?: string;
     directBind?: boolean;
     items: string;
+    dynamicItems?: boolean;
     width?: string;
     style?: string;
     item?: IRItemInteraction;
@@ -359,6 +360,7 @@ export interface IRListBox {
     onChangeExpr?: string;
     directBind?: boolean;
     items: string;
+    dynamicItems?: boolean;
     width?: string;
     style?: string;
     item?: IRItemInteraction;

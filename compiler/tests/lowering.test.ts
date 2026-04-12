@@ -174,6 +174,22 @@ function App(props: { canSend: boolean, onSend: () => void }) {
         }
     });
 
+    it('lowers dynamic Combo items and index callback references', () => {
+        const ir = lower(`
+function App(props: { selectedProviderIndex: number, onProviderChange: (index: number) => void, providerLabels: string[] }) {
+  return <Combo label="Provider" value={props.selectedProviderIndex} onChange={props.onProviderChange} items={props.providerLabels} width={180} />;
+}
+        `);
+
+        const combo = ir.body[0];
+        expect(combo.kind).toBe('combo');
+        if (combo.kind === 'combo') {
+            expect(combo.items).toBe('props.providerLabels');
+            expect(combo.dynamicItems).toBe(true);
+            expect(combo.onChangeExpr).toBe('props.onProviderChange(val);');
+        }
+    });
+
     it('lowers DrawLine inside Canvas', () => {
         const ir = lower(`
 function App() {

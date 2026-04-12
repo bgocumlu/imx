@@ -229,6 +229,33 @@ function emitFloat(val: string): string {
     return trimmed.includes('.') ? `${trimmed}F` : `${trimmed}.0F`;
 }
 
+function emitStringItemsSource(
+    itemsExpr: string,
+    dynamicItems: boolean | undefined,
+    prefix: string,
+    counter: number,
+    indent: string,
+    lines: string[],
+): { itemsArg: string; countExpr: string } {
+    if (!dynamicItems) {
+        const itemsList = itemsExpr.split(',').map(s => s.trim()).filter(s => s.length > 0);
+        const itemsVar = `${prefix}_${counter}`;
+        lines.push(`${indent}const char* ${itemsVar}[] = {${itemsList.join(', ')}};`);
+        return { itemsArg: itemsVar, countExpr: `${itemsList.length}` };
+    }
+
+    const sourceVar = `${prefix}_src_${counter}`;
+    const itemsVar = `${prefix}_ptrs_${counter}`;
+    const itemVar = `${prefix}_item_${counter}`;
+    lines.push(`${indent}const auto& ${sourceVar} = ${itemsExpr};`);
+    lines.push(`${indent}std::vector<const char*> ${itemsVar};`);
+    lines.push(`${indent}${itemsVar}.reserve(${sourceVar}.size());`);
+    lines.push(`${indent}for (const auto& ${itemVar} : ${sourceVar}) {`);
+    lines.push(`${indent}${INDENT}${itemsVar}.push_back(${itemVar}.c_str());`);
+    lines.push(`${indent}}`);
+    return { itemsArg: `${itemsVar}.data()`, countExpr: `static_cast<int>(${itemsVar}.size())` };
+}
+
 function findDockLayout(nodes: IRNode[]): IRDockLayout | null {
     for (const node of nodes) {
         if (node.kind === 'dock_layout') return node;
@@ -356,6 +383,7 @@ export function emitComponent(comp: IRComponent, imports?: ImportInfo[], sourceF
             // Named interface: include runtime + renderer, plus user header for the struct definition
             lines.push('#include <imx/runtime.h>');
             lines.push('#include <imx/renderer.h>');
+            lines.push('#include <vector>');
             lines.push(`#include "${comp.namedPropsType}.h"`);
             if (hasColorType) {
                 lines.push('#include <array>');
@@ -375,6 +403,7 @@ export function emitComponent(comp: IRComponent, imports?: ImportInfo[], sourceF
         } else {
             // Component with inline props: include its own header instead of redeclaring struct
             lines.push(`#include "${comp.name}.gen.h"`);
+            lines.push('#include <vector>');
             if (hasColorType) {
                 lines.push('#include <array>');
             }
@@ -395,6 +424,7 @@ export function emitComponent(comp: IRComponent, imports?: ImportInfo[], sourceF
         // No props: standard headers
         lines.push('#include <imx/runtime.h>');
         lines.push('#include <imx/renderer.h>');
+        lines.push('#include <vector>');
         if (hasColorType) {
             lines.push('#include <array>');
         }
@@ -2291,19 +2321,17 @@ function emitDragInt(node: IRDragInt, lines: string[], indent: string): void {
 function emitCombo(node: IRCombo, lines: string[], indent: string): void {
     emitLocComment(node.loc, 'Combo', lines, indent);
     const label = asCharPtr(node.label);
-    const itemsList = node.items.split(',').map(s => s.trim()).filter(s => s.length > 0);
-    const count = itemsList.length;
-    const varName = `combo_items_${comboCounter++}`;
+    const counter = comboCounter++;
 
     if (node.stateVar) {
         lines.push(`${indent}{`);
         const innerIndent = indent + INDENT;
         const styleVar = buildWidgetStyleVar(node.style, node.width, innerIndent, lines);
         const styleArg = styleVar ? `, ${styleVar}` : '';
-        lines.push(`${innerIndent}const char* ${varName}[] = {${itemsList.join(', ')}};`);
+        const { itemsArg, countExpr } = emitStringItemsSource(node.items, node.dynamicItems, 'combo_items', counter, innerIndent, lines);
         lines.push(`${innerIndent}int val = ${node.stateVar}.get();`);
         const changedVar = nextWidgetTemp('combo_changed');
-        const resultVar = emitBoolWidgetCall(`imx::renderer::combo(${label}, &val, ${varName}, ${count}${styleArg})`, node.item, lines, innerIndent, changedVar);
+        const resultVar = emitBoolWidgetCall(`imx::renderer::combo(${label}, &val, ${itemsArg}, ${countExpr}${styleArg})`, node.item, lines, innerIndent, changedVar);
         lines.push(`${innerIndent}if (${resultVar}) {`);
         lines.push(`${innerIndent}${INDENT}${node.stateVar}.set(val);`);
         lines.push(`${innerIndent}}`);
@@ -2313,21 +2341,21 @@ function emitCombo(node: IRCombo, lines: string[], indent: string): void {
         const innerIndent = indent + INDENT;
         const styleVar = buildWidgetStyleVar(node.style, node.width, innerIndent, lines);
         const styleArg = styleVar ? `, ${styleVar}` : '';
-        lines.push(`${innerIndent}const char* ${varName}[] = {${itemsList.join(', ')}};`);
-        emitBoolWidgetCall(`imx::renderer::combo(${label}, ${emitDirectBindPtr(node.valueExpr)}, ${varName}, ${count}${styleArg})`, node.item, lines, innerIndent);
+        const { itemsArg, countExpr } = emitStringItemsSource(node.items, node.dynamicItems, 'combo_items', counter, innerIndent, lines);
+        emitBoolWidgetCall(`imx::renderer::combo(${label}, ${emitDirectBindPtr(node.valueExpr)}, ${itemsArg}, ${countExpr}${styleArg})`, node.item, lines, innerIndent);
         lines.push(`${indent}}`);
     } else if (node.valueExpr !== undefined) {
         lines.push(`${indent}{`);
         const innerIndent = indent + INDENT;
         const styleVar = buildWidgetStyleVar(node.style, node.width, innerIndent, lines);
         const styleArg = styleVar ? `, ${styleVar}` : '';
-        lines.push(`${innerIndent}const char* ${varName}[] = {${itemsList.join(', ')}};`);
+        const { itemsArg, countExpr } = emitStringItemsSource(node.items, node.dynamicItems, 'combo_items', counter, innerIndent, lines);
         lines.push(`${innerIndent}int val = ${node.valueExpr};`);
         const changedVar = nextWidgetTemp('combo_changed');
-        const resultVar = emitBoolWidgetCall(`imx::renderer::combo(${label}, &val, ${varName}, ${count}${styleArg})`, node.item, lines, innerIndent, changedVar);
+        const resultVar = emitBoolWidgetCall(`imx::renderer::combo(${label}, &val, ${itemsArg}, ${countExpr}${styleArg})`, node.item, lines, innerIndent, changedVar);
         lines.push(`${innerIndent}if (${resultVar}) {`);
         if (node.onChangeExpr) {
-            lines.push(`${innerIndent}${INDENT}${node.onChangeExpr};`);
+            lines.push(`${innerIndent}${INDENT}${node.onChangeExpr}`);
         }
         lines.push(`${innerIndent}}`);
         lines.push(`${indent}}`);
@@ -2483,19 +2511,17 @@ function emitColorEdit3(node: IRColorEdit3, lines: string[], indent: string): vo
 function emitListBox(node: IRListBox, lines: string[], indent: string): void {
     emitLocComment(node.loc, 'ListBox', lines, indent);
     const label = asCharPtr(node.label);
-    const itemsList = node.items.split(',').map(s => s.trim()).filter(s => s.length > 0);
-    const count = itemsList.length;
-    const varName = `listbox_items_${listBoxCounter++}`;
+    const counter = listBoxCounter++;
 
     if (node.stateVar) {
         lines.push(`${indent}{`);
         const innerIndent = indent + INDENT;
         const styleVar = buildWidgetStyleVar(node.style, node.width, innerIndent, lines);
         const styleArg = styleVar ? `, ${styleVar}` : '';
-        lines.push(`${innerIndent}const char* ${varName}[] = {${itemsList.join(', ')}};`);
+        const { itemsArg, countExpr } = emitStringItemsSource(node.items, node.dynamicItems, 'listbox_items', counter, innerIndent, lines);
         lines.push(`${innerIndent}int val = ${node.stateVar}.get();`);
         const changedVar = nextWidgetTemp('list_box_changed');
-        const resultVar = emitBoolWidgetCall(`imx::renderer::list_box(${label}, &val, ${varName}, ${count}${styleArg})`, node.item, lines, innerIndent, changedVar);
+        const resultVar = emitBoolWidgetCall(`imx::renderer::list_box(${label}, &val, ${itemsArg}, ${countExpr}${styleArg})`, node.item, lines, innerIndent, changedVar);
         lines.push(`${innerIndent}if (${resultVar}) {`);
         lines.push(`${innerIndent}${INDENT}${node.stateVar}.set(val);`);
         lines.push(`${innerIndent}}`);
@@ -2505,21 +2531,21 @@ function emitListBox(node: IRListBox, lines: string[], indent: string): void {
         const innerIndent = indent + INDENT;
         const styleVar = buildWidgetStyleVar(node.style, node.width, innerIndent, lines);
         const styleArg = styleVar ? `, ${styleVar}` : '';
-        lines.push(`${innerIndent}const char* ${varName}[] = {${itemsList.join(', ')}};`);
-        emitBoolWidgetCall(`imx::renderer::list_box(${label}, ${emitDirectBindPtr(node.valueExpr)}, ${varName}, ${count}${styleArg})`, node.item, lines, innerIndent);
+        const { itemsArg, countExpr } = emitStringItemsSource(node.items, node.dynamicItems, 'listbox_items', counter, innerIndent, lines);
+        emitBoolWidgetCall(`imx::renderer::list_box(${label}, ${emitDirectBindPtr(node.valueExpr)}, ${itemsArg}, ${countExpr}${styleArg})`, node.item, lines, innerIndent);
         lines.push(`${indent}}`);
     } else if (node.valueExpr !== undefined) {
         lines.push(`${indent}{`);
         const innerIndent = indent + INDENT;
         const styleVar = buildWidgetStyleVar(node.style, node.width, innerIndent, lines);
         const styleArg = styleVar ? `, ${styleVar}` : '';
-        lines.push(`${innerIndent}const char* ${varName}[] = {${itemsList.join(', ')}};`);
+        const { itemsArg, countExpr } = emitStringItemsSource(node.items, node.dynamicItems, 'listbox_items', counter, innerIndent, lines);
         lines.push(`${innerIndent}int val = ${node.valueExpr};`);
         const changedVar = nextWidgetTemp('list_box_changed');
-        const resultVar = emitBoolWidgetCall(`imx::renderer::list_box(${label}, &val, ${varName}, ${count}${styleArg})`, node.item, lines, innerIndent, changedVar);
+        const resultVar = emitBoolWidgetCall(`imx::renderer::list_box(${label}, &val, ${itemsArg}, ${countExpr}${styleArg})`, node.item, lines, innerIndent, changedVar);
         lines.push(`${innerIndent}if (${resultVar}) {`);
         if (node.onChangeExpr) {
-            lines.push(`${innerIndent}${INDENT}${node.onChangeExpr};`);
+            lines.push(`${innerIndent}${INDENT}${node.onChangeExpr}`);
         }
         lines.push(`${innerIndent}}`);
         lines.push(`${indent}}`);

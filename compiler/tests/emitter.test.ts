@@ -157,6 +157,22 @@ function App(props: { showTerminalWindow: boolean, onToggleTerminalWindow: () =>
         expect(output).not.toContain('"Show Terminal".c_str()');
     });
 
+    it('emits Combo with dynamic items arrays and index callback references', () => {
+        const output = compile(`
+function App(props: { selectedProviderIndex: number, onProviderChange: (index: number) => void, providerLabels: string[] }) {
+  return <Combo label="Provider" value={props.selectedProviderIndex} onChange={props.onProviderChange} items={props.providerLabels} width={180} />;
+}
+        `);
+
+        expect(output).toContain('const auto& combo_items_src_0 = props.providerLabels;');
+        expect(output).toContain('std::vector<const char*> combo_items_ptrs_0;');
+        expect(output).toContain('combo_items_ptrs_0.push_back(combo_items_item_0.c_str());');
+        expect(output).toContain('imx::renderer::combo("Provider", &val, combo_items_ptrs_0.data(), static_cast<int>(combo_items_ptrs_0.size()), style_0)');
+        expect(output).toContain('props.onProviderChange(val);');
+        expect(output).not.toContain('const char* combo_items_0[] = {props.providerLabels};');
+        expect(output).not.toContain('props.onProviderChange();');
+    });
+
     it('emits Checkbox with temp bool pattern', () => {
         const output = compile(`
 function App() {

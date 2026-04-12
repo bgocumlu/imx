@@ -1876,6 +1876,40 @@ function lowerValueOnChange(rawAttrs, ctx) {
     }
     return { stateVar, valueExpr, onChangeExpr, directBind };
 }
+function lowerIndexedValueOnChange(rawAttrs, ctx, valueName) {
+    let stateVar = '';
+    let valueExpr;
+    let onChangeExpr;
+    let directBind;
+    const valueRaw = rawAttrs.get('value');
+    if (valueRaw && ts.isIdentifier(valueRaw) && ctx.stateVars.has(valueRaw.text)) {
+        stateVar = valueRaw.text;
+    }
+    else if (valueRaw) {
+        valueExpr = exprToCpp(valueRaw, ctx);
+        const onChangeRaw = rawAttrs.get('onChange');
+        if (onChangeRaw) {
+            const { paramName, bodyCode } = lowerParameterizedCallback(onChangeRaw, ctx, valueName);
+            onChangeExpr = paramName === valueName
+                ? bodyCode
+                : `auto ${paramName} = ${valueName}; ${bodyCode}`;
+        }
+        else if (ts.isPropertyAccessExpression(valueRaw)) {
+            directBind = true;
+        }
+    }
+    return { stateVar, valueExpr, onChangeExpr, directBind };
+}
+function lowerItemsSource(attrs, rawAttrs, ctx) {
+    const itemsRaw = rawAttrs.get('items');
+    if (!itemsRaw) {
+        return { items: attrs['items'] ?? '' };
+    }
+    if (ts.isArrayLiteralExpression(itemsRaw)) {
+        return { items: exprToCpp(itemsRaw, ctx) };
+    }
+    return { items: exprToCpp(itemsRaw, ctx), dynamicItems: true };
+}
 function lowerSliderFloat(attrs, rawAttrs, body, ctx, loc) {
     const label = attrs['label'] ?? '""';
     const min = attrs['min'] ?? '0.0f';
@@ -1948,12 +1982,12 @@ function lowerDragInt(attrs, rawAttrs, body, ctx, loc) {
 }
 function lowerCombo(attrs, rawAttrs, body, ctx, loc) {
     const label = attrs['label'] ?? '""';
-    const items = attrs['items'] ?? '';
     const width = attrs['width'];
     const style = attrs['style'];
-    const { stateVar, valueExpr, onChangeExpr, directBind } = lowerValueOnChange(rawAttrs, ctx);
+    const { items, dynamicItems } = lowerItemsSource(attrs, rawAttrs, ctx);
+    const { stateVar, valueExpr, onChangeExpr, directBind } = lowerIndexedValueOnChange(rawAttrs, ctx, 'val');
     const item = lowerItemInteraction(attrs, rawAttrs, ctx);
-    body.push({ kind: 'combo', label, stateVar, valueExpr, onChangeExpr, directBind, items, width, style, item, loc });
+    body.push({ kind: 'combo', label, stateVar, valueExpr, onChangeExpr, directBind, items, dynamicItems, width, style, item, loc });
 }
 function lowerInputInt(attrs, rawAttrs, body, ctx, loc) {
     const label = attrs['label'] ?? '""';
@@ -2035,12 +2069,12 @@ function lowerColorEdit3(attrs, rawAttrs, body, ctx, loc) {
 }
 function lowerListBox(attrs, rawAttrs, body, ctx, loc) {
     const label = attrs['label'] ?? '""';
-    const items = attrs['items'] ?? '';
     const width = attrs['width'];
     const style = attrs['style'];
-    const { stateVar, valueExpr, onChangeExpr, directBind } = lowerValueOnChange(rawAttrs, ctx);
+    const { items, dynamicItems } = lowerItemsSource(attrs, rawAttrs, ctx);
+    const { stateVar, valueExpr, onChangeExpr, directBind } = lowerIndexedValueOnChange(rawAttrs, ctx, 'val');
     const item = lowerItemInteraction(attrs, rawAttrs, ctx);
-    body.push({ kind: 'list_box', label, stateVar, valueExpr, onChangeExpr, directBind, items, width, style, item, loc });
+    body.push({ kind: 'list_box', label, stateVar, valueExpr, onChangeExpr, directBind, items, dynamicItems, width, style, item, loc });
 }
 function lowerProgressBar(attrs, rawAttrs, body, ctx, loc) {
     const value = attrs['value'] ?? '0.0f';

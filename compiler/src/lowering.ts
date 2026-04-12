@@ -1935,6 +1935,48 @@ function lowerValueOnChange(rawAttrs: Map<string, ts.Expression | null>, ctx: Lo
     return { stateVar, valueExpr, onChangeExpr, directBind };
 }
 
+function lowerIndexedValueOnChange(
+    rawAttrs: Map<string, ts.Expression | null>,
+    ctx: LoweringContext,
+    valueName: string,
+): { stateVar: string; valueExpr?: string; onChangeExpr?: string; directBind?: boolean } {
+    let stateVar = '';
+    let valueExpr: string | undefined;
+    let onChangeExpr: string | undefined;
+    let directBind: boolean | undefined;
+    const valueRaw = rawAttrs.get('value');
+    if (valueRaw && ts.isIdentifier(valueRaw) && ctx.stateVars.has(valueRaw.text)) {
+        stateVar = valueRaw.text;
+    } else if (valueRaw) {
+        valueExpr = exprToCpp(valueRaw, ctx);
+        const onChangeRaw = rawAttrs.get('onChange');
+        if (onChangeRaw) {
+            const { paramName, bodyCode } = lowerParameterizedCallback(onChangeRaw, ctx, valueName);
+            onChangeExpr = paramName === valueName
+                ? bodyCode
+                : `auto ${paramName} = ${valueName}; ${bodyCode}`;
+        } else if (ts.isPropertyAccessExpression(valueRaw)) {
+            directBind = true;
+        }
+    }
+    return { stateVar, valueExpr, onChangeExpr, directBind };
+}
+
+function lowerItemsSource(
+    attrs: Record<string, string>,
+    rawAttrs: Map<string, ts.Expression | null>,
+    ctx: LoweringContext,
+): { items: string; dynamicItems?: boolean } {
+    const itemsRaw = rawAttrs.get('items');
+    if (!itemsRaw) {
+        return { items: attrs['items'] ?? '' };
+    }
+    if (ts.isArrayLiteralExpression(itemsRaw)) {
+        return { items: exprToCpp(itemsRaw, ctx) };
+    }
+    return { items: exprToCpp(itemsRaw, ctx), dynamicItems: true };
+}
+
 function lowerSliderFloat(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext, loc: SourceLoc): void {
     const label = attrs['label'] ?? '""';
     const min = attrs['min'] ?? '0.0f';
@@ -2014,12 +2056,12 @@ function lowerDragInt(attrs: Record<string, string>, rawAttrs: Map<string, ts.Ex
 
 function lowerCombo(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext, loc: SourceLoc): void {
     const label = attrs['label'] ?? '""';
-    const items = attrs['items'] ?? '';
     const width = attrs['width'];
     const style = attrs['style'];
-    const { stateVar, valueExpr, onChangeExpr, directBind } = lowerValueOnChange(rawAttrs, ctx);
+    const { items, dynamicItems } = lowerItemsSource(attrs, rawAttrs, ctx);
+    const { stateVar, valueExpr, onChangeExpr, directBind } = lowerIndexedValueOnChange(rawAttrs, ctx, 'val');
     const item = lowerItemInteraction(attrs, rawAttrs, ctx);
-    body.push({ kind: 'combo', label, stateVar, valueExpr, onChangeExpr, directBind, items, width, style, item, loc });
+    body.push({ kind: 'combo', label, stateVar, valueExpr, onChangeExpr, directBind, items, dynamicItems, width, style, item, loc });
 }
 
 function lowerInputInt(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext, loc: SourceLoc): void {
@@ -2100,12 +2142,12 @@ function lowerColorEdit3(attrs: Record<string, string>, rawAttrs: Map<string, ts
 
 function lowerListBox(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext, loc: SourceLoc): void {
     const label = attrs['label'] ?? '""';
-    const items = attrs['items'] ?? '';
     const width = attrs['width'];
     const style = attrs['style'];
-    const { stateVar, valueExpr, onChangeExpr, directBind } = lowerValueOnChange(rawAttrs, ctx);
+    const { items, dynamicItems } = lowerItemsSource(attrs, rawAttrs, ctx);
+    const { stateVar, valueExpr, onChangeExpr, directBind } = lowerIndexedValueOnChange(rawAttrs, ctx, 'val');
     const item = lowerItemInteraction(attrs, rawAttrs, ctx);
-    body.push({ kind: 'list_box', label, stateVar, valueExpr, onChangeExpr, directBind, items, width, style, item, loc });
+    body.push({ kind: 'list_box', label, stateVar, valueExpr, onChangeExpr, directBind, items, dynamicItems, width, style, item, loc });
 }
 
 function lowerProgressBar(attrs: Record<string, string>, rawAttrs: Map<string, ts.Expression | null>, body: IRNode[], ctx: LoweringContext, loc: SourceLoc): void {
