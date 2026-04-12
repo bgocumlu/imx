@@ -15,7 +15,7 @@ function createDeps(overrides: Partial<CliDeps> = {}): { deps: CliDeps; stdout: 
             { name: 'minimal', description: 'Minimal app' },
             { name: 'hotreload', description: 'Hot reload' },
         ] as any,
-        version: '0.6.4',
+        version: '0.6.5',
         stdout: text => { stdout.push(text); },
         stderr: text => { stderr.push(text); },
         ...overrides,
@@ -38,7 +38,7 @@ describe('runCli', () => {
         const code = await runCli(['--version'], deps);
 
         expect(code).toBe(0);
-        expect(stdout.join('')).toContain('0.6.4');
+        expect(stdout.join('')).toContain('0.6.5');
     });
 
     it('prints subcommand help for watch --help', async () => {
