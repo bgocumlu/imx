@@ -146,7 +146,7 @@ The goal is a compiler where any valid-looking TSX produces valid C++. If a patt
 - TypeScript type definitions for IDE support
 - CLI: `imxc init` (interactive feature selector + `--template` flag), `imxc add` (existing project), `imxc watch` (file watcher + `--build` for hot reload), `imxc templates` (list available templates)
 - API documentation + LLM prompt reference complete
-- Packaging: `imxc@0.6.7` on npm, FetchContent for C++ (compiler/dist/ committed, no npm install needed)
+- Packaging: `imxc@0.6.8` on npm, FetchContent for C++ (compiler/dist/ committed, no npm install needed)
 - Release builds hide console on Windows (WIN32_EXECUTABLE), Debug shows it
 - Developer Experience (Phase 19): source-mapped errors (`#line` directives in `.gen.cpp` pointing back to `.tsx` source lines — MSVC errors show `App.tsx:42` instead of `App.gen.cpp:187`), compiler warnings for unknown components and missing `<ID scope>` in `.map()` loops, warning severity in diagnostics output
 - Project Templates (Phase 20): 6 standalone templates (minimal, async, persistence, networking, hotreload, filedialog) + multi-template combining via `--template=async,persistence`. Interactive checkbox selector with arrow keys. Vendored single-header libraries (`imx/json.hpp`, `imx/httplib.h`, `imx/pfd.h`) — no external FetchContent needed. DLL hot reload with `imxc watch --build`. Examples in `examples/async/`, `persistence/`, `networking/`, `hotreload/`, `filedialog/`.
