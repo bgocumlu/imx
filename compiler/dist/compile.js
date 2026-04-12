@@ -49,7 +49,7 @@ export function compile(files, outputDir) {
         const imports = extractImports(parsed.sourceFile);
         compiled.push({
             name: ir.name,
-            sourceFile: path.basename(file),
+            sourceFile: parsed.sourceFile.fileName,
             sourcePath: file,
             stateCount: ir.stateSlots.length,
             bufferCount: ir.bufferCount,
@@ -99,7 +99,7 @@ export function compile(files, outputDir) {
     }
     const sharedPropsType = compiled.find(c => c.ir.namedPropsType)?.ir.namedPropsType;
     // Resolve actual C++ types for bound props by tracing through parent interfaces.
-    // When a child declares `speed: number` (→ 'int'), but the parent struct has `float speed`,
+    // When a child declares `speed: number`, but the parent struct has `float speed`,
     // the bound prop pointer must use the parent's actual type.
     const resolvedBoundPropTypes = new Map();
     for (const comp of compiled) {
@@ -478,7 +478,7 @@ function extractNestedPropAccess(expr, bound) {
 }
 /**
  * Walk IR nodes in a parent component, resolving actual C++ types for child bound props.
- * When a child has `speed: number` (→ 'int') but the parent passes props.speed from a struct
+ * When a child has `speed: number` but the parent passes props.speed from a struct
  * where speed is float, the resolved type overrides the child's inferred type.
  */
 function resolveChildBoundTypes(nodes, parentFieldTypes, componentMap, extIfaces, result) {
@@ -489,25 +489,7 @@ function resolveChildBoundTypes(nodes, parentFieldTypes, componentMap, extIfaces
                 for (const [propName, valueExpr] of Object.entries(node.props)) {
                     if (!child.boundProps.has(propName) || !valueExpr.startsWith('props.'))
                         continue;
-                    const parts = valueExpr.slice(6).split('.');
-                    const topField = parts[0].split('[')[0];
-                    const topType = parentFieldTypes.get(topField);
-                    if (!topType || topType === 'callback')
-                        continue;
-                    let resolvedType;
-                    if (parts.length === 1) {
-                        // Direct scalar: props.speed → parent's type for speed
-                        resolvedType = topType;
-                    }
-                    else if (parts.length === 2) {
-                        // Nested: props.data.speed → look up speed in data's interface
-                        const iface = extIfaces.get(topType);
-                        if (iface) {
-                            const ft = iface.get(parts[1].split('[')[0]);
-                            if (ft && ft !== 'callback')
-                                resolvedType = ft;
-                        }
-                    }
+                    const resolvedType = resolveBoundPropType(valueExpr, parentFieldTypes, extIfaces);
                     if (resolvedType) {
                         if (!result.has(node.name))
                             result.set(node.name, new Map());
@@ -525,6 +507,30 @@ function resolveChildBoundTypes(nodes, parentFieldTypes, componentMap, extIfaces
             resolveChildBoundTypes(node.body, parentFieldTypes, componentMap, extIfaces, result);
         }
     }
+}
+function resolveBoundPropType(valueExpr, rootFieldTypes, extIfaces) {
+    if (!valueExpr.startsWith('props.'))
+        return undefined;
+    const parts = valueExpr
+        .slice(6)
+        .split('.')
+        .map(part => part.split('[')[0])
+        .filter(Boolean);
+    if (parts.length === 0)
+        return undefined;
+    let currentType = rootFieldTypes.get(parts[0]);
+    if (!currentType || currentType === 'callback')
+        return undefined;
+    for (let i = 1; i < parts.length; i++) {
+        const iface = extIfaces.get(currentType);
+        if (!iface)
+            return undefined;
+        const nextType = iface.get(parts[i]);
+        if (!nextType || nextType === 'callback')
+            return undefined;
+        currentType = nextType;
+    }
+    return currentType;
 }
 /**
  * Parse the imx.d.ts in the given directory (if present) and extract

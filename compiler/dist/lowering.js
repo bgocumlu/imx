@@ -90,7 +90,7 @@ export function lowerComponent(parsed, validation, externalInterfaces) {
 function normalizePropTypeText(typeText) {
     const trimmed = typeText.trim().replace(/\s*\|\s*undefined$/, '');
     if (trimmed === 'number')
-        return 'int';
+        return 'float';
     if (trimmed === 'boolean')
         return 'bool';
     if (trimmed === 'string')
@@ -1215,33 +1215,9 @@ function inferExprType(expr, ctx) {
         // .length maps to .size() in C++ — always int
         if (prop === 'length')
             return 'int';
-        // If accessing a direct field of the props param, look up its type
-        if (ctx.propsParam && ts.isIdentifier(expr.expression) && expr.expression.text === ctx.propsParam) {
-            const ft = ctx.propsFieldTypes.get(prop);
-            if (ft && ft !== 'callback') {
-                if (ft === 'int' || ft === 'float' || ft === 'bool' || ft === 'string' || ft === 'color' || ft === 'int_array') {
-                    return ft;
-                }
-                return 'string';
-            }
-        }
-        // Nested access: props.data.field — resolve through external interfaces
-        if (ctx.propsParam && ctx.externalInterfaces && ts.isPropertyAccessExpression(expr.expression)) {
-            const mid = expr.expression;
-            if (ts.isIdentifier(mid.expression) && mid.expression.text === ctx.propsParam) {
-                const midType = ctx.propsFieldTypes.get(mid.name.text);
-                if (midType && midType !== 'callback') {
-                    const iface = ctx.externalInterfaces.get(midType);
-                    if (iface) {
-                        const fieldType = iface.get(prop);
-                        if (fieldType && fieldType !== 'callback') {
-                            if (fieldType === 'int' || fieldType === 'float' || fieldType === 'bool' || fieldType === 'string' || fieldType === 'color' || fieldType === 'int_array') {
-                                return fieldType;
-                            }
-                        }
-                    }
-                }
-            }
+        const resolvedType = resolvePropertyAccessType(expr, ctx);
+        if (resolvedType) {
+            return resolvedType;
         }
         return 'string';
     }
@@ -1274,6 +1250,37 @@ function inferExprType(expr, ctx) {
         }
     }
     return 'int'; // default
+}
+function resolvePropertyAccessType(expr, ctx) {
+    if (!ctx.propsParam)
+        return null;
+    const parts = [];
+    let current = expr;
+    while (ts.isPropertyAccessExpression(current)) {
+        parts.unshift(current.name.text);
+        current = current.expression;
+    }
+    if (!ts.isIdentifier(current) || current.text !== ctx.propsParam || parts.length === 0) {
+        return null;
+    }
+    let currentType = ctx.propsFieldTypes.get(parts[0]);
+    if (!currentType || currentType === 'callback')
+        return null;
+    for (let i = 1; i < parts.length; i++) {
+        if (!ctx.externalInterfaces)
+            return null;
+        const iface = ctx.externalInterfaces.get(currentType);
+        if (!iface)
+            return null;
+        const nextType = iface.get(parts[i]);
+        if (!nextType || nextType === 'callback')
+            return null;
+        currentType = nextType;
+    }
+    if (currentType === 'int' || currentType === 'float' || currentType === 'bool' || currentType === 'string' || currentType === 'color' || currentType === 'int_array') {
+        return currentType;
+    }
+    return 'string';
 }
 function lowerListMap(node, body, ctx, loc) {
     const propAccess = node.expression;

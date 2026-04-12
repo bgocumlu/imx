@@ -1,3 +1,4 @@
+import * as path from 'node:path';
 import { describe, it, expect } from 'vitest';
 import { parseFile, extractImports } from '../src/parser.js';
 
@@ -33,6 +34,18 @@ describe('parseFile', () => {
         const source = `import { TodoItem } from './TodoItem';\nfunction App() { return <TodoItem />; }`;
         const result = parseFile('App.tsx', source);
         expect(result.errors).toHaveLength(0);
+    });
+
+    it('allows top-level interfaces before the component', () => {
+        const source = `interface Props { speed: number; }\nfunction App(props: Props) { return <Text>{props.speed}</Text>; }`;
+        const result = parseFile('App.tsx', source);
+        expect(result.errors).toHaveLength(0);
+    });
+
+    it('normalizes parser file names relative to cwd', () => {
+        const source = `function App() { return <Text>Hi</Text>; }`;
+        const result = parseFile(path.join('src', 'App.tsx'), source);
+        expect(result.sourceFile.fileName).toBe('src/App.tsx');
     });
 });
 

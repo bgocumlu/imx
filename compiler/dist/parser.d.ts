@@ -12,5 +12,6 @@ export interface ParseError {
     message: string;
     severity?: 'error' | 'warning';
 }
+export declare function normalizeDisplayPath(filePath: string): string;
 export declare function parseFile(filePath: string, source: string): ParsedFile;
 export declare function extractImports(sourceFile: ts.SourceFile): Map<string, string>;

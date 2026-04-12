@@ -7,8 +7,10 @@ Templates: minimal, async, persistence, networking, hotreload, filedialog
 Combine: `npx imxc init <name> --template=async,persistence`
 List: `npx imxc templates`
 Watch: `npx imxc watch <dir> -o <outdir> [--build <cmd>]`
+Help: `npx imxc --help`, `npx imxc watch --help`
+Version: `npx imxc --version`
 
-Source mapping: generated `.gen.cpp` files include `#line` directives pointing back to `.tsx` source. MSVC errors show the original TSX filename and line number.
+Source mapping: generated `.gen.cpp` files include `#line` directives pointing back to normalized `.tsx` source paths. MSVC errors show the original TSX path and line number.
 
 ## Vendored Libraries
 
@@ -288,7 +290,7 @@ export default function App() {
 }
 ```
 
-Props access: `props.name` (no destructuring). Types: `string`, `number`, `boolean`, `() => void`.
+Props access: `props.name` (no destructuring). Types: `string`, `number`, `boolean`, `() => void`. Declared `number` props map to generated C++ `float`.
 
 ## Critical Patterns
 
@@ -581,9 +583,11 @@ export default function App() {
 
 ## File Setup
 
-Required files per app directory: `App.tsx`, `imx.d.ts`, `tsconfig.json`, `main.cpp`.
-Compile all .tsx files together: `node compiler/dist/index.js App.tsx TodoItem.tsx -o build/generated`
-First .tsx argument is the root component (must use `export default`).
+Scaffolded apps use `src/App.tsx`, `src/imx.d.ts`, `tsconfig.json`, and `src/main.cpp` or `main.cpp` depending on template.
+Compile all .tsx files together: `node compiler/dist/index.js src/App.tsx src/TodoItem.tsx -o build/generated`
+First .tsx argument is the root component (must use `export default` for the root file).
+Top-level `interface` declarations are allowed in `.tsx` files.
+Watch mode chooses the root deterministically: `src/App.tsx`, then `App.tsx`, then the first `.tsx` file alphabetically.
 
 ## Native Widgets
 
@@ -595,7 +599,7 @@ Native widgets are C++ ImGui widgets registered at runtime. Use them like any co
 
 Requirements:
 - Widget must be registered in `main.cpp` with `imx::register_widget("Knob", ...)`
-- Props must be declared in `imx.d.ts` for type checking
+- Props must be declared in `imx.d.ts` for type checking and to suppress unknown-component warnings
 - Callbacks with a value parameter need a type annotation: `(v: number) => ...`
 
 Custom themes work via `imx::register_theme("name", fn)` and `<Theme preset="name">`.
@@ -626,6 +630,8 @@ export default function App(props: AppState) {
 C++ side: define struct in `AppState.h`, pass to `imx::render_root(runtime, state)`.
 Callbacks: `std::function<void()>` or `std::function<void(int)>` fields. Vector iteration: `.map()` emits `auto&` reference.
 Thread safety: developer's responsibility (same as raw ImGui).
+
+Nested binding chains are supported: `props.audio.master.volume` still emits direct field access with the resolved bound field type.
 
 ### Struct Binding Notes
 

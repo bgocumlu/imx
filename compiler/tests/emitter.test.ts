@@ -84,7 +84,7 @@ function Greeting(props: { name: string, age: number }) {
         const header = compileHeader(source);
         expect(header).toContain('struct GreetingProps');
         expect(header).toContain('std::string name;');
-        expect(header).toContain('int age;');
+        expect(header).toContain('float age;');
         expect(header).toContain('void Greeting_render(imx::RenderContext& ctx, GreetingProps& props);');
     });
 
@@ -1209,6 +1209,43 @@ interface AppState { appearance: AppearanceSettings; }
         expect(cpp).not.toContain('->data()');
     });
 
+    it('resolves deep nested sub-struct bindings to the actual field type', () => {
+        const files = compileMultiFiles({
+            'App.tsx': `
+import { SpeedSlider } from './SpeedSlider';
+export default function App(props: AppState) {
+  return <SpeedSlider speed={props.outer.inner.speed} />;
+}`,
+            'SpeedSlider.tsx': `
+export function SpeedSlider(props: { speed: number }) {
+  return <SliderFloat label="Speed" value={props.speed} min={0} max={100} />;
+}`,
+            'imx.d.ts': `
+interface Inner { speed: number; }
+interface Outer { inner: Inner; }
+interface AppState { outer: Outer; }
+`,
+        });
+
+        const header = files['SpeedSlider.gen.h'] ?? '';
+        expect(header).toContain('float* speed');
+    });
+
+    it('accepts same-file interfaces for named props', () => {
+        const output = compile(`
+interface Props {
+  speed: number;
+}
+
+function App(props: Props) {
+  return <Text>{props.speed}</Text>;
+}
+        `);
+
+        expect(output).toContain('Props& props');
+        expect(output).toContain('(double)props.speed');
+    });
+
     it('emits Font with PushFont/PopFont', () => {
         const output = compile(`
 function App() {
@@ -1429,7 +1466,7 @@ function App() {
 }
         `, 'App.tsx', { sourceMap: true });
 
-        // loc.file comes from parseFile('Test.tsx', ...) — the parser filename
+        // loc.file comes from parseFile('Test.tsx', ...) — normalized parser path
         expect(output).toMatch(/^#line \d+ "Test\.tsx"$/m);
     });
 

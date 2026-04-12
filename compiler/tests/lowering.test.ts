@@ -105,7 +105,7 @@ function Greeting(props: { name: string, age: number }) {
         expect(ir.name).toBe('Greeting');
         expect(ir.params).toHaveLength(2);
         expect(ir.params[0]).toMatchObject({ name: 'name', type: 'string' });
-        expect(ir.params[1]).toMatchObject({ name: 'age', type: 'int' });
+        expect(ir.params[1]).toMatchObject({ name: 'age', type: 'float' });
 
         expect(ir.body.length).toBe(1);
         const text = ir.body[0];

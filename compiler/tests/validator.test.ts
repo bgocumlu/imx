@@ -1,3 +1,6 @@
+import * as fs from 'node:fs';
+import * as os from 'node:os';
+import * as path from 'node:path';
 import { describe, it, expect } from 'vitest';
 import { parseFile } from '../src/parser.js';
 import { validate } from '../src/validator.js';
@@ -58,6 +61,21 @@ describe('validate', () => {
         const result = validate(parsed);
         expect(result.errors).toHaveLength(0);
         expect(result.warnings).toHaveLength(0);
+    });
+
+    it('no warning for native widget declared in imx.d.ts', () => {
+        const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'imx-validator-'));
+        fs.writeFileSync(path.join(tmpDir, 'imx.d.ts'), `
+interface KnobProps { value: number; }
+declare function Knob(props: KnobProps): any;
+`);
+
+        const parsed = parseFile(path.join(tmpDir, 'App.tsx'), `function App() { return <Knob value={0} />; }`);
+        const result = validate(parsed);
+
+        expect(result.errors).toHaveLength(0);
+        expect(result.warnings).toHaveLength(0);
+        fs.rmSync(tmpDir, { recursive: true, force: true });
     });
 
     it('warns on .map() without ID wrapper', () => {

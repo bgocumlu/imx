@@ -1,3 +1,5 @@
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 import ts from 'typescript';
 import { HOST_COMPONENTS, isHostComponent } from './components.js';
 import { extractImports } from './parser.js';
@@ -15,6 +17,7 @@ export function validate(parsed) {
     const sf = parsed.sourceFile;
     const func = parsed.component;
     const customComponents = extractImports(sf);
+    const nativeWidgets = loadDeclaredNativeWidgets(path.dirname(parsed.filePath));
     const useStateCalls = [];
     if (!func || !func.body)
         return { errors, warnings, customComponents, useStateCalls };
@@ -34,7 +37,7 @@ export function validate(parsed) {
     }
     const returnStmt = func.body.statements.find(ts.isReturnStatement);
     if (returnStmt && returnStmt.expression) {
-        validateExpression(returnStmt.expression, sf, customComponents, errors, warnings);
+        validateExpression(returnStmt.expression, sf, customComponents, nativeWidgets, errors, warnings);
     }
     return { errors, warnings, customComponents, useStateCalls };
 }
@@ -70,30 +73,30 @@ function extractUseState(decl, index, sf, errors) {
     }
     return { name: nameEl.name.text, setter: setterEl.name.text, initializer: call.arguments[0], index };
 }
-function validateExpression(node, sf, customComponents, errors, warnings) {
+function validateExpression(node, sf, customComponents, nativeWidgets, errors, warnings) {
     if (ts.isJsxElement(node)) {
-        validateJsxElement(node, sf, customComponents, errors, warnings);
+        validateJsxElement(node, sf, customComponents, nativeWidgets, errors, warnings);
     }
     else if (ts.isJsxSelfClosingElement(node)) {
-        validateJsxTag(node.tagName, node, sf, customComponents, warnings);
+        validateJsxTag(node.tagName, node, sf, customComponents, nativeWidgets, warnings);
         validateJsxAttributes(node.attributes, node.tagName, sf, errors);
     }
     else if (ts.isJsxFragment(node)) {
         for (const child of node.children)
-            validateExpression(child, sf, customComponents, errors, warnings);
+            validateExpression(child, sf, customComponents, nativeWidgets, errors, warnings);
     }
     else if (ts.isParenthesizedExpression(node)) {
-        validateExpression(node.expression, sf, customComponents, errors, warnings);
+        validateExpression(node.expression, sf, customComponents, nativeWidgets, errors, warnings);
     }
     else if (ts.isConditionalExpression(node)) {
-        validateExpression(node.whenTrue, sf, customComponents, errors, warnings);
-        validateExpression(node.whenFalse, sf, customComponents, errors, warnings);
+        validateExpression(node.whenTrue, sf, customComponents, nativeWidgets, errors, warnings);
+        validateExpression(node.whenFalse, sf, customComponents, nativeWidgets, errors, warnings);
     }
     else if (ts.isBinaryExpression(node) && node.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandToken) {
-        validateExpression(node.right, sf, customComponents, errors, warnings);
+        validateExpression(node.right, sf, customComponents, nativeWidgets, errors, warnings);
     }
     else if (ts.isJsxExpression(node) && node.expression) {
-        validateExpression(node.expression, sf, customComponents, errors, warnings);
+        validateExpression(node.expression, sf, customComponents, nativeWidgets, errors, warnings);
     }
     else if (ts.isCallExpression(node) && ts.isPropertyAccessExpression(node.expression) && node.expression.name.text === 'map') {
         const callback = node.arguments[0];
@@ -107,7 +110,7 @@ function validateExpression(node, sf, customComponents, errors, warnings) {
                 mapBody = callback.body;
             }
             if (mapBody) {
-                validateExpression(mapBody, sf, customComponents, errors, warnings);
+                validateExpression(mapBody, sf, customComponents, nativeWidgets, errors, warnings);
                 if (!hasIDWrapper(mapBody)) {
                     warnings.push(warn(sf, node, 'Items in .map() should be wrapped in <ID scope={i}> to avoid ImGui ID conflicts'));
                 }
@@ -126,13 +129,13 @@ function hasIDWrapper(expr) {
         return true;
     return false;
 }
-function validateJsxElement(node, sf, customComponents, errors, warnings) {
-    validateJsxTag(node.openingElement.tagName, node, sf, customComponents, warnings);
+function validateJsxElement(node, sf, customComponents, nativeWidgets, errors, warnings) {
+    validateJsxTag(node.openingElement.tagName, node, sf, customComponents, nativeWidgets, warnings);
     validateJsxAttributes(node.openingElement.attributes, node.openingElement.tagName, sf, errors);
     for (const child of node.children)
-        validateExpression(child, sf, customComponents, errors, warnings);
+        validateExpression(child, sf, customComponents, nativeWidgets, errors, warnings);
 }
-function validateJsxTag(tagName, node, sf, customComponents, warnings) {
+function validateJsxTag(tagName, node, sf, customComponents, nativeWidgets, warnings) {
     if (!ts.isIdentifier(tagName))
         return;
     const name = tagName.text;
@@ -140,10 +143,10 @@ function validateJsxTag(tagName, node, sf, customComponents, warnings) {
     if (name[0] === name[0].toLowerCase())
         return;
     // Known host component or imported custom component — fine
-    if (isHostComponent(name) || customComponents.has(name))
+    if (isHostComponent(name) || customComponents.has(name) || nativeWidgets.has(name))
         return;
     // Unknown uppercase component — warn (may be a native C++ widget)
-    warnings.push(warn(sf, node, `Unknown component '<${name}>' -- will be treated as a native C++ widget. If this is intentional, you can ignore this warning.`));
+    warnings.push(warn(sf, node, `Unknown component '<${name}>' -- will be treated as a native C++ widget. If this is a registered widget, declare it in imx.d.ts to suppress this warning.`));
 }
 function validateJsxAttributes(attrs, tagName, sf, errors) {
     if (!ts.isIdentifier(tagName))
@@ -162,4 +165,21 @@ function validateJsxAttributes(attrs, tagName, sf, errors) {
             errors.push(err(sf, attrs, `<${name}> requires prop '${propName}'`));
         }
     }
+}
+function loadDeclaredNativeWidgets(dir) {
+    const widgets = new Set();
+    const dtsPath = path.join(dir, 'imx.d.ts');
+    if (!fs.existsSync(dtsPath))
+        return widgets;
+    const source = fs.readFileSync(dtsPath, 'utf-8');
+    const sf = ts.createSourceFile('imx.d.ts', source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
+    for (const stmt of sf.statements) {
+        if (!ts.isFunctionDeclaration(stmt) || !stmt.name)
+            continue;
+        const name = stmt.name.text;
+        if (name && name[0] !== name[0].toLowerCase()) {
+            widgets.add(name);
+        }
+    }
+    return widgets;
 }

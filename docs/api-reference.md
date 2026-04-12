@@ -16,6 +16,16 @@ IMX is a React-Native-like framework that lets you write `.tsx` files and compil
 2. Run the compiler: `node compiler/dist/index.js App.tsx [OtherComponent.tsx ...] -o build/generated`
 3. Build with CMake: `cmake --build build`
 
+Traditional CLI help is available:
+
+```bash
+npx imxc --help
+npx imxc watch --help
+npx imxc --version
+```
+
+Manual compilation uses the first positional `.tsx` file as the root component. Watch mode compiles every discovered `.tsx` file, then selects the root in this order: `src/App.tsx`, `App.tsx`, then the first file alphabetically.
+
 ### Important: Not React
 
 IMX uses JSX syntax but compiles to C++. Key differences from React:
@@ -1912,6 +1922,8 @@ export function TransformSection(props: { value: TransformSettings }) {
 - The root component (entry point) must use `export default`.
 - **File name must match function name** — `Sidebar.tsx` exports `Sidebar`, not `SidebarPanel`. CMake derives the output filename from the source filename, the compiler uses the function name. A mismatch causes build failures.
 - Props types can be: `string`, `number`, `boolean`, or `() => void` (callback).
+- Top-level `interface` declarations are allowed in `.tsx` files alongside imports and the component function.
+- Declared `number` props map to generated C++ `float`, whether declared inline, in a local `.tsx` interface, or in `imx.d.ts`.
 - Access props via `props.propName` (not destructuring).
 - All `.tsx` files that are imported must be passed to the compiler together.
 
@@ -1956,7 +1968,7 @@ imx::register_widget("Knob", [](imx::WidgetArgs& args) {
 
 ### Declaring Types
 
-Add type declarations to your `imx.d.ts` so TypeScript checks props:
+Add type declarations to your `imx.d.ts` so TypeScript checks props and the compiler recognizes the widget as a declared native component:
 
 ```typescript
 interface KnobProps {
@@ -2078,6 +2090,8 @@ interface AppState {
 | `value={stateVar}` (useState) | `.get()`/`.set()` pattern (existing behavior) |
 | `{props.field}` in Text | Read-only display |
 | `onPress={props.callback}` | `props.callback()` invocation |
+
+Direct binding works through nested fields as well, such as `props.settings.audio.volume`. The compiler resolves the full field chain and emits the actual bound field type.
 | `props.vec.map(...)` | `for` loop with `auto&` reference |
 
 ### Coexistence
@@ -2182,9 +2196,10 @@ const [open, setOpen] = useState(false);
 
 ```
 my-app/
-  App.tsx                # Root component (export default)
-  MyComponent.tsx        # Custom component (named export)
-  imx.d.ts           # Type definitions (copy from examples/hello/)
+  src/
+    App.tsx              # Root component (export default)
+    MyComponent.tsx      # Custom component (named export)
+    imx.d.ts             # Type definitions
   tsconfig.json          # TypeScript config (copy from examples/hello/)
   main.cpp               # Application entry point (copy from examples/hello/)
 ```
@@ -2204,7 +2219,7 @@ my-app/
     "noEmit": true,
     "skipLibCheck": true
   },
-  "include": ["*.tsx", "imx.d.ts"]
+  "include": ["src/**/*.tsx", "src/imx.d.ts"]
 }
 ```
 
@@ -2224,12 +2239,12 @@ add_custom_command(
         ${IMX_GENERATED_DIR}/MyComponent.gen.cpp
         ${IMX_GENERATED_DIR}/MyComponent.gen.h
     COMMAND node ${CMAKE_SOURCE_DIR}/compiler/dist/index.js
-        ${CMAKE_SOURCE_DIR}/my-app/App.tsx
-        ${CMAKE_SOURCE_DIR}/my-app/MyComponent.tsx
+        ${CMAKE_SOURCE_DIR}/my-app/src/App.tsx
+        ${CMAKE_SOURCE_DIR}/my-app/src/MyComponent.tsx
         -o ${IMX_GENERATED_DIR}
     DEPENDS
-        ${CMAKE_SOURCE_DIR}/my-app/App.tsx
-        ${CMAKE_SOURCE_DIR}/my-app/MyComponent.tsx
+        ${CMAKE_SOURCE_DIR}/my-app/src/App.tsx
+        ${CMAKE_SOURCE_DIR}/my-app/src/MyComponent.tsx
     COMMENT "Compiling .tsx -> C++"
 )
 

@@ -26,6 +26,14 @@ cmake -B build
 cmake --build build --config Release
 ```
 
+Traditional CLI help is available:
+
+```bash
+npx imxc --help
+npx imxc init --help
+npx imxc --version
+```
+
 Or pick features interactively:
 
 ```bash
@@ -56,6 +64,8 @@ Six project templates for common patterns. Combine multiple with `--template=a,b
 npx imxc templates        # list all templates
 npx imxc watch src -o build/generated --build "cmake --build build"  # watch + rebuild
 ```
+
+Watch mode is deterministic: it compiles every `.tsx` file it finds, then chooses the root in this order: `src/App.tsx`, `App.tsx`, then the first file alphabetically. Manual compilation still uses the first positional `.tsx` input as the root.
 
 ## How It Works
 
@@ -106,7 +116,7 @@ The compiler parses TSX, lowers it to an intermediate representation, and emits 
 
 ## C++ Struct Binding
 
-Use TSX as a UI layer on existing C++ state. No `onChange` needed — widgets write directly through pointers.
+Use TSX as a UI layer on existing C++ state. No `onChange` needed — widgets write directly through pointers. Declared TSX `number` props now map to generated C++ `float` consistently, whether the type comes from inline props, a local `interface`, or `imx.d.ts`.
 
 ```cpp
 // AppState.h
@@ -147,6 +157,8 @@ imx::register_widget("Knob", [](imx::WidgetArgs& a) {
 ```tsx
 <Knob value={vol} onChange={(v: number) => setVol(v)} min={0} max={1} />
 ```
+
+Declare native widget props in `src/imx.d.ts` or `imx.d.ts`. That gives type checking and suppresses unknown-component warnings for registered widgets.
 
 ## Add to Existing Project
 

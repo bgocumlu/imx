@@ -6,7 +6,7 @@ import { compile } from './compile.js';
 /**
  * Discover all .tsx files in a directory (recursive).
  */
-function discoverTsxFiles(dir: string): string[] {
+export function discoverTsxFiles(dir: string): string[] {
     const results: string[] = [];
     const entries = fs.readdirSync(dir, { withFileTypes: true });
     for (const entry of entries) {
@@ -20,15 +20,49 @@ function discoverTsxFiles(dir: string): string[] {
     return results;
 }
 
+export interface WatchCompileSelection {
+    files: string[];
+    rootFile: string;
+    appCandidates: string[];
+}
+
+export function selectWatchCompileFiles(watchDir: string, discoveredFiles: string[]): WatchCompileSelection {
+    const files = [...discoveredFiles].sort((a, b) => a.localeCompare(b));
+    const normalizedDir = path.resolve(watchDir);
+    const preferredCandidates = [
+        path.join(normalizedDir, 'src', 'App.tsx'),
+        path.join(normalizedDir, 'App.tsx'),
+    ].map(candidate => path.resolve(candidate));
+
+    const appCandidates = files.filter(file => path.basename(file) === 'App.tsx');
+    const rootFile =
+        preferredCandidates.find(candidate => files.includes(candidate)) ??
+        files[0];
+
+    if (rootFile !== files[0]) {
+        const remaining = files.filter(file => file !== rootFile);
+        return { files: [rootFile, ...remaining], rootFile, appCandidates };
+    }
+
+    return { files, rootFile, appCandidates };
+}
+
 function runCompile(watchDir: string, outputDir: string, buildCmd?: string): void {
-    const files = discoverTsxFiles(watchDir);
-    if (files.length === 0) {
+    const discoveredFiles = discoverTsxFiles(watchDir);
+    if (discoveredFiles.length === 0) {
         console.log('[watch] No .tsx files found in ' + watchDir);
         return;
     }
+    const selection = selectWatchCompileFiles(watchDir, discoveredFiles);
+    const rootRelative = path.relative(process.cwd(), selection.rootFile).replace(/\\/g, '/');
+    if (selection.appCandidates.length > 1) {
+        console.warn(`[watch] multiple App.tsx candidates found; using ${rootRelative} as root`);
+    } else {
+        console.log(`[watch] root: ${rootRelative}`);
+    }
 
     const start = performance.now();
-    const result = compile(files, outputDir);
+    const result = compile(selection.files, outputDir);
     const elapsed = Math.round(performance.now() - start);
 
     if (result.warnings.length > 0) {

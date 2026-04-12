@@ -21,10 +21,22 @@ function formatError(sourceFile: ts.SourceFile, node: ts.Node, message: string):
     return { file: sourceFile.fileName, line: line + 1, col: character + 1, message };
 }
 
+export function normalizeDisplayPath(filePath: string): string {
+    const absolutePath = path.resolve(filePath);
+    const relativePath = path.relative(process.cwd(), absolutePath);
+    const displayPath =
+        relativePath &&
+        !relativePath.startsWith('..') &&
+        !path.isAbsolute(relativePath)
+            ? relativePath
+            : absolutePath;
+    return displayPath.replace(/\\/g, '/');
+}
+
 export function parseFile(filePath: string, source: string): ParsedFile {
-    const fileName = path.basename(filePath);
+    const displayPath = normalizeDisplayPath(filePath);
     const sourceFile = ts.createSourceFile(
-        fileName, source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX,
+        displayPath, source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX,
     );
 
     const errors: ParseError[] = [];
@@ -37,6 +49,8 @@ export function parseFile(filePath: string, source: string): ParsedFile {
             } else {
                 component = stmt;
             }
+        } else if (ts.isInterfaceDeclaration(stmt)) {
+            // allowed
         } else if (ts.isImportDeclaration(stmt)) {
             // allowed
         } else {
@@ -45,10 +59,10 @@ export function parseFile(filePath: string, source: string): ParsedFile {
     }
 
     if (!component && errors.length === 0) {
-        errors.push({ file: fileName, line: 1, col: 1, message: 'No component function found in file' });
+        errors.push({ file: displayPath, line: 1, col: 1, message: 'No component function found in file' });
     }
 
-    return { sourceFile, filePath, component, errors };
+    return { sourceFile, filePath: path.resolve(filePath), component, errors };
 }
 
 export function extractImports(sourceFile: ts.SourceFile): Map<string, string> {
