@@ -563,6 +563,42 @@ function App() {
         expect(output).toContain('ImGui::PopID()');
     });
 
+    it('emits ID string expressions with the string PushID overload', () => {
+        const output = compile(`
+function App(props: { playerId: string }) {
+  return (
+    <Window title="Test">
+      <ID scope={props.playerId}>
+        <Text>Hello</Text>
+      </ID>
+    </Window>
+  );
+}
+        `);
+
+        expect(output).toContain('ImGui::PushID((props.playerId).c_str())');
+        expect(output).not.toContain('static_cast<int>(props.playerId)');
+    });
+
+    it('emits mixed string/number ID ternaries as string scopes', () => {
+        const output = compile(`
+function App(props: { projects: { id: string, title: string }[] }) {
+  return (
+    <Window title="Test">
+      {props.projects.map((project, index) => (
+        <ID scope={project.id.length > 0 ? project.id : index}>
+          <Text>{project.title}</Text>
+        </ID>
+      ))}
+    </Window>
+  );
+}
+        `);
+
+        expect(output).toContain('ImGui::PushID((project.id.size() > 0 ? project.id : std::to_string(index)).c_str())');
+        expect(output).not.toContain('static_cast<int>(project.id.size() > 0 ? project.id : index)');
+    });
+
     it('emits StyleColor with struct-based overrides', () => {
         const output = compile(`
 function App() {

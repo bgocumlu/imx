@@ -372,6 +372,62 @@ export function exprToCpp(node: ts.Expression, ctx: LoweringContext): string {
     return node.getText();
 }
 
+function isStringLikeExpr(expr: ts.Expression, ctx: LoweringContext): boolean {
+    if (ts.isStringLiteral(expr) || ts.isNoSubstitutionTemplateLiteral(expr) || ts.isTemplateExpression(expr)) {
+        return true;
+    }
+    if (ts.isConditionalExpression(expr)) {
+        return isStringLikeExpr(expr.whenTrue, ctx) || isStringLikeExpr(expr.whenFalse, ctx);
+    }
+    if (ts.isBinaryExpression(expr) && expr.operatorToken.kind === ts.SyntaxKind.PlusToken) {
+        return isStringLikeExpr(expr.left, ctx) || isStringLikeExpr(expr.right, ctx)
+            || inferExprType(expr.left, ctx) === 'string'
+            || inferExprType(expr.right, ctx) === 'string';
+    }
+    return inferExprType(expr, ctx) === 'string';
+}
+
+function coerceExprToCppString(expr: ts.Expression, ctx: LoweringContext): string {
+    if (ts.isStringLiteral(expr) || ts.isNoSubstitutionTemplateLiteral(expr)) {
+        return JSON.stringify(expr.text);
+    }
+    if (ts.isConditionalExpression(expr)) {
+        const condition = exprToCpp(expr.condition, ctx);
+        const whenTrue = coerceExprToCppString(expr.whenTrue, ctx);
+        const whenFalse = coerceExprToCppString(expr.whenFalse, ctx);
+        return `${condition} ? ${whenTrue} : ${whenFalse}`;
+    }
+
+    const cppExpr = exprToCpp(expr, ctx);
+    if (isStringLikeExpr(expr, ctx)) {
+        return cppExpr.startsWith('"') ? `std::string(${cppExpr})` : cppExpr;
+    }
+    if (inferExprType(expr, ctx) === 'bool') {
+        return `${cppExpr} ? std::string("true") : std::string("false")`;
+    }
+    return `std::to_string(${cppExpr})`;
+}
+
+function normalizeIdScopeAttrs(
+    attrs: Record<string, string>,
+    rawAttrs: Map<string, ts.Expression | null>,
+    ctx: LoweringContext,
+): Record<string, string> {
+    const normalized = { ...attrs };
+    const scopeExpr = rawAttrs.get('scope');
+    if (!scopeExpr) return normalized;
+
+    if (isStringLikeExpr(scopeExpr, ctx)) {
+        normalized['scope'] = coerceExprToCppString(scopeExpr, ctx);
+        normalized['_scopeType'] = 'string';
+    } else {
+        normalized['scope'] = exprToCpp(scopeExpr, ctx);
+        normalized['_scopeType'] = 'number';
+    }
+
+    return normalized;
+}
+
 function stmtToCpp(stmt: ts.Statement, ctx: LoweringContext): string {
     if (ts.isExpressionStatement(stmt)) {
         return exprToCpp(stmt.expression, ctx) + ';';
@@ -520,8 +576,11 @@ function lowerJsxElement(node: ts.JsxElement, body: IRNode[], ctx: LoweringConte
 
     if (isHostComponent(name)) {
         const def = HOST_COMPONENTS[name];
-        const attrs = getAttributes(node.openingElement.attributes, ctx);
+        let attrs = getAttributes(node.openingElement.attributes, ctx);
         const rawAttrs = getRawAttributes(node.openingElement.attributes);
+        if (name === 'ID') {
+            attrs = normalizeIdScopeAttrs(attrs, rawAttrs, ctx);
+        }
 
         if (name === 'Table') {
             lowerTableElement(node, body, ctx, attrs, rawAttrs, getLoc(node, ctx));
@@ -707,8 +766,11 @@ function lowerJsxSelfClosing(node: ts.JsxSelfClosingElement, body: IRNode[], ctx
         return;
     }
 
-    const attrs = getAttributes(node.attributes, ctx);
+    let attrs = getAttributes(node.attributes, ctx);
     const rawAttrs = getRawAttributes(node.attributes);
+    if (name === 'ID') {
+        attrs = normalizeIdScopeAttrs(attrs, rawAttrs, ctx);
+    }
 
     const loc = getLoc(node, ctx);
 

@@ -1356,8 +1356,13 @@ function emitBeginContainer(node: IRBeginContainer, lines: string[], indent: str
         }
         case 'ID': {
             const scope = node.props['scope'] ?? '""';
-            if (scope.startsWith('"')) {
-                lines.push(`${indent}ImGui::PushID(${scope});`);
+            const scopeType = node.props['_scopeType'] ?? (scope.startsWith('"') ? 'string' : 'number');
+            if (scopeType === 'string') {
+                if (scope.startsWith('"') || scope.endsWith('.c_str()')) {
+                    lines.push(`${indent}ImGui::PushID(${scope});`);
+                } else {
+                    lines.push(`${indent}ImGui::PushID((${scope}).c_str());`);
+                }
             } else {
                 lines.push(`${indent}ImGui::PushID(static_cast<int>(${scope}));`);
             }

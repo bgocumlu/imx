@@ -402,7 +402,7 @@ set(FETCHCONTENT_QUIET OFF)
 FetchContent_Declare(
     imx
     GIT_REPOSITORY ${repoUrl}
-    GIT_TAG v0.6.6
+    GIT_TAG v0.6.7
     GIT_SHALLOW TRUE
     GIT_PROGRESS TRUE
 )
