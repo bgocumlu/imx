@@ -88,6 +88,17 @@ function Greeting(props: { name: string, age: number }) {
         expect(header).toContain('void Greeting_render(imx::RenderContext& ctx, GreetingProps& props);');
     });
 
+    it('emits string concatenation in Text with a single .c_str()', () => {
+        const output = compile(`
+function App(props: { latestTurnCount: number }) {
+  return <Text>{"Latest turn " + props.latestTurnCount}</Text>;
+}
+        `);
+
+        expect(output).toContain('imx::renderer::text("%s", (std::string("Latest turn ") + std::to_string(props.latestTurnCount)).c_str());');
+        expect(output).not.toContain('.c_str().c_str()');
+    });
+
     it('emits ternary conditional with else', () => {
         const output = compile(`
 function App() {

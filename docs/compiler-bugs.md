@@ -1,6 +1,6 @@
 # Compiler Bugs
 
-No known compiler bugs. All patterns below have been fixed and should generate valid C++.
+Active open regressions are tracked in [compiler-flaws.md](compiler-flaws.md). Fixed issues remain below for reference.
 
 ## Fixed (kept for reference)
 

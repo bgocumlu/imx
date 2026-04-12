@@ -1,6 +1,6 @@
 {
   "name": "imxc",
-  "version": "0.6.5",
+  "version": "0.6.6",
   "description": "Compiler for IMX — compiles React-like .tsx to native Dear ImGui C++",
   "type": "module",
   "bin": {

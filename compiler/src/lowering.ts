@@ -288,10 +288,10 @@ export function exprToCpp(node: ts.Expression, ctx: LoweringContext): string {
             const leftIsString = ts.isStringLiteral(node.left) || ts.isNoSubstitutionTemplateLiteral(node.left) || inferExprType(node.left, ctx) === 'string';
             const rightIsString = ts.isStringLiteral(node.right) || ts.isNoSubstitutionTemplateLiteral(node.right) || inferExprType(node.right, ctx) === 'string';
             if (leftIsString && !rightIsString) {
-                return `(std::string(${left}) + std::to_string(${right})).c_str()`;
+                return `std::string(${left}) + std::to_string(${right})`;
             }
             if (!leftIsString && rightIsString) {
-                return `(std::to_string(${left}) + std::string(${right})).c_str()`;
+                return `std::to_string(${left}) + std::string(${right})`;
             }
         }
         return `${left} ${op} ${right}`;
@@ -1202,11 +1202,13 @@ function lowerTextElement(node: ts.JsxElement, body: IRNode[], ctx: LoweringCont
                     break;
                 case 'string':
                     format += '%s';
-                    // String literals and ternaries of literals are already const char*
-                    if (cppExpr.startsWith('"') || isCharPtrExpression(expr)) {
+                    // String literals, literal-only ternaries, and pre-converted char* values
+                    // should be passed through unchanged. Other string expressions stay as
+                    // std::string until this point and need a single .c_str().
+                    if (cppExpr.startsWith('"') || cppExpr.endsWith('.c_str()') || isCharPtrExpression(expr)) {
                         args.push(cppExpr);
                     } else {
-                        args.push(`${cppExpr}.c_str()`);
+                        args.push(`(${cppExpr}).c_str()`);
                     }
                     break;
                 default:
