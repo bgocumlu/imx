@@ -146,6 +146,17 @@ function App(props: { canSend: boolean, onSend: () => void }) {
         expect(output).not.toContain('imx::renderer::button("Send")');
     });
 
+    it('emits literal-only ternary string props without invalid .c_str()', () => {
+        const output = compile(`
+function App(props: { showTerminalWindow: boolean, onToggleTerminalWindow: () => void, hasSelectedThread: boolean }) {
+  return <Button title={props.showTerminalWindow ? "Hide Terminal" : "Show Terminal"} onPress={props.onToggleTerminalWindow} disabled={!props.hasSelectedThread} />;
+}
+        `);
+
+        expect(output).toContain('imx::renderer::button(props.showTerminalWindow ? "Hide Terminal" : "Show Terminal", {}, !props.hasSelectedThread)');
+        expect(output).not.toContain('"Show Terminal".c_str()');
+    });
+
     it('emits Checkbox with temp bool pattern', () => {
         const output = compile(`
 function App() {

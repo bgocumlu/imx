@@ -30,20 +30,121 @@ function cppPropType(t) {
     }
     return t;
 }
+function unwrapOuterParens(expr) {
+    let current = expr.trim();
+    while (current.startsWith('(') && current.endsWith(')')) {
+        let depth = 0;
+        let balanced = true;
+        for (let i = 0; i < current.length; i++) {
+            const ch = current[i];
+            if (ch === '(') {
+                depth++;
+            }
+            else if (ch === ')') {
+                depth--;
+                if (depth < 0) {
+                    balanced = false;
+                    break;
+                }
+                if (depth === 0 && i < current.length - 1) {
+                    balanced = false;
+                    break;
+                }
+            }
+        }
+        if (!balanced || depth !== 0) {
+            break;
+        }
+        current = current.slice(1, -1).trim();
+    }
+    return current;
+}
+function findTopLevelTernary(expr) {
+    let depthParen = 0;
+    let depthBracket = 0;
+    let depthBrace = 0;
+    let inString = false;
+    let stringQuote = '';
+    let question = -1;
+    for (let i = 0; i < expr.length; i++) {
+        const ch = expr[i];
+        const prev = i > 0 ? expr[i - 1] : '';
+        if (inString) {
+            if (ch === stringQuote && prev !== '\\') {
+                inString = false;
+                stringQuote = '';
+            }
+            continue;
+        }
+        if (ch === '"' || ch === '\'') {
+            inString = true;
+            stringQuote = ch;
+            continue;
+        }
+        if (ch === '(') {
+            depthParen++;
+            continue;
+        }
+        if (ch === ')') {
+            depthParen--;
+            continue;
+        }
+        if (ch === '[') {
+            depthBracket++;
+            continue;
+        }
+        if (ch === ']') {
+            depthBracket--;
+            continue;
+        }
+        if (ch === '{') {
+            depthBrace++;
+            continue;
+        }
+        if (ch === '}') {
+            depthBrace--;
+            continue;
+        }
+        if (depthParen !== 0 || depthBracket !== 0 || depthBrace !== 0) {
+            continue;
+        }
+        if (ch === '?' && question === -1) {
+            question = i;
+            continue;
+        }
+        if (ch === ':' && question !== -1) {
+            return { question, colon: i };
+        }
+    }
+    return undefined;
+}
+function isStringLiteral(expr) {
+    const trimmed = expr.trim();
+    return trimmed.startsWith('"') && trimmed.endsWith('"');
+}
+function isCharPtrExpression(expr) {
+    const trimmed = unwrapOuterParens(expr);
+    if (isStringLiteral(trimmed) || trimmed.endsWith('.c_str()')) {
+        return true;
+    }
+    const ternary = findTopLevelTernary(trimmed);
+    if (!ternary) {
+        return false;
+    }
+    const whenTrue = trimmed.slice(ternary.question + 1, ternary.colon).trim();
+    const whenFalse = trimmed.slice(ternary.colon + 1).trim();
+    return isCharPtrExpression(whenTrue) && isCharPtrExpression(whenFalse);
+}
 /**
  * Ensure a string expression is a const char*.
  * String literals (quoted) are already const char*.
  * Expressions like props.title (std::string) need .c_str().
  */
 function asCharPtr(expr) {
-    // Already a string literal — "hello" is const char*
-    if (expr.startsWith('"'))
-        return expr;
-    // Already has .c_str()
-    if (expr.endsWith('.c_str()'))
-        return expr;
-    // Expression — assume std::string, add .c_str()
-    return `${expr}.c_str()`;
+    const trimmed = expr.trim();
+    if (isCharPtrExpression(trimmed))
+        return trimmed;
+    return `(${trimmed}).c_str()`;
 }
 /**
  * For directBind emitters: if the valueExpr references a bound prop (pointer),
