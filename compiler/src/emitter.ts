@@ -1640,7 +1640,7 @@ function emitText(node: IRText, lines: string[], indent: string): void {
 function emitButton(node: IRButton, lines: string[], indent: string, depth: number): void {
     emitLocComment(node.loc, 'Button', lines, indent);
     const title = asCharPtr(node.title);
-    const disabledArg = node.disabled ? ', {}, true' : '';
+    const disabledArg = node.disabled !== undefined ? `, {}, ${node.disabled}` : '';
     const pressedVar = node.action.length > 0 ? nextWidgetTemp('button_pressed') : undefined;
     const resultVar = emitBoolWidgetCall(`imx::renderer::button(${title}${disabledArg})`, node.item, lines, indent, pressedVar);
     if (node.action.length > 0 && resultVar) {

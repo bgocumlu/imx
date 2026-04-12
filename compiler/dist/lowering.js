@@ -1045,7 +1045,7 @@ function lowerButton(attrs, rawAttrs, body, ctx, loc) {
     if (onPressExpr) {
         action = extractActionStatements(onPressExpr, ctx);
     }
-    const disabled = attrs['disabled'] === 'true' ? true : undefined;
+    const disabled = attrs['disabled'];
     const style = attrs['style'];
     const item = lowerItemInteraction(attrs, rawAttrs, ctx);
     body.push({ kind: 'button', title, action, disabled, style, item, loc });

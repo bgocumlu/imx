@@ -135,6 +135,17 @@ function App() {
         expect(output).toContain('name.set(buf.value())');
     });
 
+    it('emits Button with dynamic disabled expressions', () => {
+        const output = compile(`
+function App(props: { canSend: boolean, onSend: () => void }) {
+  return <Button title="Send" onPress={props.onSend} disabled={!props.canSend} />;
+}
+        `);
+
+        expect(output).toContain('imx::renderer::button("Send", {}, !props.canSend)');
+        expect(output).not.toContain('imx::renderer::button("Send")');
+    });
+
     it('emits Checkbox with temp bool pattern', () => {
         const output = compile(`
 function App() {

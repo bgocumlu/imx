@@ -160,6 +160,20 @@ function App() {
         }
     });
 
+    it('preserves dynamic disabled expressions on Button', () => {
+        const ir = lower(`
+function App(props: { canSend: boolean, onSend: () => void }) {
+  return <Button title="Send" onPress={props.onSend} disabled={!props.canSend} />;
+}
+        `);
+
+        const button = ir.body[0];
+        expect(button.kind).toBe('button');
+        if (button.kind === 'button') {
+            expect(button.disabled).toBe('!props.canSend');
+        }
+    });
+
     it('lowers DrawLine inside Canvas', () => {
         const ir = lower(`
 function App() {

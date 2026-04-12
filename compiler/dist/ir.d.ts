@@ -138,7 +138,7 @@ export interface IRButton {
     kind: 'button';
     title: string;
     action: string[];
-    disabled?: boolean;
+    disabled?: string;
     style?: string;
     item?: IRItemInteraction;
     loc?: SourceLoc;
