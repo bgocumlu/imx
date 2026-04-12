@@ -26,7 +26,36 @@ cmake -B build
 cmake --build build --config Release
 ```
 
+Or pick features interactively:
+
+```bash
+npx imxc init myapp
+# Arrow keys + space to select features, enter to confirm
+
+# Or specify templates directly:
+npx imxc init myapp --template=async
+npx imxc init myapp --template=async,persistence
+```
+
 Requires: Node.js, CMake 3.25+, C++20 compiler (MSVC, GCC, or Clang).
+
+## Templates
+
+Six project templates for common patterns. Combine multiple with `--template=a,b`.
+
+| Template | Description |
+|----------|-------------|
+| `minimal` | Basic app with `useState` (default) |
+| `async` | Background threads with UI progress reporting |
+| `persistence` | Save/load app state to JSON (`imx/json.hpp`) |
+| `networking` | HTTP client/server (`imx/httplib.h`) |
+| `hotreload` | DLL hot reload with `imxc watch --build` |
+| `filedialog` | Native open/save dialogs (`imx/pfd.h`) |
+
+```bash
+npx imxc templates        # list all templates
+npx imxc watch src -o build/generated --build "cmake --build build"  # watch + rebuild
+```
 
 ## How It Works
 
@@ -36,25 +65,25 @@ Requires: Node.js, CMake 3.25+, C++20 compiler (MSVC, GCC, or Clang).
 
 The compiler parses TSX, lowers it to an intermediate representation, and emits C++ that calls Dear ImGui directly. State management uses compiler-assigned slots, not a React runtime.
 
-## 54 Components
+## ~98 Components
 
-**Layout:** DockSpace, Window, View, Row, Column, Group, Child
+**Layout:** DockSpace, Window, View, Row, Column, Group, Child, Indent, TextWrap, Spacing, Dummy, SameLine, NewLine, Cursor
 
-**Navigation:** MenuBar, Menu, MenuItem, TabBar, TabItem
+**Navigation:** MainMenuBar, MenuBar, Menu, MenuItem, Shortcut, TabBar, TabItem
 
-**Data:** Table, TableRow, TreeNode, CollapsingHeader
+**Data:** Table, TableRow, TableCell, TreeNode, CollapsingHeader
 
-**Input:** Button, TextInput, Checkbox, SliderFloat, SliderInt, DragFloat, DragInt, InputInt, InputFloat, ColorEdit, ColorPicker, Combo, ListBox, Radio, Selectable, InputTextMultiline
+**Input:** Button, SmallButton, ArrowButton, InvisibleButton, ImageButton, TextInput, InputTextMultiline, Checkbox, SliderFloat, SliderInt, SliderAngle, VSliderFloat, VSliderInt, DragFloat, DragInt, InputInt, InputFloat, InputFloat2/3/4, InputInt2/3/4, DragFloat2/3/4, DragInt2/3/4, SliderFloat2/3/4, SliderInt2/3/4, ColorEdit, ColorEdit3, ColorPicker, ColorPicker3, Combo, ListBox, Radio, Selectable, MultiSelect
 
-**Display:** Text, BulletText, LabelText, Separator, ProgressBar, Tooltip, PlotLines, PlotHistogram, Image
+**Display:** Text, BulletText, Bullet, LabelText, Separator, ProgressBar, Tooltip, PlotLines, PlotHistogram, Image
 
-**Overlay:** Modal, Popup
+**Overlay:** Modal, Popup, ContextMenu
 
-**Styling:** Theme, StyleColor, StyleVar, ID, Disabled
+**Styling:** Theme, StyleColor, StyleVar, Font, ID, Disabled
 
 **Interaction:** DragDropSource, DragDropTarget
 
-**Drawing:** Canvas, DrawLine, DrawRect, DrawCircle, DrawText
+**Drawing:** Canvas, DrawLine, DrawRect, DrawCircle, DrawText, DrawBezierCubic, DrawBezierQuadratic, DrawPolyline, DrawConvexPolyFilled, DrawNgon, DrawNgonFilled, DrawTriangle
 
 **Dock Config:** DockLayout, DockSplit, DockPanel
 

@@ -2,8 +2,21 @@
 
 IMX: write .tsx with JSX components and useState hooks. Compiles to native Dear ImGui C++ apps.
 Compile: `node compiler/dist/index.js App.tsx [Other.tsx ...] -o build/generated`
+Project setup: `npx imxc init <name> --template=<template>`
+Templates: minimal, async, persistence, networking, hotreload, filedialog
+Combine: `npx imxc init <name> --template=async,persistence`
+List: `npx imxc templates`
+Watch: `npx imxc watch <dir> -o <outdir> [--build <cmd>]`
 
 Source mapping: generated `.gen.cpp` files include `#line` directives pointing back to `.tsx` source. MSVC errors show the original TSX filename and line number.
+
+## Vendored Libraries
+
+Single-header libraries shipped with IMX (no FetchContent or package manager needed):
+
+- `#include <imx/json.hpp>` — nlohmann/json v3.11.3 (JSON serialization/deserialization)
+- `#include <imx/httplib.h>` — cpp-httplib v0.18.3 (HTTP client and server)
+- `#include <imx/pfd.h>` — portable-file-dialogs (native open/save/folder dialogs)
 
 ## Font Loading (C++)
 

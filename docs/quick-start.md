@@ -1,36 +1,31 @@
 # IMX Quick Start
 
-## 1. Create a minimal app
-
-Create `App.tsx`:
-
-```tsx
-export default function App() {
-  return (
-    <Window title="Hello">
-      <Text>Hello, IMX!</Text>
-    </Window>
-  );
-}
-```
-
-Copy `imx.d.ts` and `tsconfig.json` from `examples/hello/` into the same directory.
-
-## 2. Build and run
+## 1. Create and build
 
 ```bash
-# Build the compiler (first time only)
-cd compiler && npm install && npm run build && cd ..
-
-# Compile .tsx to C++
-node compiler/dist/index.js App.tsx -o build/generated
-
-# Configure and build with CMake
+npx imxc init myapp
+cd myapp
 cmake -B build
-cmake --build build
+cmake --build build --config Release
+```
 
-# Run
-./build/hello_app
+This creates a minimal app with `App.tsx`, `main.cpp`, `tsconfig.json`, `imx.d.ts`, and `CMakeLists.txt`.
+
+To start with additional features, pick a template:
+
+```bash
+npx imxc init myapp --template=persistence
+npx imxc init myapp --template=async,networking
+npx imxc templates   # list all available templates
+```
+
+## 2. File watcher
+
+Recompile `.tsx` on save (optionally rebuild the C++ project):
+
+```bash
+npx imxc watch src -o build/generated
+npx imxc watch src -o build/generated --build "cmake --build build"
 ```
 
 ## 3. Add a custom component
