@@ -5,7 +5,7 @@ import { HOST_COMPONENTS, isHostComponent } from './components.js';
 import type {
     IRComponent, IRNode, IRStateSlot, IRPropParam, IRType, IRExpr, SourceLoc,
     IRBeginContainer, IREndContainer, IRText, IRButton, IRTextInput,
-    IRCheckbox, IRSeparator, IRSpacing, IRDummy, IRSameLine, IRNewLine, IRCursor, IRConditional, IRListMap, IRCustomComponent,
+    IRCheckbox, IRSeparator, IRSpacing, IRDummy, IRSameLine, IRNewLine, IRCursor, IRGuardReturn, IRConditional, IRListMap, IRCustomComponent,
     IRBeginPopup, IREndPopup, IROpenPopup, IRMenuItem,
     IRBeginTable, IREndTable, IRBeginTableRow, IREndTableRow, IRBeginTableCell, IREndTableCell, IRTableColumn,
     IRBeginTreeNode, IREndTreeNode, IRBeginCollapsingHeader, IREndCollapsingHeader,
@@ -124,9 +124,18 @@ export function lowerComponent(
     const body: IRNode[] = [];
     if (func.body) {
         collectLocalAliases(func.body, ctx);
-        const returnStmt = func.body.statements.find(ts.isReturnStatement);
-        if (returnStmt && returnStmt.expression) {
-            lowerJsxExpression(returnStmt.expression, body, ctx);
+        for (const stmt of func.body.statements) {
+            const guard = lowerTopLevelGuardReturn(stmt, ctx);
+            if (guard) {
+                body.push(guard);
+                continue;
+            }
+            if (ts.isReturnStatement(stmt)) {
+                if (stmt.expression) {
+                    lowerJsxExpression(stmt.expression, body, ctx);
+                }
+                break;
+            }
         }
     }
 
@@ -138,6 +147,31 @@ export function lowerComponent(
         namedPropsType,
         body,
     };
+}
+
+function lowerTopLevelGuardReturn(stmt: ts.Statement, ctx: LoweringContext): IRGuardReturn | undefined {
+    if (!ts.isIfStatement(stmt) || !statementReturnsNullish(stmt.thenStatement)) {
+        return undefined;
+    }
+    return {
+        kind: 'guard_return',
+        condition: exprToCpp(stmt.expression, ctx),
+        loc: getLoc(stmt, ctx),
+    };
+}
+
+function statementReturnsNullish(stmt: ts.Statement): boolean {
+    if (ts.isReturnStatement(stmt)) {
+        return isNullishReturnExpression(stmt.expression);
+    }
+    if (ts.isBlock(stmt) && stmt.statements.length === 1 && ts.isReturnStatement(stmt.statements[0])) {
+        return isNullishReturnExpression(stmt.statements[0].expression);
+    }
+    return false;
+}
+
+function isNullishReturnExpression(expr: ts.Expression | undefined): boolean {
+    return !expr || expr.kind === ts.SyntaxKind.NullKeyword || expr.kind === ts.SyntaxKind.UndefinedKeyword;
 }
 
 function collectLocalAliases(body: ts.Block, ctx: LoweringContext): void {

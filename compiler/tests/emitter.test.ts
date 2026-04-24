@@ -155,6 +155,29 @@ function ThreadStatusBanners(props: { state: AppState }) {
         expect(output).not.toContain('app.activities');
     });
 
+    it('emits top-level return null guards before JSX body', () => {
+        const output = compile(`
+interface AppState {
+  enabled: boolean;
+  onRun: () => void;
+}
+
+function ConditionalAction(props: { state: AppState }) {
+  const app = props.state;
+
+  if (!app.enabled) {
+    return null;
+  }
+
+  return <Button title="Run" onPress={app.onRun} />;
+}
+        `);
+
+        expect(output).toContain('if (!props.state.enabled) {');
+        expect(output).toContain('return;');
+        expect(output.indexOf('if (!props.state.enabled)')).toBeLessThan(output.indexOf('imx::renderer::button("Run"'));
+    });
+
     it('emits ternary conditional with else', () => {
         const output = compile(`
 function App() {
@@ -1354,6 +1377,43 @@ interface AppState {
         expect(cpp).toContain('((*props.state).activities[0].summary).c_str()');
         expect(cpp).toContain('((*props.state).activities[0].createdAt).c_str()');
         expect(cpp).not.toContain('app.activities');
+    });
+
+    it('emits pointer-propagated return null guards before JSX body', () => {
+        const files = compileMultiFiles({
+            'App.tsx': `
+import { ConditionalAction } from './ConditionalAction';
+export default function App(props: AppState) {
+  return <ConditionalAction state={props} />;
+}`,
+            'ConditionalAction.tsx': `
+export function ConditionalAction(props: { state: AppState }) {
+  const app = props.state;
+
+  if (!app.enabled) {
+    return null;
+  }
+
+  return (
+    <Column>
+      <SliderFloat label="Speed" value={props.state.speed} min={0} max={100} />
+      <Button title="Run" onPress={app.onRun} />
+    </Column>
+  );
+}`,
+            'imx.d.ts': `
+interface AppState {
+  enabled: boolean;
+  speed: number;
+  onRun: () => void;
+}
+`,
+        });
+
+        const cpp = files['ConditionalAction.gen.cpp'] ?? '';
+        expect(cpp).toContain('if (!(*props.state).enabled) {');
+        expect(cpp).toContain('return;');
+        expect(cpp.indexOf('if (!(*props.state).enabled)')).toBeLessThan(cpp.indexOf('slider_float("Speed"'));
     });
 
     it('emits nested sub-struct color bindings with member access before data()', () => {

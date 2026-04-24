@@ -39,3 +39,6 @@ Local `const` aliases declared before the JSX return, such as `const app = props
 
 ### 12. Indexed local aliases are rewritten before C++ emission (fixed)
 Local aliases used through indexed array access, such as `app.activities[0].summary`, now lower through structured element-access codegen instead of raw source text. This keeps alias rewriting intact and emits `props.state.activities[0].summary` or `(*props.state).activities[0].summary` for pointer-propagated component props.
+
+### 13. Top-level `return null` guards emit early returns (fixed)
+Component-level guard clauses such as `if (!app.enabled) return null;` now lower to explicit C++ early returns before the JSX body is emitted. This preserves source-level conditional components and prevents guarded controls, inputs, and badges from rendering unconditionally.

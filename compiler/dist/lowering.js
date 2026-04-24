@@ -75,9 +75,18 @@ export function lowerComponent(parsed, validation, externalInterfaces) {
     const body = [];
     if (func.body) {
         collectLocalAliases(func.body, ctx);
-        const returnStmt = func.body.statements.find(ts.isReturnStatement);
-        if (returnStmt && returnStmt.expression) {
-            lowerJsxExpression(returnStmt.expression, body, ctx);
+        for (const stmt of func.body.statements) {
+            const guard = lowerTopLevelGuardReturn(stmt, ctx);
+            if (guard) {
+                body.push(guard);
+                continue;
+            }
+            if (ts.isReturnStatement(stmt)) {
+                if (stmt.expression) {
+                    lowerJsxExpression(stmt.expression, body, ctx);
+                }
+                break;
+            }
         }
     }
     return {
@@ -88,6 +97,28 @@ export function lowerComponent(parsed, validation, externalInterfaces) {
         namedPropsType,
         body,
     };
+}
+function lowerTopLevelGuardReturn(stmt, ctx) {
+    if (!ts.isIfStatement(stmt) || !statementReturnsNullish(stmt.thenStatement)) {
+        return undefined;
+    }
+    return {
+        kind: 'guard_return',
+        condition: exprToCpp(stmt.expression, ctx),
+        loc: getLoc(stmt, ctx),
+    };
+}
+function statementReturnsNullish(stmt) {
+    if (ts.isReturnStatement(stmt)) {
+        return isNullishReturnExpression(stmt.expression);
+    }
+    if (ts.isBlock(stmt) && stmt.statements.length === 1 && ts.isReturnStatement(stmt.statements[0])) {
+        return isNullishReturnExpression(stmt.statements[0].expression);
+    }
+    return false;
+}
+function isNullishReturnExpression(expr) {
+    return !expr || expr.kind === ts.SyntaxKind.NullKeyword || expr.kind === ts.SyntaxKind.UndefinedKeyword;
 }
 function collectLocalAliases(body, ctx) {
     for (const stmt of body.statements) {

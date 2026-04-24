@@ -44,7 +44,7 @@ export function addToProject(projectDir: string): void {
     console.log('    include(FetchContent)');
     console.log('    FetchContent_Declare(imx');
     console.log('        GIT_REPOSITORY https://github.com/bgocumlu/imx.git');
-        console.log('        GIT_TAG v0.6.12');
+        console.log('        GIT_TAG v0.6.13');
     console.log('    )');
     console.log('    FetchContent_MakeAvailable(imx)');
     console.log('    include(ImxCompile)');

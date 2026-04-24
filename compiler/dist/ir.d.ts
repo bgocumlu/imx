@@ -37,7 +37,7 @@ export interface IRPropParam {
     name: string;
     type: string | 'callback';
 }
-export type IRNode = IRBeginContainer | IREndContainer | IRText | IRButton | IRTextInput | IRCheckbox | IRSeparator | IRSpacing | IRDummy | IRSameLine | IRNewLine | IRCursor | IRBeginPopup | IREndPopup | IROpenPopup | IRConditional | IRListMap | IRCustomComponent | IRMenuItem | IRBeginTable | IREndTable | IRBeginTableRow | IREndTableRow | IRBeginTableCell | IREndTableCell | IRBeginTreeNode | IREndTreeNode | IRBeginCollapsingHeader | IREndCollapsingHeader | IRSliderFloat | IRSliderInt | IRDragFloat | IRDragInt | IRCombo | IRInputInt | IRInputFloat | IRColorEdit | IRListBox | IRProgressBar | IRTooltip | IRShortcut | IRDockLayout | IRNativeWidget | IRBulletText | IRLabelText | IRSelectable | IRRadio | IRInputTextMultiline | IRColorPicker | IRColorEdit3 | IRColorPicker3 | IRPlotLines | IRPlotHistogram | IRImage | IRDrawLine | IRDrawRect | IRDrawCircle | IRDrawText | IRDrawBezierCubic | IRDrawBezierQuadratic | IRDrawPolyline | IRDrawConvexPolyFilled | IRDrawNgon | IRDrawNgonFilled | IRDrawTriangle | IRInputFloatN | IRInputIntN | IRDragFloatN | IRDragIntN | IRSliderFloatN | IRSliderIntN | IRSmallButton | IRArrowButton | IRInvisibleButton | IRImageButton | IRVSliderFloat | IRVSliderInt | IRSliderAngle | IRBeginCombo | IREndCombo | IRBullet | IRBeginListBox | IREndListBox;
+export type IRNode = IRBeginContainer | IREndContainer | IRText | IRButton | IRTextInput | IRCheckbox | IRSeparator | IRSpacing | IRDummy | IRSameLine | IRNewLine | IRCursor | IRBeginPopup | IREndPopup | IROpenPopup | IRGuardReturn | IRConditional | IRListMap | IRCustomComponent | IRMenuItem | IRBeginTable | IREndTable | IRBeginTableRow | IREndTableRow | IRBeginTableCell | IREndTableCell | IRBeginTreeNode | IREndTreeNode | IRBeginCollapsingHeader | IREndCollapsingHeader | IRSliderFloat | IRSliderInt | IRDragFloat | IRDragInt | IRCombo | IRInputInt | IRInputFloat | IRColorEdit | IRListBox | IRProgressBar | IRTooltip | IRShortcut | IRDockLayout | IRNativeWidget | IRBulletText | IRLabelText | IRSelectable | IRRadio | IRInputTextMultiline | IRColorPicker | IRColorEdit3 | IRColorPicker3 | IRPlotLines | IRPlotHistogram | IRImage | IRDrawLine | IRDrawRect | IRDrawCircle | IRDrawText | IRDrawBezierCubic | IRDrawBezierQuadratic | IRDrawPolyline | IRDrawConvexPolyFilled | IRDrawNgon | IRDrawNgonFilled | IRDrawTriangle | IRInputFloatN | IRInputIntN | IRDragFloatN | IRDragIntN | IRSliderFloatN | IRSliderIntN | IRSmallButton | IRArrowButton | IRInvisibleButton | IRImageButton | IRVSliderFloat | IRVSliderInt | IRSliderAngle | IRBeginCombo | IREndCombo | IRBullet | IRBeginListBox | IREndListBox;
 export interface IRBeginContainer {
     kind: 'begin_container';
     tag: 'Window' | 'View' | 'Indent' | 'TextWrap' | 'Row' | 'Column' | 'DockSpace' | 'MainMenuBar' | 'MenuBar' | 'Menu' | 'TabBar' | 'TabItem' | 'Theme' | 'DockLayout' | 'DockSplit' | 'DockPanel' | 'Modal' | 'Group' | 'ID' | 'StyleColor' | 'StyleVar' | 'DragDropSource' | 'DragDropTarget' | 'Canvas' | 'Disabled' | 'Child' | 'Font' | 'ContextMenu' | 'MultiSelect';
@@ -209,6 +209,11 @@ export interface IREndPopup {
 export interface IROpenPopup {
     kind: 'open_popup';
     id: string;
+    loc?: SourceLoc;
+}
+export interface IRGuardReturn {
+    kind: 'guard_return';
+    condition: string;
     loc?: SourceLoc;
 }
 export interface IRConditional {

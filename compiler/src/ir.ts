@@ -46,7 +46,7 @@ export type IRNode =
     | IRTextInput | IRCheckbox | IRSeparator
     | IRSpacing | IRDummy | IRSameLine | IRNewLine | IRCursor
     | IRBeginPopup | IREndPopup | IROpenPopup
-    | IRConditional | IRListMap | IRCustomComponent
+    | IRGuardReturn | IRConditional | IRListMap | IRCustomComponent
     | IRMenuItem
     | IRBeginTable | IREndTable | IRBeginTableRow | IREndTableRow | IRBeginTableCell | IREndTableCell
     | IRBeginTreeNode | IREndTreeNode | IRBeginCollapsingHeader | IREndCollapsingHeader
@@ -154,6 +154,7 @@ export interface IRCursor { kind: 'cursor'; x: string; y: string; loc?: SourceLo
 export interface IRBeginPopup { kind: 'begin_popup'; id: string; style?: string; loc?: SourceLoc; }
 export interface IREndPopup { kind: 'end_popup'; }
 export interface IROpenPopup { kind: 'open_popup'; id: string; loc?: SourceLoc; }
+export interface IRGuardReturn { kind: 'guard_return'; condition: string; loc?: SourceLoc; }
 export interface IRConditional { kind: 'conditional'; condition: string; body: IRNode[]; elseBody?: IRNode[]; loc?: SourceLoc; }
 export interface IRListMap { kind: 'list_map'; array: string; itemVar: string; indexVar: string; internalIndexVar: string; key: string; componentName: string; stateCount: number; bufferCount: number; body: IRNode[]; loc?: SourceLoc; }
 export interface IRCustomComponent { kind: 'custom_component'; name: string; props: Record<string, string>; key?: string; stateCount: number; bufferCount: number; loc?: SourceLoc; }

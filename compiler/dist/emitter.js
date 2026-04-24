@@ -589,6 +589,9 @@ function emitNode(node, lines, depth) {
             emitLocComment(node.loc, 'OpenPopup', lines, indent);
             lines.push(`${indent}imx::renderer::open_popup(${node.id});`);
             break;
+        case 'guard_return':
+            emitGuardReturn(node, lines, indent);
+            break;
         case 'conditional':
             emitConditional(node, lines, indent, depth);
             break;
@@ -1959,6 +1962,12 @@ function emitNewLine(node, lines, indent) {
 function emitCursor(node, lines, indent) {
     emitLocComment(node.loc, 'Cursor', lines, indent);
     lines.push(`${indent}imx::renderer::set_cursor_pos(${emitFloat(node.x)}, ${emitFloat(node.y)});`);
+}
+function emitGuardReturn(node, lines, indent) {
+    emitLocComment(node.loc, 'return null guard', lines, indent);
+    lines.push(`${indent}if (${node.condition}) {`);
+    lines.push(`${indent}${INDENT}return;`);
+    lines.push(`${indent}}`);
 }
 function emitConditional(node, lines, indent, depth) {
     if (node.loc) {

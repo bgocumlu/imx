@@ -2,7 +2,7 @@ import type {
     IRComponent, IRNode, IRStateSlot, IRPropParam, IRType, SourceLoc,
     IRBeginContainer, IREndContainer, IRText, IRButton, IRTextInput,
     IRCheckbox, IRSeparator, IRSpacing, IRDummy, IRSameLine, IRNewLine, IRCursor, IRConditional, IRListMap, IRCustomComponent,
-    IRBeginPopup, IREndPopup, IROpenPopup, IRMenuItem,
+    IRBeginPopup, IREndPopup, IROpenPopup, IRGuardReturn, IRMenuItem,
     IRBeginTable, IREndTable, IRBeginTableRow, IREndTableRow, IRBeginTableCell, IREndTableCell,
     IRBeginTreeNode, IREndTreeNode, IRBeginCollapsingHeader, IREndCollapsingHeader,
     IRSliderFloat, IRSliderInt, IRDragFloat, IRDragInt, IRCombo,
@@ -656,6 +656,9 @@ function emitNode(node: IRNode, lines: string[], depth: number): void {
         case 'open_popup':
             emitLocComment(node.loc, 'OpenPopup', lines, indent);
             lines.push(`${indent}imx::renderer::open_popup(${node.id});`);
+            break;
+        case 'guard_return':
+            emitGuardReturn(node, lines, indent);
             break;
         case 'conditional':
             emitConditional(node, lines, indent, depth);
@@ -1974,6 +1977,13 @@ function emitNewLine(node: IRNewLine, lines: string[], indent: string): void {
 function emitCursor(node: IRCursor, lines: string[], indent: string): void {
     emitLocComment(node.loc, 'Cursor', lines, indent);
     lines.push(`${indent}imx::renderer::set_cursor_pos(${emitFloat(node.x)}, ${emitFloat(node.y)});`);
+}
+
+function emitGuardReturn(node: IRGuardReturn, lines: string[], indent: string): void {
+    emitLocComment(node.loc, 'return null guard', lines, indent);
+    lines.push(`${indent}if (${node.condition}) {`);
+    lines.push(`${indent}${INDENT}return;`);
+    lines.push(`${indent}}`);
 }
 
 function emitConditional(node: IRConditional, lines: string[], indent: string, depth: number): void {
