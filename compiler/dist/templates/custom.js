@@ -428,7 +428,7 @@ set(FETCHCONTENT_QUIET OFF)
 FetchContent_Declare(
     imx
     GIT_REPOSITORY https://github.com/bgocumlu/imx.git
-GIT_TAG v0.6.10
+GIT_TAG v0.6.11
     GIT_SHALLOW TRUE
     GIT_PROGRESS TRUE
 )

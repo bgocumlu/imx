@@ -5,6 +5,7 @@ import type { IRComponent, IRStateSlot } from './ir.js';
 interface LoweringContext {
     stateVars: Map<string, IRStateSlot>;
     setterMap: Map<string, string>;
+    localAliases: Map<string, ts.Expression>;
     propsParam: string | null;
     propsFieldTypes: Map<string, string | 'callback'>;
     externalInterfaces?: Map<string, Map<string, string | 'callback'>>;

@@ -99,6 +99,29 @@ function App(props: { latestTurnCount: number }) {
         expect(output).not.toContain('.c_str().c_str()');
     });
 
+    it('rewrites local aliases used in JSX expressions', () => {
+        const output = compile(`
+interface HeaderState {
+  hasSelectedThread: boolean;
+  selectedThreadTitle: string;
+}
+
+function Header(props: { state: HeaderState }) {
+  const app = props.state;
+
+  return (
+    <Child id="header" height={52} border>
+      <Text>{app.hasSelectedThread ? app.selectedThreadTitle : "No thread selected"}</Text>
+    </Child>
+  );
+}
+        `);
+
+        expect(output).toContain('props.state.hasSelectedThread ? props.state.selectedThreadTitle : "No thread selected"');
+        expect(output).not.toContain('app.hasSelectedThread');
+        expect(output).not.toContain('app.selectedThreadTitle');
+    });
+
     it('emits ternary conditional with else', () => {
         const output = compile(`
 function App() {

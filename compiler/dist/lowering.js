@@ -62,6 +62,7 @@ export function lowerComponent(parsed, validation, externalInterfaces) {
     const ctx = {
         stateVars,
         setterMap,
+        localAliases: new Map(),
         propsParam,
         propsFieldTypes,
         externalInterfaces,
@@ -73,6 +74,7 @@ export function lowerComponent(parsed, validation, externalInterfaces) {
     // Find return statement and lower its JSX
     const body = [];
     if (func.body) {
+        collectLocalAliases(func.body, ctx);
         const returnStmt = func.body.statements.find(ts.isReturnStatement);
         if (returnStmt && returnStmt.expression) {
             lowerJsxExpression(returnStmt.expression, body, ctx);
@@ -86,6 +88,25 @@ export function lowerComponent(parsed, validation, externalInterfaces) {
         namedPropsType,
         body,
     };
+}
+function collectLocalAliases(body, ctx) {
+    for (const stmt of body.statements) {
+        if (ts.isReturnStatement(stmt)) {
+            return;
+        }
+        if (!ts.isVariableStatement(stmt)) {
+            continue;
+        }
+        if ((stmt.declarationList.flags & ts.NodeFlags.Const) === 0) {
+            continue;
+        }
+        for (const decl of stmt.declarationList.declarations) {
+            if (!ts.isIdentifier(decl.name) || !decl.initializer) {
+                continue;
+            }
+            ctx.localAliases.set(decl.name.text, decl.initializer);
+        }
+    }
 }
 function normalizePropTypeText(typeText) {
     const trimmed = typeText.trim().replace(/\s*\|\s*undefined$/, '');
@@ -208,6 +229,10 @@ export function exprToCpp(node, ctx) {
         const name = node.text;
         if (ctx.stateVars.has(name)) {
             return `${name}.get()`;
+        }
+        const alias = ctx.localAliases.get(name);
+        if (alias) {
+            return exprToCpp(alias, ctx);
         }
         if (name === 'resetLayout') {
             return 'imx_reset_layout';
@@ -1264,6 +1289,9 @@ function inferExprType(expr, ctx) {
         const slot = ctx.stateVars.get(expr.text);
         if (slot)
             return slot.type;
+        const alias = ctx.localAliases.get(expr.text);
+        if (alias)
+            return inferExprType(alias, ctx);
     }
     // Property access: props.name -> look up field type if available
     if (ts.isPropertyAccessExpression(expr)) {

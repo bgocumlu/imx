@@ -33,3 +33,6 @@ String-producing expressions such as `<Text>{"Latest turn " + props.count}</Text
 
 ### 10. Non-root component imports (fixed)
 Components with inline props that import other components now correctly include `#include` directives for imported component headers. Previously only the named-interface and no-props code paths included imports.
+
+### 11. Local aliases used in JSX are rewritten before C++ emission (fixed)
+Local `const` aliases declared before the JSX return, such as `const app = props.state`, are now rewritten to their source expression during lowering. This prevents generated C++ from referencing undeclared alias names in JSX text or prop expressions, so `app.selectedThreadTitle` emits as `props.state.selectedThreadTitle`.

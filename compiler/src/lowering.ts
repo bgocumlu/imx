@@ -31,6 +31,7 @@ import type {
 interface LoweringContext {
     stateVars: Map<string, IRStateSlot>;
     setterMap: Map<string, string>;  // setter name -> state var name
+    localAliases: Map<string, ts.Expression>;  // const alias name -> source expression
     propsParam: string | null;       // name of props parameter, if any
     propsFieldTypes: Map<string, string | 'callback'>;  // field name -> type (from named interface)
     externalInterfaces?: Map<string, Map<string, string | 'callback'>>;  // for nested struct field type resolution
@@ -109,6 +110,7 @@ export function lowerComponent(
     const ctx: LoweringContext = {
         stateVars,
         setterMap,
+        localAliases: new Map(),
         propsParam,
         propsFieldTypes,
         externalInterfaces,
@@ -121,6 +123,7 @@ export function lowerComponent(
     // Find return statement and lower its JSX
     const body: IRNode[] = [];
     if (func.body) {
+        collectLocalAliases(func.body, ctx);
         const returnStmt = func.body.statements.find(ts.isReturnStatement);
         if (returnStmt && returnStmt.expression) {
             lowerJsxExpression(returnStmt.expression, body, ctx);
@@ -135,6 +138,26 @@ export function lowerComponent(
         namedPropsType,
         body,
     };
+}
+
+function collectLocalAliases(body: ts.Block, ctx: LoweringContext): void {
+    for (const stmt of body.statements) {
+        if (ts.isReturnStatement(stmt)) {
+            return;
+        }
+        if (!ts.isVariableStatement(stmt)) {
+            continue;
+        }
+        if ((stmt.declarationList.flags & ts.NodeFlags.Const) === 0) {
+            continue;
+        }
+        for (const decl of stmt.declarationList.declarations) {
+            if (!ts.isIdentifier(decl.name) || !decl.initializer) {
+                continue;
+            }
+            ctx.localAliases.set(decl.name.text, decl.initializer);
+        }
+    }
 }
 
 function normalizePropTypeText(typeText: string): string {
@@ -254,6 +277,10 @@ export function exprToCpp(node: ts.Expression, ctx: LoweringContext): string {
         const name = node.text;
         if (ctx.stateVars.has(name)) {
             return `${name}.get()`;
+        }
+        const alias = ctx.localAliases.get(name);
+        if (alias) {
+            return exprToCpp(alias, ctx);
         }
         if (name === 'resetLayout') {
             return 'imx_reset_layout';
@@ -1308,6 +1335,8 @@ function inferExprType(expr: ts.Expression, ctx: LoweringContext): IRType {
     if (ts.isIdentifier(expr)) {
         const slot = ctx.stateVars.get(expr.text);
         if (slot) return slot.type;
+        const alias = ctx.localAliases.get(expr.text);
+        if (alias) return inferExprType(alias, ctx);
     }
 
     // Property access: props.name -> look up field type if available
