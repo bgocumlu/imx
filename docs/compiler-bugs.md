@@ -36,3 +36,6 @@ Components with inline props that import other components now correctly include 
 
 ### 11. Local aliases used in JSX are rewritten before C++ emission (fixed)
 Local `const` aliases declared before the JSX return, such as `const app = props.state`, are now rewritten to their source expression during lowering. This prevents generated C++ from referencing undeclared alias names in JSX text or prop expressions, so `app.selectedThreadTitle` emits as `props.state.selectedThreadTitle`.
+
+### 12. Indexed local aliases are rewritten before C++ emission (fixed)
+Local aliases used through indexed array access, such as `app.activities[0].summary`, now lower through structured element-access codegen instead of raw source text. This keeps alias rewriting intact and emits `props.state.activities[0].summary` or `(*props.state).activities[0].summary` for pointer-propagated component props.

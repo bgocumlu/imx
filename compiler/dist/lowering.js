@@ -248,6 +248,12 @@ export function exprToCpp(node, ctx) {
             return `${obj}.size()`;
         return `${obj}.${prop}`;
     }
+    // Element access (e.g., items[0], props.items[i])
+    if (ts.isElementAccessExpression(node)) {
+        const obj = exprToCpp(node.expression, ctx);
+        const arg = node.argumentExpression ? exprToCpp(node.argumentExpression, ctx) : '';
+        return `${obj}[${arg}]`;
+    }
     // Parenthesized expression
     if (ts.isParenthesizedExpression(node)) {
         return `(${exprToCpp(node.expression, ctx)})`;

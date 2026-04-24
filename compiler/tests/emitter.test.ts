@@ -122,6 +122,39 @@ function Header(props: { state: HeaderState }) {
         expect(output).not.toContain('app.selectedThreadTitle');
     });
 
+    it('rewrites local aliases used in indexed JSX expressions', () => {
+        const output = compile(`
+interface Activity {
+  summary: string;
+  createdAt: string;
+}
+
+interface AppState {
+  activities: Activity[];
+}
+
+function ThreadStatusBanners(props: { state: AppState }) {
+  const app = props.state;
+
+  return (
+    <>
+      {app.activities.length > 0 && (
+        <Column>
+          <Text>{app.activities[0].summary}</Text>
+          <Text>{app.activities[0].createdAt}</Text>
+        </Column>
+      )}
+    </>
+  );
+}
+        `);
+
+        expect(output).toContain('props.state.activities.size() > 0');
+        expect(output).toContain('(props.state.activities[0].summary).c_str()');
+        expect(output).toContain('(props.state.activities[0].createdAt).c_str()');
+        expect(output).not.toContain('app.activities');
+    });
+
     it('emits ternary conditional with else', () => {
         const output = compile(`
 function App() {
@@ -1280,6 +1313,47 @@ interface AppState { settings: SettingsData; }
         expect(header).toContain('SettingsData* value');
         expect(cpp).toContain('slider_float("Speed", &((*props.value).speed)');
         expect(appCpp).toContain('&props.settings');
+    });
+
+    it('rewrites indexed local aliases for pointer-propagated component props', () => {
+        const files = compileMultiFiles({
+            'App.tsx': `
+import { ThreadStatusBanners } from './ThreadStatusBanners';
+export default function App(props: AppState) {
+  return <ThreadStatusBanners state={props} />;
+}`,
+            'ThreadStatusBanners.tsx': `
+export function ThreadStatusBanners(props: { state: AppState }) {
+  const app = props.state;
+  return (
+    <Column>
+      {app.activities.length > 0 && (
+        <Column>
+          <Text>{app.activities[0].summary}</Text>
+          <Text>{app.activities[0].createdAt}</Text>
+        </Column>
+      )}
+      <SliderFloat label="Speed" value={props.state.speed} min={0} max={100} />
+    </Column>
+  );
+}`,
+            'imx.d.ts': `
+interface Activity {
+  summary: string;
+  createdAt: string;
+}
+interface AppState {
+  speed: number;
+  activities: Activity[];
+}
+`,
+        });
+
+        const cpp = files['ThreadStatusBanners.gen.cpp'] ?? '';
+        expect(cpp).toContain('(*props.state).activities.size() > 0');
+        expect(cpp).toContain('((*props.state).activities[0].summary).c_str()');
+        expect(cpp).toContain('((*props.state).activities[0].createdAt).c_str()');
+        expect(cpp).not.toContain('app.activities');
     });
 
     it('emits nested sub-struct color bindings with member access before data()', () => {
